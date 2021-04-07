@@ -35,10 +35,11 @@ local STATE_RACING = 1
 
 local races = {} -- races[] = {state, laps, race[] = {x, y, z}, numRacers, players[] = {numWaypoints, data}, results[] = {playerName, finishTime}}
 
-local raceDataFile = "./resources/races/raceData.txt"
+local raceDataFile = "./resources/races/raceData.json"
 
 RegisterNetEvent("races:load")
 AddEventHandler("races:load", function(public, name)
+    local source = source
     local playerRaces = loadPlayerData(public, source)
     local race = playerRaces[name]
     if race ~= nil then
@@ -50,6 +51,7 @@ end)
 
 RegisterNetEvent("races:save")
 AddEventHandler("races:save", function(public, name, race)
+    local source = source
     local playerRaces = loadPlayerData(public, source)
     if playerRaces[name] ~= nil then
         notifyPlayer(source, ("'%s' exists.  Use '/races overwrite %s'"):format(name, name))
@@ -62,6 +64,7 @@ end)
 
 RegisterNetEvent("races:overwrite")
 AddEventHandler("races:overwrite", function(public, name, race)
+    local source = source
     local playerRaces = loadPlayerData(public, source)
     if playerRaces[name] ~= nil then
         playerRaces[name] = race
@@ -74,6 +77,7 @@ end)
 
 RegisterNetEvent("races:delete")
 AddEventHandler("races:delete", function(public, name)
+    local source = source
     local playerRaces = loadPlayerData(public, source)
     if playerRaces[name] ~= nil then
         playerRaces[name] = nil
@@ -86,6 +90,7 @@ end)
 
 RegisterNetEvent("races:list")
 AddEventHandler("races:list", function(public)
+    local source = source
     local playerRaces = loadPlayerData(public, source)
     local empty = true
     local msg = "Saved races: "
@@ -103,8 +108,9 @@ end)
 
 RegisterNetEvent("races:register")
 AddEventHandler("races:register", function(coord, laps, timeout, race)
+    local source = source
     if coord and laps > 0 and race then
-        if races[source] == nil then
+        if nil == races[source] then
             races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, race = race, numRacers = 0, players = {}, results = {}}
             TriggerClientEvent("races:register", -1, source, GetPlayerName(source), coord)
             notifyPlayer(source, "Race registered")
@@ -122,6 +128,7 @@ end)
 
 RegisterNetEvent("races:unregister")
 AddEventHandler("races:unregister", function()
+    local source = source
     if races[source] ~= nil then
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
@@ -133,6 +140,7 @@ end)
 
 RegisterNetEvent("races:join")
 AddEventHandler("races:join", function(index)
+    local source = source
     if races[index] ~= nil then
         if STATE_REGISTERING == races[index].state then
             races[index].numRacers = races[index].numRacers + 1
@@ -148,6 +156,7 @@ end)
 
 RegisterNetEvent("races:leave")
 AddEventHandler("races:leave", function(index)
+    local source = source
     if races[index] ~= nil then
         if races[index].players[source] ~= nil then
             if STATE_RACING == races[index].state then
@@ -167,6 +176,7 @@ end)
 
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
+    local source = source
     if races[source] ~= nil then
         if STATE_REGISTERING == races[source].state then
             if delay >= 0 then
@@ -204,7 +214,7 @@ AddEventHandler("races:finish", function(index, fromSource, playerSource, finish
 
                 local playerResult = {playerName = playerName, finishTime = finishTime}
                 if finishTime < 0 then
-                    table.insert(races[index].results, playerResult)
+                    races[index].results[#(races[index].results) + 1] = playerResult
                 else
                     local inserted = false
                     for i, result in pairs(races[index].results) do
@@ -219,7 +229,7 @@ AddEventHandler("races:finish", function(index, fromSource, playerSource, finish
                         end
                     end
                     if not inserted then
-                        table.insert(races[index].results, playerResult)
+                        races[index].results[#(races[index].results) + 1] = playerResult
                     end
                 end
 
@@ -243,6 +253,7 @@ end)
 
 RegisterNetEvent("races:position")
 AddEventHandler("races:position", function(index)
+    local source = source
     if races[index] ~= nil and STATE_RACING == races[index].state and races[index].players[source] ~= nil then
         local position = -1
         local numPlayers = -1
@@ -275,7 +286,7 @@ AddEventHandler("races:position", function(index)
                 end
 
                 if not inserted then
-                    table.insert(sortedPlayers, playerInfo)
+                    sortedPlayers[#sortedPlayers + 1] = playerInfo
                 end
             end
         end
@@ -297,6 +308,7 @@ end)
 
 RegisterNetEvent("races:report")
 AddEventHandler("races:report", function(index, numWaypoints, data)
+    local source = source
     if races[index] ~= nil and races[index].players[source] ~= nil then
         races[index].players[source].numWaypoints = numWaypoints
         races[index].players[source].data = data

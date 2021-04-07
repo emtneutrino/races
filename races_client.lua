@@ -175,7 +175,7 @@ RegisterCommand("races", function(_, args)
                 if STATE_IDLE == raceState then
                     if #waypoints > 0 then
                         local race = convertWaypoints()
-                        TriggerServerEvent("races:register", GetEntityCoords(GetPlayerPed(-1)), laps, timeout, race)
+                        TriggerServerEvent("races:register", GetEntityCoords(PlayerPedId()), laps, timeout, race)
                     else
                         notifyPlayer("No waypoints loaded")
                     end
@@ -209,9 +209,9 @@ RegisterCommand("races", function(_, args)
         printResults()
 --[[
     elseif "test0" == args[1] then
-        local pedCoord = GetEntityCoords(GetPlayerPed(-1))
+        local pedCoord = GetEntityCoords(PlayerPedId())
         local blipCoord = GetBlipCoords(waypoints[1])
-        local dist0 = GetDistanceBetweenCoords(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z, true)
+        local dist0 = #(pedCoord - blipCoord)
         local dist1 = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z)
         print("dist0 = " .. dist0)
         print("dist1 = " .. dist1)
@@ -360,7 +360,7 @@ RegisterNetEvent("races:report")
 AddEventHandler("races:report", function()
     if numWaypoints == #waypoints * (currentLap - 1) + currentWaypoint then -- player has not finished race
         local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
-        local pedCoord = GetEntityCoords(GetPlayerPed(-1))
+        local pedCoord = GetEntityCoords(PlayerPedId())
         local dist = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z)
         TriggerServerEvent("races:report", raceIndex, numWaypoints, dist)
     else -- player has finished race - numWaypoints will be #waypoints * raceLaps + 1
@@ -452,7 +452,7 @@ Citizen.CreateThread(function()
                 end
             end
         elseif STATE_RACING == raceState then
-            local player = GetPlayerPed(-1)
+            local player = PlayerPedId()
             local currentTime = GetGameTimer()
             local countDown = raceStart + raceDelay * 1000 - currentTime
             if countDown > 0 then
@@ -531,7 +531,7 @@ Citizen.CreateThread(function()
 
                 if STATE_RACING == raceState then
                     local pedCoord = GetEntityCoords(player)
-                    if GetDistanceBetweenCoords(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z, true) < 10.0 then
+                    if #(pedCoord - blipCoord) < 10.0 then
 
                         DeleteCheckpoint(raceCheckpoint)
                         checkpointDeleted = true
@@ -560,10 +560,10 @@ Citizen.CreateThread(function()
                 end
             end
         elseif STATE_IDLE == raceState then
-            local pedCoord = GetEntityCoords(GetPlayerPed(-1))
+            local pedCoord = GetEntityCoords(PlayerPedId())
             for index, start in pairs(starts) do
                 local blipCoord = GetBlipCoords(start.blip)
-                if GetDistanceBetweenCoords(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z, true) < 10.0 then
+                if #(pedCoord - blipCoord) < 10.0 then
                     DrawMsg(0.45, 0.5, "Press[E] or right DPAD to join race owned by " .. start.owner, 0.5)
                     if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                         TriggerServerEvent('races:join', index)
@@ -647,8 +647,7 @@ end
 function convertWaypoints()
     local race = {}
     for i = 1, #waypoints do
-        local blipCoords = GetBlipCoords(waypoints[i])
-        race[i] = {x = blipCoords.x, y = blipCoords.y, z = blipCoords.z}
+        race[i] = GetBlipCoords(waypoints[i])
     end
     return race
 end
