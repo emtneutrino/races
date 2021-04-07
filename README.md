@@ -18,7 +18,7 @@ COMMANDS
 `/races overwritePublic [name]` - overwrite existing public race waypoints saved as [name]\
 `/races deletePublic [name]` - delete public race waypoints saved as [name]\
 `/races listPublic` - list public saved races\
-`/races register (laps) (DNF timeout)` - register your race; If you do not indicate (laps) or (DNF timeout), the default is 1 lap and 120 secondS DNF timeout\
+`/races register (laps) (DNF timeout)` - register your race; If you do not indicate (laps) or (DNF timeout), the default is 1 lap and 120 seconds DNF timeout\
 `/races unregister` - unregister your race\
 `/races leave` - leave a race that you joined\
 `/races start (delay)` - start your registered race; If you do not indicate (delay), the default is 30 seconds delay\
