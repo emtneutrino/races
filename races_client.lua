@@ -145,7 +145,7 @@ RegisterCommand("races", function(_, args)
             lastSelectedWaypoint = 0
             deleteWaypoints()
         else
-            notifyPlayer("Cannot clear.  Leave race first.")
+            notifyPlayer("Cannot clear waypoints.  Leave race first.")
         end
     elseif "load" == args[1] then
         load(false, args[2])
@@ -638,8 +638,8 @@ function loadWaypoints(race)
 end
 
 function deleteWaypoints()
-    for _, blip in pairs(waypoints) do
-        RemoveBlip(blip)
+    for i = 1, #waypoints do
+        RemoveBlip(waypoints[i])
     end
     waypoints = {}
 end
