@@ -418,7 +418,7 @@ Citizen.CreateThread(function()
                     if lastSelectedWaypoint < 1 then -- no previous selected waypoint exists, add new waypoint
                         SetBlipColour(blip, blipColor)
                         ShowNumberOnBlip(blip, #waypoints + 1)
-                        table.insert(waypoints, blip)
+                        waypoints[#waypoints + 1] = blip
                     else -- previous selected waypoint exists, move previous selected waypoint to new location
                         RemoveBlip(waypoints[lastSelectedWaypoint])
                         table.remove(waypoints, lastSelectedWaypoint)
