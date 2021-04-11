@@ -54,7 +54,11 @@ AddEventHandler("races:save", function(public, name, race)
     local source = source
     local playerRaces = loadPlayerData(public, source)
     if playerRaces[name] ~= nil then
-        notifyPlayer(source, ("'%s' exists.  Use '/races overwrite %s'"):format(name, name))
+        if public then
+            notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'"):format(name, name))
+        else
+            notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'"):format(name, name))
+        end
     else
         playerRaces[name] = race
         savePlayerData(public, source, playerRaces)    
@@ -71,7 +75,11 @@ AddEventHandler("races:overwrite", function(public, name, race)
         savePlayerData(public, source, playerRaces)    
         notifyPlayer(source, "Saved '" .. name .. "'")
     else
-        notifyPlayer(source, ("'%s' does not exist.  Use '/races save %s'"):format(name, name))
+        if public then
+            notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'"):format(name, name))
+        else
+            notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'"):format(name, name))
+        end
     end
 end)
 
@@ -118,7 +126,7 @@ AddEventHandler("races:register", function(coord, laps, timeout, race)
             if STATE_RACING == races[source].state then
                 notifyPlayer(source, "Cannot register.  Race in progress.")
             else
-                notifyPlayer(source, "Cannot register new race.  Prevouse race registered.  Unregister first.")
+                notifyPlayer(source, "Cannot register new race.  Previous race registered.  Unregister first.")
             end
         end
     else

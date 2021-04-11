@@ -26,7 +26,7 @@ COMMANDS
 
 SAMPLE RACES
 ------------
-There are two sample races:'00' and '01' saved in the public races list.  You can load one by typing `/races loadPublic 00` or `/races loadPubic 01`.  To race in one you need to register by typing `/races register`, type 'E' or press right DPAD to join, wait for other people to join if you want, then type `/races start`.
+There are three sample races:'00', '01' and '02' saved in the public races list.  You can load one by typing `/races loadPublic 00` or `/races loadPubic 01` or `/races loadPubic 02`.  To race in one you need to register by typing `/races register`, type 'E' or press right DPAD to join, wait for other people to join if you want, then type `/races start`.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
@@ -40,9 +40,9 @@ COMMAND DETAILS
 ---------------
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
-Adding a waypoint will always be added as the last waypoint.  You cannot put a waypoint between two waypoints.  You also cannot put a waypoint before another waypoint.
+Adding a waypoint will always be added as the last waypoint.  You cannot put a waypoint between two waypoints.  You also cannot put a waypoint before another waypoint.  A yellow checkpoint will appear in the world where you placed the waypoint.
 
-Clicking an existing waypoint will select it and turn it red.  Clicking it again will unselect it and turn it blue.  If you have a previously selected waypoint, selecting a new waypoint will turn the new waypoint red and unselect your previous waypoint, turning it blue.
+Clicking an existing waypoint will select it and turn it red.  Clicking it again will unselect it and turn it blue.  If you have a previously selected waypoint, selecting a new waypoint will turn the new waypoint red and unselect your previous waypoint, turning it blue.  A selected waypoint will have a yellow checkpoint appear in the world.  You can fine tune its placement by moving it to your desired location.
 
 You can move an existing waypoint by selecting it, then click on where you want to move it.
 
