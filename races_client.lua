@@ -437,7 +437,7 @@ Citizen.CreateThread(function()
 
                     SetBlipRoute(waypoints[1], true)
                     SetBlipRouteColour(waypoints[1], blipRouteColor)
-            else -- existing waypoint selected
+                else -- existing waypoint selected
                     if lastSelectedWaypoint < 1 then -- no previous selected waypoint exists
                         SetBlipColour(waypoints[selectedWaypoint], selectedBlipColor)
                         lastSelectedWaypoint = selectedWaypoint
