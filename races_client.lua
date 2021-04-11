@@ -419,6 +419,10 @@ Citizen.CreateThread(function()
                         SetBlipColour(blip, blipColor)
                         ShowNumberOnBlip(blip, #waypoints + 1)
                         waypoints[#waypoints + 1] = blip
+
+                        if not checkpointDeleted then -- new waypoint was added previously
+                            DeleteCheckpoint(raceCheckpoint)
+                        end
                     else -- previous selected waypoint exists, move previous selected waypoint to new location
                         RemoveBlip(waypoints[lastSelectedWaypoint])
                         table.remove(waypoints, lastSelectedWaypoint)
@@ -426,46 +430,43 @@ Citizen.CreateThread(function()
                         SetBlipColour(blip, selectedBlipColor)
                         ShowNumberOnBlip(blip, lastSelectedWaypoint)
                         table.insert(waypoints, lastSelectedWaypoint, blip)
-                    end
 
-                    if not checkpointDeleted then
                         DeleteCheckpoint(raceCheckpoint)
                     end
-                    raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
-                    SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-                    checkpointDeleted = false
 
                     SetBlipRoute(waypoints[1], true)
                     SetBlipRouteColour(waypoints[1], blipRouteColor)
+
+                    raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
+                    SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
+                    checkpointDeleted = false
                 else -- existing waypoint selected
                     if lastSelectedWaypoint < 1 then -- no previous selected waypoint exists
                         SetBlipColour(waypoints[selectedWaypoint], selectedBlipColor)
+
                         lastSelectedWaypoint = selectedWaypoint
 
-                        if not checkpointDeleted then
+                        if not checkpointDeleted then -- new waypoint was added previously
                             DeleteCheckpoint(raceCheckpoint)
                         end
                         raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
                         SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
                         checkpointDeleted = false
                     else -- previous selected waypoint exists
+                        DeleteCheckpoint(raceCheckpoint)
                         if selectedWaypoint ~= lastSelectedWaypoint then -- selected waypoint and previous selected waypoint are different
                             SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
                             SetBlipColour(waypoints[selectedWaypoint], selectedBlipColor)
+
                             lastSelectedWaypoint = selectedWaypoint
-                            if not checkpointDeleted then
-                                DeleteCheckpoint(raceCheckpoint)
-                            end
+
                             raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
                             SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
                             checkpointDeleted = false
                         else -- selected waypoint and previous selected waypoint are the same
                             SetBlipColour(waypoints[selectedWaypoint], blipColor)
                             lastSelectedWaypoint = 0
-                            if not checkpointDeleted then
-                                DeleteCheckpoint(raceCheckpoint)
-                                checkpointDeleted = true
-                            end
+                            checkpointDeleted = true
                         end
                     end
                 end
@@ -479,10 +480,8 @@ Citizen.CreateThread(function()
 
                     lastSelectedWaypoint = 0
 
-                    if not checkpointDeleted then
-                        DeleteCheckpoint(raceCheckpoint)
-                        checkpointDeleted = true
-                    end
+                    DeleteCheckpoint(raceCheckpoint)
+                    checkpointDeleted = true
 
                     if #waypoints > 0 then
                         SetBlipRoute(waypoints[1], true)
