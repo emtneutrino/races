@@ -6,6 +6,7 @@ Create a 'races' directory under your server 'resources' folder.  Place 'fxmanif
 
 COMMANDS
 --------
+`/races` - display list of available races commands\
 `/races edit` - toggle editing race waypoints\
 `/races clear` - clear race waypoints\
 `/races load [name]` - load race waypoints saved as [name]\
@@ -18,11 +19,12 @@ COMMANDS
 `/races overwritePublic [name]` - overwrite existing public race waypoints saved as [name]\
 `/races deletePublic [name]` - delete public race waypoints saved as [name]\
 `/races listPublic` - list public saved races\
-`/races register (laps) (DNF timeout)` - register your race; If you do not indicate (laps) or (DNF timeout), the default is 1 lap and 120 seconds DNF timeout\
+`/races register (laps) (DNF timeout)` - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\
 `/races unregister` - unregister your race\
 `/races leave` - leave a race that you joined\
-`/races start (delay)` - start your registered race; If you do not indicate (delay), the default is 30 seconds delay\
-`/races results` - list latest race results
+`/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
+`/races results` - list latest race results\
+`/races speedo` - toggle display of speedometer
 
 SAMPLE RACES
 ------------
@@ -38,6 +40,8 @@ Look for green registration points on the map.  There will be a corresponding gr
 
 COMMAND DETAILS
 ---------------
+Type `/races` to see the list of available races commands
+
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
 Adding a waypoint will always be added as the last waypoint.  You cannot put a waypoint between two waypoints.  You also cannot put a waypoint before another waypoint.  A yellow checkpoint will appear in the world where you placed the waypoint.
@@ -56,6 +60,8 @@ If you want to delete a saved race, type `/races delete myrace` to delete 'myrac
 
 You can load saved waypoints by typing `/races load myrace` to load a race named 'myrace'.  This will clear any current waypoints and load the saved ones.  You cannot load saved waypoints if you have joined a race.  Leave the race or finish it first.
 
+`save`, `overwrite`, `list`, `delete` and `load` operate on your private list of races.  No one else will be able to modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic` and `loadPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
+
 You can clear all waypoints by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
 After you've set your waypoints, you can register your race.  This will advertise your race to all players.  A green registration point will appear on the map and a green checkpoint will appear in the world where you registered your race.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
@@ -66,11 +72,11 @@ Once everyone who wants to join your registered race have joined, you can start 
 
 The current race waypoint will have a yellow checkpoint appear in the world.  A blue route will be shown in your map to the current race waypoint.
 
-Your current position, lap, waypoint, lap time, best lap time, and total time will display.  If someone has already finished the race, a DNF timeout will also appear.
+Your current position, lap, waypoint, lap time, best lap time, total time and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
 
 After the first racer finishes, there will be a DNF timeout for other racers.  They must finish within the timeout, otherwise they DNF.
 
-As racers finish, their finishing time will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
+As racers finish, their finishing time and best lap time will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
 
 After all racers finish, the race results will be broadcast to players who joined the race.
 
@@ -80,11 +86,11 @@ You can unregister your previously registered race by typing `/races unregister`
 
 If you want to leave a race you joined, type `/races leave`.  If you leave after the race has started you will DNF.
 
+To toggle the display of the speedometer, type `/races speedo`.
+
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save it by typing `/races save nicerace`.
 
-Multiple races can be registered and started simultaneously.
-
-`load`, `save`, `overwrite`, `delete` and `list` operate on your private list of races.  No one else will be able to modify your private list.  `loadPublic`, `savePublic`, `overwritePublic`, `deletePublic` and `listPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
+Multiple races can be registered and started simultaneously by different players.
 
 LICENSE
 -------

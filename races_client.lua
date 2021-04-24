@@ -32,147 +32,259 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local STATE_IDLE = 0
 local STATE_EDITING = 1
-local STATE_JOINING = 2
+local STATE_REGISTERING = 2
 local STATE_RACING = 3
-local raceState = STATE_IDLE
+local raceState = STATE_IDLE -- race state
 
-local registerBlipColor =  2
-local selectedBlipColor = 1
-local blipColor = 38
-local blipRouteColor = 18
+local registerBlipColor = 2 -- green
+local selectedBlipColor = 1 -- red
+local blipColor = 38 -- dark blue
+local blipRouteColor = 18 -- light blue
 
-local lastSelectedWaypoint = 0
+local lastSelectedWaypoint = 0 -- index of last selected waypoint
+
+local raceIndex = -1 -- index of race player has joined
 
 local waypoints = {} -- blip - race waypoints
-local raceLaps = -1 -- number of laps in current race
-local currentLap = -1
-local currentWaypoint = -1
-local raceIndex = -1 -- index of race player has joined
-local raceStart = -1 -- start time of race before delay
-local raceDelay = -1  -- delay before official start of race
 
-local position = -1 -- position in race out of numPlayers players
-local numPlayers = -1 -- number of players in race - no DNF players included
+local numLaps = -1 -- number of laps in current race
+local currentLap = -1 -- current lap
+
+local numWaypointsPassed = -1 -- number of waypoints player has passed
+local currentWaypoint = -1 -- current waypoint
+
+local raceStart = -1 -- start time of race before delay
+local raceDelay = -1 -- delay before official start of race
+
+local position = -1 -- position in race out of numRacers players
+local numRacers = -1 -- number of players in race - no DNF players included
 
 local lapTimeStart = -1 -- start time of current lap
 local bestLapTime = -1 -- best lap time
 
-local numWaypoints = -1 -- number of waypoints player has passed
-local playerFinishTime = -1 -- finish time of player or -1 for DNF
-
-local raceCheckpoint
-local checkpointDeleted = true
+local raceCheckpoint = nil -- race checkpoint in world
+local checkpointDeleted = true -- flag indicating if raceCheckpoint has been deleted
 
 local DNFTimeout = -1 -- DNF timeout after first player finishes the race
-local beginDNFTimeout = false
+local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
-local starts = {} -- blip, checkpoint - registration points
+local results = {} -- playerName, finishTime, bestLapTime
 
-local results = {} -- player name, finish time
+local frozen = true -- flag indicating if vehicle is frozen
 
-local frozen = true
+local starts = {} -- owner, blip, checkpoint - registration points
 
---[[
-edit start: STATE_IDLE
-edit stop: STATE_EDITING
-clear: STATE_IDLE, STATE_EDITING
-load/loadPublic: STATE_IDLE, STATE_EDITING
-save/savePublic: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-overwrite/overwritePublic: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-delete/deletePublic: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-list/listPublic: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-register: STATE_IDLE
-unregister: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-[race join]: STATE_IDLE
-leave: STATE_JOINING, STATE_RACING
-start: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
-results: STATE_IDLE, STATE_EDITING, STATE_JOINING, STATE_RACING
---]]
+local speedo = false -- flag indicating if speedometer is displayed
+
+local function notifyPlayer(msg)
+    TriggerEvent("chat:addMessage", {
+        color = {255, 0, 0},
+        multiline = true,
+        args = {"[races:client]", msg}
+    })
+end
+
+local function loadRace(public, name)
+    if name ~= nil then
+        if STATE_IDLE == raceState or STATE_EDITING == raceState then
+            TriggerServerEvent("races:load", public, name)
+        else
+            notifyPlayer("Cannot load '" .. name .. "'.  Leave race first.")
+        end
+    else
+        notifyPlayer("Name required")
+    end
+end
+
+local function convertWaypoints()
+    local raceWaypoints = {}
+    for i = 1, #waypoints do
+        raceWaypoints[i] = GetBlipCoords(waypoints[i])
+    end
+    return raceWaypoints
+end
+
+local function saveRace(public, name)
+    if name ~= nil then
+        if #waypoints > 0 then
+            TriggerServerEvent("races:save", public, name, convertWaypoints())
+        else
+            notifyPlayer("No waypoints created")
+        end
+    else
+        notifyPlayer("Name required")
+    end
+end
+
+local function overwriteRace(public, name)
+    if name ~= nil then
+        if #waypoints > 0 then
+            TriggerServerEvent("races:overwrite", public, name, convertWaypoints())
+        else
+            notifyPlayer("No waypoints created")
+        end
+    else
+        notifyPlayer("Name required")
+    end
+end
+
+local function deleteRace(public, name)
+    if name ~= nil then
+        TriggerServerEvent("races:delete", public, name)
+     else
+         notifyPlayer("Name required")
+     end
+end
+
+local function deleteWaypoints()
+    for i = 1, #waypoints do
+        RemoveBlip(waypoints[i])
+    end
+    waypoints = {}
+end
+
+local function loadWaypoints(raceWaypoints)
+    deleteWaypoints()
+    for index, coord in ipairs(raceWaypoints) do
+        local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
+        SetBlipAsShortRange(blip, true)
+        SetBlipColour(blip, blipColor)
+        ShowNumberOnBlip(blip, index)
+        waypoints[index] = blip
+    end
+    if #waypoints > 0 then
+        SetBlipRoute(waypoints[1], true)
+        SetBlipRouteColour(waypoints[1], blipRouteColor)
+    end
+end
+
+local function removeRegistrationPoint(index)
+    if starts[index] ~= nil then
+        RemoveBlip(starts[index].blip) -- delete registration blip
+        DeleteCheckpoint(starts[index].checkpoint) -- delete registration checkpoint
+        starts[index] = nil
+    end
+end
+
+local function minutesSeconds(milliseconds)
+    local seconds = milliseconds / 1000.0
+    local minutes = math.floor(seconds / 60.0)
+    seconds = seconds - minutes * 60.0
+    return minutes, seconds
+end
+
+local function printResults()
+    if #results > 0 then
+        local msg = "Race results:\n"
+        for position, result in ipairs(results) do
+            msg = msg .. position .. " - "
+            if -1 == result.finishTime then
+                msg = msg .. "DNF - " .. result.playerName
+                if result.bestLapTime >= 0 then
+                    local minutes, seconds = minutesSeconds(result.bestLapTime)
+                    msg = msg .. (" - best lap %02d:%05.2f"):format(minutes, seconds)
+                end
+                msg = msg .. "\n"
+            else
+                local fMinutes, fSeconds = minutesSeconds(result.finishTime)
+                local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
+                msg = msg .. ("%02d:%05.2f - %s - best lap %02d:%05.2f\n"):format(fMinutes, fSeconds, result.playerName, lMinutes, lSeconds)
+            end
+        end
+        notifyPlayer(msg)
+    else
+        notifyPlayer("No results")
+    end
+end
+
+local function createRaceCheckpoint(checkpointType, coord)
+    raceCheckpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
+    SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
+    checkpointDeleted = false
+end
+
+local function drawMsg(x, y, msg, scale)
+    SetTextFont(4)
+    SetTextScale(0, scale)
+    SetTextColour(255, 255, 0, 255)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString(msg)
+    DrawText(x, y)
+end
 
 RegisterCommand("races", function(_, args)
----[[
-    if "edit" == args[1] then
+    if nil == args[1] then
+        local msg = "\n"
+        msg = msg .. "/races - display list of available races commands\n"
+        msg = msg .. "/races edit - toggle editing race waypoints\n"
+        msg = msg .. "/races clear - clear race waypoints\n"
+        msg = msg .. "/races load [name] - load race waypoints saved as [name]\n"
+        msg = msg .. "/races save [name] - save new race waypoints as [name]\n"
+        msg = msg .. "/races overwrite [name] - overwrite existing race waypoints saved as [name]\n"
+        msg = msg .. "/races delete [name] - delete race waypoints saved as [name]\n"
+        msg = msg .. "/races list - list saved races\n"
+        msg = msg .. "/races loadPublic [name] - load public race waypoints saved as [name]\n"
+        msg = msg .. "/races savePublic [name] - save new public race waypoints as [name]\n"
+        msg = msg .. "/races overwritePublic [name] - overwrite existing public race waypoints saved as [name]\n"
+        msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
+        msg = msg .. "/races listPublic - list public saved races\n"
+        msg = msg .. "/races register (laps) (DNF timeout) - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\n"
+        msg = msg .. "/races unregister - unregister your race\n"
+        msg = msg .. "/races leave - leave a race that you joined\n"
+        msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
+        msg = msg .. "/races results - list latest race results\n"
+        msg = msg .. "/races speedo - toggle display of speedometer\n"
+        notifyPlayer(msg)
+    elseif "edit" == args[1] then
         if STATE_IDLE == raceState then
             raceState = STATE_EDITING
-            lastSelectedWaypoint = 0
-            checkpointDeleted = true
             SetWaypointOff()
             notifyPlayer("Editing started")
         elseif STATE_EDITING == raceState then
             raceState = STATE_IDLE
+            if false == checkpointDeleted then
+                DeleteCheckpoint(raceCheckpoint)
+                checkpointDeleted = true
+            end
             if lastSelectedWaypoint > 0 then
                 SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
                 lastSelectedWaypoint = 0
-            end
-            if not checkpointDeleted then
-                DeleteCheckpoint(raceCheckpoint)
-                checkpointDeleted = true
             end
             notifyPlayer("Editing stopped")
         else
             notifyPlayer("Cannot edit waypoints.  Leave race first.")
         end
---]]
---[[
-        if "start" == args[2] then
-            if STATE_IDLE == raceState then
-                raceState = STATE_EDITING
-                lastSelectedWaypoint = 0
-                checkpointDeleted = true
-                SetWaypointOff()
-                notifyPlayer("Editing started")
-            elseif STATE_EDITING == raceState then
-                notifyPlayer("Editing already started")
-            else
-                notifyPlayer("Cannot edit.  Leave race first.")
-            end
-        elseif "stop" == args[2] then
-            if STATE_EDITING == raceState then
-                raceState = STATE_IDLE
-                if lastSelectedWaypoint > 0 then
-                    SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
-                    lastSelectedWaypoint = 0
-                end
-                if not checkpointDeleted then
-                    DeleteCheckpoint(raceCheckpoint)
-                    checkpointDeleted = true
-                end
-                notifyPlayer("Editing stopped")
-            else
-                notifyPlayer("Not editing")
-            end
-        elseif nil == args[2] then
-            notifyPlayer("'start' or 'stop' command required")
-        else
-            notifyPlayer("Invalid edit command")
-        end
---]]
     elseif "clear" == args[1] then
         if STATE_IDLE == raceState then
             deleteWaypoints()
         elseif STATE_EDITING == raceState then
+            if false == checkpointDeleted then
+                DeleteCheckpoint(raceCheckpoint)
+                checkpointDeleted = true
+            end
             lastSelectedWaypoint = 0
             deleteWaypoints()
         else
             notifyPlayer("Cannot clear waypoints.  Leave race first.")
         end
     elseif "load" == args[1] then
-        load(false, args[2])
+        loadRace(false, args[2])
     elseif "loadPublic" == args[1] then
-        load(true, args[2])
+        loadRace(true, args[2])
     elseif "save" == args[1] then
-        save(false, args[2])
+        saveRace(false, args[2])
     elseif "savePublic" == args[1] then
-        save(true, args[2])
+        saveRace(true, args[2])
     elseif "overwrite" == args[1] then
-        overwrite(false, args[2])
+        overwriteRace(false, args[2])
     elseif "overwritePublic" == args[1] then
-        overwrite(true, args[2])
+        overwriteRace(true, args[2])
     elseif "delete" == args[1] then
-        delete(false, args[2])
+        deleteRace(false, args[2])
     elseif "deletePublic" == args[1] then
-        delete(true, args[2])
+        deleteRace(true, args[2])
     elseif "list" == args[1] then
         TriggerServerEvent("races:list", false)
     elseif "listPublic" == args[1] then
@@ -184,8 +296,7 @@ RegisterCommand("races", function(_, args)
             if timeout >= 0 then
                 if STATE_IDLE == raceState then
                     if #waypoints > 0 then
-                        local race = convertWaypoints()
-                        TriggerServerEvent("races:register", GetEntityCoords(PlayerPedId()), laps, timeout, race)
+                        TriggerServerEvent("races:register", GetEntityCoords(PlayerPedId()), laps, timeout, convertWaypoints())
                     else
                         notifyPlayer("No waypoints loaded")
                     end
@@ -203,192 +314,207 @@ RegisterCommand("races", function(_, args)
     elseif "unregister" == args[1] then
         TriggerServerEvent("races:unregister")
     elseif "leave" == args[1] then
-        if STATE_JOINING == raceState or STATE_RACING == raceState then
+        if STATE_REGISTERING == raceState then
+            raceState = STATE_IDLE
             TriggerServerEvent("races:leave", raceIndex)
+            notifyPlayer("Left race")
+        elseif STATE_RACING == raceState then
+            raceState = STATE_IDLE
+            TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
+            DeleteCheckpoint(raceCheckpoint)
+            checkpointDeleted = true
+            SetBlipRoute(waypoints[1], true)
+            SetBlipRouteColour(waypoints[1], blipRouteColor)
+            speedo = false
+            notifyPlayer("Left race")
         else
             notifyPlayer("Not joined to any race")
         end
     elseif "start" == args[1] then
         local delay = tonumber(args[2]) or 30
-        if delay < 0 then
-            notifyPlayer("Invalid delay")
-        else
+        if delay >= 0 then
             TriggerServerEvent("races:start", delay)
+        else
+            notifyPlayer("Invalid delay")
         end
     elseif "results" == args[1] then
         printResults()
---[[
-    elseif "test0" == args[1] then
-        local pedCoord = GetEntityCoords(PlayerPedId())
-        local blipCoord = GetBlipCoords(waypoints[1])
-        local dist0 = #(pedCoord - blipCoord)
-        local dist1 = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z)
-        print("dist0 = " .. dist0)
-        print("dist1 = " .. dist1)
-    elseif "test1" == args[1] then
-        TriggerEvent("races:finish", raceIndex, "John Doe", (5 * 60 + 30) * 1000)
---]]
-    elseif nil == args[1] then
-        notifyPlayer("Command required")
+    elseif "speedo" == args[1] then
+        speedo = not speedo
     else
         notifyPlayer("Unknown command")
     end
 end)
 
 RegisterNetEvent("races:load")
-AddEventHandler("races:load", function(name, race)
-    if STATE_IDLE == raceState or STATE_EDITING == raceState then
-        loadWaypoints(race)
-        notifyPlayer("Loaded '" .. name .. "'")
-    else
-        notifyPlayer("Ignoring load event.  Currently joined to race.")
+AddEventHandler("races:load", function(name, raceWaypoints)
+    if name ~= nil and raceWaypoints ~= nil then
+        if STATE_IDLE == raceState then
+            loadWaypoints(raceWaypoints)
+            notifyPlayer("Loaded '" .. name .. "'")
+        elseif STATE_EDITING == raceState then
+            if false == checkpointDeleted then
+                DeleteCheckpoint(raceCheckpoint)
+                checkpointDeleted = true
+            end
+            lastSelectedWaypoint = 0
+            loadWaypoints(raceWaypoints)
+            notifyPlayer("Loaded '" .. name .. "'")
+        else
+            notifyPlayer("Ignoring load event.  Currently joined to race.")
+        end
     end
 end)
 
 RegisterNetEvent("races:register")
 AddEventHandler("races:register", function(index, owner, coord)
-    local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
-    SetBlipColour(blip, registerBlipColor)
-    SetBlipAsShortRange(blip, true)
+    if index ~= nil and owner ~= nil and coord ~= nil then
+        local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
+        SetBlipAsShortRange(blip, true)
+        SetBlipColour(blip, registerBlipColor)
 
-    local checkpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 0, 255, 0, 127, 0) -- registration checkpoint
-    SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
+        local checkpoint = CreateCheckpoint(45, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, 0, 255, 0, 127, 0) -- registration checkpoint
+        SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
 
-    starts[index] = {owner = owner, blip = blip, checkpoint = checkpoint}
+        starts[index] = {owner = owner, blip = blip, checkpoint = checkpoint}
+    end
 end)
 
 RegisterNetEvent("races:unregister")
 AddEventHandler("races:unregister", function(index)
-    removeRegistrationPoint(index)
-    if raceIndex == index then
-        if STATE_JOINING == raceState then
-            raceState = STATE_IDLE
-            notifyPlayer("Race canceled")
-        elseif STATE_RACING == raceState then
-            raceState = STATE_IDLE
-            SetBlipRoute(waypoints[1], true)
-            SetBlipRouteColour(waypoints[1], blipRouteColor)
-            DeleteCheckpoint(raceCheckpoint) -- delete last checkpoint
-            notifyPlayer("Race canceled")
+    if index ~= nil then
+        removeRegistrationPoint(index)
+        if raceIndex == index then
+            if STATE_REGISTERING == raceState then
+                raceState = STATE_IDLE
+                notifyPlayer("Race canceled")
+            elseif STATE_RACING == raceState then
+                raceState = STATE_IDLE
+                SetBlipRoute(waypoints[1], true)
+                SetBlipRouteColour(waypoints[1], blipRouteColor)
+                DeleteCheckpoint(raceCheckpoint)
+                checkpointDeleted = true
+                speedo = false
+                notifyPlayer("Race canceled")
+            end
         end
     end
 end)
 
 RegisterNetEvent("races:join")
-AddEventHandler("races:join", function(index, laps, timeout, race)
-    if STATE_IDLE == raceState then
-        raceState = STATE_JOINING
-        raceIndex = index
-        raceLaps = laps
-        DNFTimeout = timeout * 1000
-        loadWaypoints(race)
-        notifyPlayer(("Joined race owned by %s : %d lap(s)"):format(starts[index].owner, laps))
-    elseif STATE_EDITING == raceState then
-        notifyPlayer("Ignoring race join event.  Currently editing.")
-    else
-        notifyPlayer("Ignoring race join event.  Already joined to a race.")
-    end
-end)
-
-RegisterNetEvent("races:leave")
-AddEventHandler("races:leave", function()
-    if STATE_JOINING == raceState then
-        raceState = STATE_IDLE
-        notifyPlayer("Left race")
-    elseif STATE_RACING == raceState then
-        raceState = STATE_IDLE
-        SetBlipRoute(waypoints[1], true)
-        SetBlipRouteColour(waypoints[1], blipRouteColor)
-        DeleteCheckpoint(raceCheckpoint) -- delete last checkpoint
-        notifyPlayer("Left race")
-    else
-        notifyPlayer("Ignoring race leave event.  Not joined to a race.")
+AddEventHandler("races:join", function(index, laps, timeout, raceWaypoints)
+    if index ~= nil and laps ~= nil and timeout ~= nil and raceWaypoints ~= nil then
+        if STATE_IDLE == raceState then
+            raceState = STATE_REGISTERING
+            raceIndex = index
+            numLaps = laps
+            DNFTimeout = timeout * 1000
+            loadWaypoints(raceWaypoints)
+            notifyPlayer(("Joined race owned by %s : %d lap(s)"):format(starts[index].owner, laps))
+        elseif STATE_EDITING == raceState then
+            notifyPlayer("Ignoring race join event.  Currently editing.")
+        else
+            notifyPlayer("Ignoring race join event.  Already joined to a race.")
+        end
     end
 end)
 
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
-    if delay >= 0 then
-        if STATE_JOINING == raceState then
-            raceState = STATE_RACING
-            raceStart = GetGameTimer()
-            raceDelay = delay
-            lapTimeStart = raceStart + delay * 1000
-            bestLapTime = -1
-            currentLap = 1
-            currentWaypoint = 1
-            numWaypoints = #waypoints * (currentLap - 1) + currentWaypoint
-            position = -1
-            numPlayers = -1
-            beginDNFTimeout = false
-            results = {}
-            checkpointDeleted = true
-            notifyPlayer("Race started")
-        elseif STATE_RACING == raceState then
-            notifyPlayer("Ignoring race start event.  Already in a race.")
-        elseif STATE_EDITING == raceState then
-            notifyPlayer("Ignoring race start event.  Currently editing.")
+    if delay ~= nil then
+        if delay >= 0 then
+            if STATE_REGISTERING == raceState then
+                raceState = STATE_RACING
+                raceStart = GetGameTimer()
+                raceDelay = delay
+                lapTimeStart = raceStart + delay * 1000
+                bestLapTime = -1
+                currentLap = 1
+                currentWaypoint = 1
+                numWaypointsPassed = 0
+                position = -1
+                numRacers = -1
+                beginDNFTimeout = false
+                timeoutStart = -1
+                results = {}
+                checkpointDeleted = true
+                frozen = true
+                speedo = true
+                notifyPlayer("Race started")
+            elseif STATE_RACING == raceState then
+                notifyPlayer("Ignoring race start event.  Already in a race.")
+            elseif STATE_EDITING == raceState then
+                notifyPlayer("Ignoring race start event.  Currently editing.")
+            else
+                notifyPlayer("Ignoring race start event.  Currently idle.")
+            end
         else
-            notifyPlayer("Ignoring race start event.  Currently idle.")
+            notifyPlayer("Ignoring race start event.  Invalid delay.")
         end
-    else
-        notifyPlayer("Ignoring race start event.  Invalid delay.")
     end
 end)
 
 RegisterNetEvent("races:results")
 AddEventHandler("races:results", function(raceResults)
-    results = raceResults
-    printResults()
+    if raceResults ~= nil then
+        results = raceResults -- results[] = {playerName, finishTime, bestLapTime}
+
+        table.sort(results, function(p0, p1)
+            return
+                (p0.finishTime >= 0 and (-1 == p1.finishTime or p0.finishTime < p1.finishTime)) or
+                (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
+        end)
+
+        printResults()
+    end
 end)
 
 RegisterNetEvent("races:hide")
 AddEventHandler("races:hide", function(index)
-    removeRegistrationPoint(index)
+    if index ~= nil then
+        removeRegistrationPoint(index)
+    end
 end)
 
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(index, playerName, finishTime)
-    if raceIndex == index then
-        if finishTime < 0 then
-            notifyPlayer(playerName .. " did not finish")
+AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLapTime)
+    if playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil then
+        if -1 == raceFinishTime then
+            if -1 == raceBestLapTime then
+                notifyPlayer(playerName .. " did not finish")
+            else
+                local minutes, seconds = minutesSeconds(raceBestLapTime)
+                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f"):format(playerName, minutes, seconds))
+            end
         else
-            if not beginDNFTimeout then
+            if false == beginDNFTimeout then
                 beginDNFTimeout = true
                 timeoutStart = GetGameTimer()
             end
 
-            local seconds = finishTime / 1000.0
-            local minutes = math.floor(seconds / 60.0)
-            seconds = seconds - minutes * 60.0
-            notifyPlayer(("%s finished in %02d:%05.2f"):format(playerName, minutes, seconds))
+            local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
+            local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
+            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds))
         end
     end
 end)
 
-RegisterNetEvent("races:report")
-AddEventHandler("races:report", function()
-    if numWaypoints == #waypoints * (currentLap - 1) + currentWaypoint then -- player has not finished race
-        local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
-        local pedCoord = GetEntityCoords(PlayerPedId())
-        local dist = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z)
-        TriggerServerEvent("races:report", raceIndex, numWaypoints, dist)
-    else -- player has finished race - numWaypoints will be #waypoints * raceLaps + 1
-        TriggerServerEvent("races:report", raceIndex, numWaypoints, playerFinishTime)
-    end
-end)
-
 RegisterNetEvent("races:position")
-AddEventHandler("races:position", function(pos, numP)
-    position = pos
-    numPlayers = numP
+AddEventHandler("races:position", function(pos, numR)
+    if pos ~= nil and numR ~= nil then
+        position = pos
+        numRacers = numR
+    end
 end)
 
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(1000)
         if STATE_RACING == raceState then
-            TriggerServerEvent("races:position", raceIndex)
+            local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
+            local pedCoord = GetEntityCoords(PlayerPedId())
+            local dist = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, blipCoord.x, blipCoord.y, blipCoord.z)
+            TriggerServerEvent("races:report", raceIndex, numWaypointsPassed, dist)
         end
     end
 end)
@@ -404,54 +530,43 @@ Citizen.CreateThread(function()
 
                 local selectedWaypoint = 0
                 for index, blip in pairs(waypoints) do
-                    local blipCoord = GetBlipCoords(blip)
-                    if coord.x == blipCoord.x and coord.y == blipCoord.y and coord.z == blipCoord.z then
+                    if coord == GetBlipCoords(blip) then
                         selectedWaypoint = index
                         break
                     end
                 end
 
-                if selectedWaypoint < 1 then -- no existing waypoint selected
-                    local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
-                    SetBlipAsShortRange(blip, true)
-
-                    if lastSelectedWaypoint < 1 then -- no previous selected waypoint exists, add new waypoint
+                if 0 == selectedWaypoint then -- no existing waypoint selected
+                    if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists, add new waypoint
+                        local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
+                        SetBlipAsShortRange(blip, true)
                         SetBlipColour(blip, blipColor)
                         ShowNumberOnBlip(blip, #waypoints + 1)
                         waypoints[#waypoints + 1] = blip
 
-                        if not checkpointDeleted then -- new waypoint was added previously
+                        if false == checkpointDeleted then -- new waypoint was added previously
                             DeleteCheckpoint(raceCheckpoint)
                         end
                     else -- previous selected waypoint exists, move previous selected waypoint to new location
-                        RemoveBlip(waypoints[lastSelectedWaypoint])
-                        table.remove(waypoints, lastSelectedWaypoint)
-
-                        SetBlipColour(blip, selectedBlipColor)
-                        ShowNumberOnBlip(blip, lastSelectedWaypoint)
-                        table.insert(waypoints, lastSelectedWaypoint, blip)
-
+                        SetBlipCoords(waypoints[lastSelectedWaypoint], coord.x, coord.y, coord.z)
                         DeleteCheckpoint(raceCheckpoint)
                     end
 
                     SetBlipRoute(waypoints[1], true)
                     SetBlipRouteColour(waypoints[1], blipRouteColor)
 
-                    raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
-                    SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-                    checkpointDeleted = false
+                    createRaceCheckpoint(45, coord)
                 else -- existing waypoint selected
-                    if lastSelectedWaypoint < 1 then -- no previous selected waypoint exists
+                    if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists
                         SetBlipColour(waypoints[selectedWaypoint], selectedBlipColor)
 
                         lastSelectedWaypoint = selectedWaypoint
 
-                        if not checkpointDeleted then -- new waypoint was added previously
+                        if false == checkpointDeleted then -- new waypoint was added previously
                             DeleteCheckpoint(raceCheckpoint)
                         end
-                        raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
-                        SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-                        checkpointDeleted = false
+
+                        createRaceCheckpoint(45, coord)
                     else -- previous selected waypoint exists
                         DeleteCheckpoint(raceCheckpoint)
                         if selectedWaypoint ~= lastSelectedWaypoint then -- selected waypoint and previous selected waypoint are different
@@ -460,9 +575,7 @@ Citizen.CreateThread(function()
 
                             lastSelectedWaypoint = selectedWaypoint
 
-                            raceCheckpoint = CreateCheckpoint(45, coord.x,  coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
-                            SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-                            checkpointDeleted = false
+                            createRaceCheckpoint(45, coord)
                         else -- selected waypoint and previous selected waypoint are the same
                             SetBlipColour(waypoints[selectedWaypoint], blipColor)
                             lastSelectedWaypoint = 0
@@ -494,101 +607,98 @@ Citizen.CreateThread(function()
             local currentTime = GetGameTimer()
             local countDown = raceStart + raceDelay * 1000 - currentTime
             if countDown > 0 then
-                DrawMsg(0.45, 0.5, ("Race starting in %05.2f seconds"):format(countDown / 1000.0), 0.5)
+                drawMsg(0.41, 0.50, ("Race starting in %05.2f seconds"):format(countDown / 1000.0), 0.7)
 
                 if IsPedInAnyVehicle(player, false) then
-                    local vehicle = GetVehiclePedIsIn(player, false)
-                    FreezeEntityPosition(vehicle, true)
+                    FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
                     frozen = true
                 end
             else
-                if frozen then
+                if true == frozen then
                     if IsPedInAnyVehicle(player, false) then
-                        local vehicle = GetVehiclePedIsIn(player, false)
-                        FreezeEntityPosition(vehicle, false)
+                        FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
                     end
                     frozen = false
                 end
 
-                local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
-                if checkpointDeleted then
-                    local checkpointType = (currentWaypoint == #waypoints and currentLap == raceLaps) and 9 or 45
-                    raceCheckpoint = CreateCheckpoint(checkpointType, blipCoord.x,  blipCoord.y, blipCoord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
-                    SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-                    checkpointDeleted = false
-                end
+                local leftSide = 0.43
+                local rightSide = 0.51
 
+                drawMsg(leftSide, 0.03, "Position", 0.5)
                 if -1 == position then
-                    DrawMsg(0.015, 0.575, "Position -- of --", 0.5)
+                    drawMsg(rightSide, 0.03, "-- of --", 0.5)
                 else
-                    DrawMsg(0.015, 0.575, ("Position %d of %d"):format(position, numPlayers), 0.5)
+                    drawMsg(rightSide, 0.03, ("%d of %d"):format(position, numRacers), 0.5)
                 end
 
-                DrawMsg(0.015, 0.605, ("Lap %d of %d"):format(currentLap, raceLaps), 0.5)
+                drawMsg(leftSide, 0.06, "Lap", 0.5)
+                drawMsg(rightSide, 0.06, ("%d of %d"):format(currentLap, numLaps), 0.5)
 
-                DrawMsg(0.015, 0.635, ("Waypoint %d of %d"):format(currentWaypoint, #waypoints), 0.5)
+                drawMsg(leftSide, 0.09, "Waypoint", 0.5)
+                drawMsg(rightSide, 0.09, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
+
+                local minutes, seconds = minutesSeconds(-countDown)
+                drawMsg(leftSide, 0.12, "Total time", 0.5)
+                drawMsg(rightSide, 0.12, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
 
                 local lapTime = currentTime - lapTimeStart
-                local seconds = lapTime / 1000.0
-                local minutes = math.floor(seconds / 60.0)
-                seconds = seconds - minutes * 60.0
-                DrawMsg(0.015, 0.665, ("Lap time %02d:%05.2f"):format(minutes, seconds), 0.5)
+                minutes, seconds = minutesSeconds(lapTime)
+                drawMsg(leftSide, 0.20, "Lap time", 0.7)
+                drawMsg(rightSide, 0.20, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
 
-                if bestLapTime < 0 then
-                    DrawMsg(0.015, 0.695, "Best lap time --:--", 0.5)
+                drawMsg(leftSide, 0.24, "Best lap", 0.7)
+                if -1 == bestLapTime then
+                    drawMsg(rightSide, 0.24, "- - : - -", 0.7)
                 else
-                    seconds = bestLapTime / 1000.0
-                    minutes = math.floor(seconds / 60.0)
-                    seconds = seconds - minutes * 60.0
-                    DrawMsg(0.015, 0.695, ("Best lap time %02d:%05.2f"):format(minutes, seconds), 0.5)
+                    minutes, seconds = minutesSeconds(bestLapTime)
+                    drawMsg(rightSide, 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                 end
 
-                seconds = -countDown / 1000.0
-                minutes = math.floor(seconds / 60.0)
-                seconds = seconds - minutes * 60.0
-                DrawMsg(0.015, 0.725, ("Total time %02d:%05.2f"):format(minutes, seconds), 0.5)
-
-                numWaypoints = #waypoints * (currentLap - 1) + currentWaypoint
-
                 if true == beginDNFTimeout then
-                    seconds = (timeoutStart + DNFTimeout - currentTime) / 1000.0
-                    if seconds > 0 then
-                        minutes = math.floor(seconds / 60.0)
-                        seconds = seconds - minutes * 60.0
-                        DrawMsg(0.015, 0.755, ("DNF in %02d:%05.2f"):format(minutes, seconds), 0.5)
+                    local milliseconds = timeoutStart + DNFTimeout - currentTime
+                    if milliseconds >= 0 then
+                        minutes, seconds = minutesSeconds(milliseconds)
+                        drawMsg(leftSide, 0.28, "DNF time", 0.7)
+                        drawMsg(rightSide, 0.28, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
-                        numWaypoints = numWaypoints + 1 -- indicates this player has finished the race
-                        playerFinishTime = -1
-                        TriggerServerEvent("races:finish", raceIndex, true, -1, playerFinishTime)
                         raceState = STATE_IDLE
+                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
                         DeleteCheckpoint(raceCheckpoint)
+                        checkpointDeleted = true
+
                         SetBlipRoute(waypoints[1], true)
                         SetBlipRouteColour(waypoints[1], blipRouteColor)
+                        speedo = false
                     end
                 end
 
-                if STATE_RACING == raceState then
-                    local pedCoord = GetEntityCoords(player)
-                    if #(pedCoord - blipCoord) < 10.0 then
+                local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
+                if true == checkpointDeleted then
+                    local checkpointType = (currentWaypoint == #waypoints and currentLap == numLaps) and 9 or 45
+                    createRaceCheckpoint(checkpointType, blipCoord)
+                end
 
+                if STATE_RACING == raceState then
+                    if #(GetEntityCoords(player) - blipCoord) < 10.0 then
                         DeleteCheckpoint(raceCheckpoint)
                         checkpointDeleted = true
+
+                        numWaypointsPassed = numWaypointsPassed + 1
 
                         if currentWaypoint < #waypoints then
                             currentWaypoint = currentWaypoint + 1
                         else
                             currentWaypoint = 1
-                            if currentLap < raceLaps then
+                            lapTimeStart = currentTime
+                            if -1 == bestLapTime or lapTime < bestLapTime then
+                                bestLapTime = lapTime
+                            end
+                            if currentLap < numLaps then
                                 currentLap = currentLap + 1
-                                lapTimeStart = currentTime
-                                if bestLapTime < 0 or lapTime < bestLapTime then
-                                    bestLapTime = lapTime
-                                end
                             else
-                                numWaypoints = numWaypoints + 1 -- indicates this player has finished the race
-                                playerFinishTime = -countDown
-                                TriggerServerEvent("races:finish", raceIndex, true, -1, playerFinishTime)
                                 raceState = STATE_IDLE
+                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -countDown, bestLapTime)
+                                speedo = false
                             end
                         end
 
@@ -600,9 +710,8 @@ Citizen.CreateThread(function()
         elseif STATE_IDLE == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
             for index, start in pairs(starts) do
-                local blipCoord = GetBlipCoords(start.blip)
-                if #(pedCoord - blipCoord) < 10.0 then
-                    DrawMsg(0.45, 0.5, "Press[E] or right DPAD to join race owned by " .. start.owner, 0.5)
+                if #(pedCoord - GetBlipCoords(start.blip)) < 10.0 then
+                    drawMsg(0.34, 0.50, "Press[E] or right DPAD to join race owned by " .. start.owner, 0.7)
                     if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                         TriggerServerEvent('races:join', index)
                     end
@@ -610,127 +719,13 @@ Citizen.CreateThread(function()
                 end
             end
         end
+
+        if true == speedo then
+            local speed = GetEntitySpeed(PlayerPedId())
+            drawMsg(0.37, 0.91, ("%05.2f"):format(speed * 3.6), 0.7)
+            drawMsg(0.41, 0.91, "kph", 0.7)
+            drawMsg(0.57, 0.91, ("%05.2f"):format(speed * 2.2369363), 0.7)
+            drawMsg(0.61, 0.91, "mph", 0.7)
+        end
     end
 end)
-
-function load(public, name)
-    if name ~= nil then
-        if STATE_IDLE == raceState or STATE_EDITING == raceState then
-            lastSelectedWaypoint = 0
-            TriggerServerEvent("races:load", public, name)
-        else
-            notifyPlayer("Cannot load '" .. name .. "'.  Leave race first.")
-        end
-    else
-        notifyPlayer("Name required")
-    end
-end
-
-function save(public, name)
-    if name ~= nil then
-        if #waypoints > 0 then
-            local race = convertWaypoints()
-            TriggerServerEvent("races:save", public, name, race)
-        else
-            notifyPlayer("No waypoints created")
-        end
-    else
-        notifyPlayer("Name required")
-    end
-end
-
-function overwrite(public, name)
-    if name ~= nil then
-        if #waypoints > 0 then
-            local race = convertWaypoints()
-            TriggerServerEvent("races:overwrite", public, name, race)
-        else
-            notifyPlayer("No waypoints created")
-        end
-    else
-        notifyPlayer("Name required")
-    end
-end
-
-function delete(public, name)
-    if name ~= nil then
-        TriggerServerEvent("races:delete", public, name)
-     else
-         notifyPlayer("Name required")
-     end
-end
-
-function loadWaypoints(race)
-    deleteWaypoints()
-    for index, coord in pairs(race) do
-        local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
-        SetBlipColour(blip, blipColor)
-        SetBlipAsShortRange(blip, true)
-        ShowNumberOnBlip(blip, index)
-        waypoints[index] = blip
-    end
-    if #waypoints > 0 then
-        SetBlipRoute(waypoints[1], true)
-        SetBlipRouteColour(waypoints[1], blipRouteColor)
-    end
-end
-
-function deleteWaypoints()
-    for i = 1, #waypoints do
-        RemoveBlip(waypoints[i])
-    end
-    waypoints = {}
-end
-
-function convertWaypoints()
-    local race = {}
-    for i = 1, #waypoints do
-        race[i] = GetBlipCoords(waypoints[i])
-    end
-    return race
-end
-
-function removeRegistrationPoint(index)
-    if starts[index] ~= nil then
-        RemoveBlip(starts[index].blip) -- delete registration blip
-        DeleteCheckpoint(starts[index].checkpoint) -- delete registration checkpoint
-        starts[index] = nil
-    end
-end
-
-function printResults()
-    if #results > 0 then
-        local msg = "Race results:\n"
-        for _, result in pairs(results) do
-            if result.finishTime < 0 then
-                msg = msg .. ("DNF - %s\n"):format(result.playerName)
-            else
-                local seconds = result.finishTime / 1000.0
-                local minutes = math.floor(seconds / 60.0)
-                seconds = seconds - minutes * 60.0
-                msg = msg .. ("%02d:%05.2f - %s\n"):format(minutes, seconds, result.playerName)
-            end
-        end
-        notifyPlayer(msg)
-    else
-        notifyPlayer("No results")
-    end
-end
-
-function notifyPlayer(msg)
-    TriggerEvent("chat:addMessage", {
-        color = {255, 0, 0},
-        multiline = true,
-        args = {"[races:client]",  msg}
-    })
-end
-
-function DrawMsg(x, y, msg, scale)
-    SetTextFont(4)
-    SetTextScale(0, scale)
-    SetTextColour(255, 255, 0, 255)
-    SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString(msg)
-    DrawText(x, y)
-end
