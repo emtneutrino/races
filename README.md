@@ -115,7 +115,7 @@ In race\
 Near finish\
 <img src="screenshots/Screenshot%20(5).png" width="800">
 
-RAce results\
+Race results\
 <img src="screenshots/Screenshot%20(6).png" width="800">
 
 Editing waypoints\
