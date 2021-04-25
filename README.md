@@ -41,7 +41,7 @@ Look for green registration points on the map.  There will be a corresponding gr
 
 COMMAND DETAILS
 ---------------
-Type `/races` to see the list of available races commands
+Type `/races` to see the list of available races commands.
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
