@@ -98,6 +98,11 @@ Leaving a race or finishing it does not clear its waypoints.  If you like the ra
 
 Multiple races can be registered and started simultaneously by different players.
 
+SCREENSHOTS
+-----------
+Registration point
+<img src="screenshots/Screenshot%20(1).png" width="100">
+
 LICENSE
 -------
 Copyright (c) 2021, Neil J. Tan
