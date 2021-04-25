@@ -176,7 +176,7 @@ end
 local function printResults()
     if #results > 0 then
         local msg = "Race results:\n"
-        for position, result in ipairs(results) do
+        for pos, result in ipairs(results) do
             if -1 == result.finishTime then
                 msg = msg .. "DNF - " .. result.playerName
                 if result.bestLapTime >= 0 then
@@ -187,7 +187,7 @@ local function printResults()
             else
                 local fMinutes, fSeconds = minutesSeconds(result.finishTime)
                 local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
-                msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f\n"):format(position, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds)
+                msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f\n"):format(pos, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds)
             end
         end
         notifyPlayer(msg)
