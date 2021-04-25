@@ -269,6 +269,32 @@ AddEventHandler("races:leave", function(index)
     end
 end)
 
+RegisterNetEvent("races:rivals")
+AddEventHandler("races:rivals", function(index)
+    if index ~= nil then
+        local source = source
+        if races[index] ~= nil then
+            if races[index].players[source] ~= nil then
+                local msg = "Competitors:\n"
+                local empty = true
+                for i, _ in pairs(races[index].players) do
+                    msg = msg .. GetPlayerName(i) .. "\n"
+                    empty = false
+                end
+                if false == empty then
+                    notifyPlayer(source, msg)
+                else
+                    notifyPlayer(source, "No competitors yet")
+                end
+            else
+                notifyPlayer(source, "Not a member of this race")
+            end
+        else
+            notifyPlayer(source, "Race does not exist")
+        end
+    end
+end)
+
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
     if delay ~= nil then

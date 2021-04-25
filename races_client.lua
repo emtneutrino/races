@@ -230,6 +230,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races register (laps) (DNF timeout) - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\n"
         msg = msg .. "/races unregister - unregister your race\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
+        msg = msg .. "/races rivals - list competitors in a race that you joined\n"
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races results - list latest race results\n"
         msg = msg .. "/races speedo - toggle display of speedometer\n"
@@ -325,6 +326,12 @@ RegisterCommand("races", function(_, args)
             SetBlipRouteColour(waypoints[1], blipRouteColor)
             speedo = false
             notifyPlayer("Left race")
+        else
+            notifyPlayer("Not joined to any race")
+        end
+    elseif "rivals" == args[1] then
+        if STATE_REGISTERING == raceState or STATE_RACING == raceState then
+            TriggerServerEvent("races:rivals", raceIndex)
         else
             notifyPlayer("Not joined to any race")
         end

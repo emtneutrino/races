@@ -22,6 +22,7 @@ COMMANDS
 `/races register (laps) (DNF timeout)` - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\
 `/races unregister` - unregister your race\
 `/races leave` - leave a race that you joined\
+`/races rivals` - list competitors in a race that you joined\
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races results` - list latest race results\
 `/races speedo` - toggle display of speedometer\
@@ -68,6 +69,8 @@ You can clear all waypoints by typing `/races clear`.  You cannot clear waypoint
 After you've set your waypoints, you can register your race.  This will advertise your race to all players.  A green registration point will appear on the map and a green checkpoint will appear in the world where you registered your race.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
 All players who want to join the race, including you, will need to be near the green register checkpoint.  To join the race, press 'E' or right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  You cannot join a race if you are editing waypoints.  Stop editing first.  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your own race, you will not see the race results.
+
+To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.
 
 Once everyone who wants to join your registered race have joined, you can start the race.  Type `/races start 10` to start the race with a delay of 10 seconds before the actual start.  If you do not indicate a delay, the default is 30 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.
 
