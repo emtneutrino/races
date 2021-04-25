@@ -341,7 +341,7 @@ RegisterCommand("races", function(_, args)
         speedo = not speedo
     elseif "car" == args[1] then
         local vehicleName = args[2] or "adder"
-        if IsModelInCdimage(vehicleName) and IsModelAVehicle(vehicleName) then
+        if 1 == IsModelInCdimage(vehicleName) and 1 == IsModelAVehicle(vehicleName) then
             RequestModel(vehicleName)
             while false == HasModelLoaded(vehicleName) do
                 Citizen.Wait(500)
