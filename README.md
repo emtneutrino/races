@@ -101,7 +101,10 @@ Multiple races can be registered and started simultaneously by different players
 SCREENSHOTS
 -----------
 Registration point\
-<img src="screenshots/Screenshot%20(1).png" width="800">
+<img src="screenshots/Screenshot%20(1).png" width="100">
+
+Before race start\
+<img src="screenshots/Screenshot%20(2).png" width="100">
 
 LICENSE
 -------
