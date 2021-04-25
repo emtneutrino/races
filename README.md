@@ -25,7 +25,7 @@ COMMANDS
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races results` - list latest race results\
 `/races speedo` - toggle display of speedometer\
-`/races car (name)` - spawn a car; (name) defaults to 'adder'\
+`/races car (name)` - spawn a car; (name) defaults to 'adder'
 
 SAMPLE RACES
 ------------
