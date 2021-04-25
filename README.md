@@ -24,7 +24,8 @@ COMMANDS
 `/races leave` - leave a race that you joined\
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races results` - list latest race results\
-`/races speedo` - toggle display of speedometer
+`/races speedo` - toggle display of speedometer\
+`/races car (name)` - spawn a car; (name) defaults to 'adder'\
 
 SAMPLE RACES
 ------------
@@ -87,6 +88,8 @@ You can unregister your previously registered race by typing `/races unregister`
 If you want to leave a race you joined, type `/races leave`.  If you leave after the race has started you will DNF.
 
 To toggle the display of the speedometer, type `/races speedo`.
+
+To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save it by typing `/races save nicerace`.
 

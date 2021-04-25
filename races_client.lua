@@ -63,7 +63,6 @@ local lapTimeStart = -1 -- start time of current lap
 local bestLapTime = -1 -- best lap time
 
 local raceCheckpoint = nil -- race checkpoint in world
-local checkpointDeleted = true -- flag indicating if raceCheckpoint has been deleted
 
 local DNFTimeout = -1 -- DNF timeout after first player finishes the race
 local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
@@ -200,7 +199,6 @@ end
 local function createRaceCheckpoint(checkpointType, coord)
     raceCheckpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, 255, 255, 0, 127, 0)
     SetCheckpointCylinderHeight(raceCheckpoint, 10.0, 10.0, 10.0)
-    checkpointDeleted = false
 end
 
 local function drawMsg(x, y, msg, scale)
@@ -235,6 +233,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races results - list latest race results\n"
         msg = msg .. "/races speedo - toggle display of speedometer\n"
+        msg = msg .. "/races car (name) - spawn a car; (name) defaults to 'adder'\n"
         notifyPlayer(msg)
     elseif "edit" == args[1] then
         if STATE_IDLE == raceState then
@@ -243,9 +242,9 @@ RegisterCommand("races", function(_, args)
             notifyPlayer("Editing started")
         elseif STATE_EDITING == raceState then
             raceState = STATE_IDLE
-            if false == checkpointDeleted then
+            if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
-                checkpointDeleted = true
+                raceCheckpoint = nil
             end
             if lastSelectedWaypoint > 0 then
                 SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
@@ -259,9 +258,9 @@ RegisterCommand("races", function(_, args)
         if STATE_IDLE == raceState then
             deleteWaypoints()
         elseif STATE_EDITING == raceState then
-            if false == checkpointDeleted then
+            if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
-                checkpointDeleted = true
+                raceCheckpoint = nil
             end
             lastSelectedWaypoint = 0
             deleteWaypoints()
@@ -321,7 +320,7 @@ RegisterCommand("races", function(_, args)
             raceState = STATE_IDLE
             TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
             DeleteCheckpoint(raceCheckpoint)
-            checkpointDeleted = true
+            raceCheckpoint = nil
             SetBlipRoute(waypoints[1], true)
             SetBlipRouteColour(waypoints[1], blipRouteColor)
             speedo = false
@@ -340,6 +339,23 @@ RegisterCommand("races", function(_, args)
         printResults()
     elseif "speedo" == args[1] then
         speedo = not speedo
+    elseif "car" == args[1] then
+        local vehicleName = args[2] or "adder"
+        if IsModelInCdimage(vehicleName) and IsModelAVehicle(vehicleName) then
+            RequestModel(vehicleName)
+            while false == HasModelLoaded(vehicleName) do
+                Citizen.Wait(500)
+            end
+
+            local player = PlayerPedId()
+            local pedCoord = GetEntityCoords(player)
+            local vehicle = CreateVehicle(vehicleName, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
+            SetPedIntoVehicle(player, vehicle, -1)
+            SetEntityAsNoLongerNeeded(vehicle)
+            SetModelAsNoLongerNeeded(vehicleName)
+        else
+            notifyPlayer("Invalid vehicle '" .. vehicleName .. "'")
+        end
     else
         notifyPlayer("Unknown command")
     end
@@ -352,9 +368,9 @@ AddEventHandler("races:load", function(name, raceWaypoints)
             loadWaypoints(raceWaypoints)
             notifyPlayer("Loaded '" .. name .. "'")
         elseif STATE_EDITING == raceState then
-            if false == checkpointDeleted then
+            if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
-                checkpointDeleted = true
+                raceCheckpoint = nil
             end
             lastSelectedWaypoint = 0
             loadWaypoints(raceWaypoints)
@@ -392,7 +408,7 @@ AddEventHandler("races:unregister", function(index)
                 SetBlipRoute(waypoints[1], true)
                 SetBlipRouteColour(waypoints[1], blipRouteColor)
                 DeleteCheckpoint(raceCheckpoint)
-                checkpointDeleted = true
+                raceCheckpoint = nil
                 speedo = false
                 notifyPlayer("Race canceled")
             end
@@ -436,7 +452,7 @@ AddEventHandler("races:start", function(delay)
                 beginDNFTimeout = false
                 timeoutStart = -1
                 results = {}
-                checkpointDeleted = true
+                raceCheckpoint = nil
                 frozen = true
                 speedo = true
                 notifyPlayer("Race started")
@@ -543,7 +559,7 @@ Citizen.CreateThread(function()
                         ShowNumberOnBlip(blip, #waypoints + 1)
                         waypoints[#waypoints + 1] = blip
 
-                        if false == checkpointDeleted then -- new waypoint was added previously
+                        if raceCheckpoint ~= nil then -- new waypoint was added previously
                             DeleteCheckpoint(raceCheckpoint)
                         end
                     else -- previous selected waypoint exists, move previous selected waypoint to new location
@@ -561,7 +577,7 @@ Citizen.CreateThread(function()
 
                         lastSelectedWaypoint = selectedWaypoint
 
-                        if false == checkpointDeleted then -- new waypoint was added previously
+                        if raceCheckpoint ~= nil then -- new waypoint was added previously
                             DeleteCheckpoint(raceCheckpoint)
                         end
 
@@ -578,7 +594,7 @@ Citizen.CreateThread(function()
                         else -- selected waypoint and previous selected waypoint are the same
                             SetBlipColour(waypoints[selectedWaypoint], blipColor)
                             lastSelectedWaypoint = 0
-                            checkpointDeleted = true
+                            raceCheckpoint = nil
                         end
                     end
                 end
@@ -593,7 +609,7 @@ Citizen.CreateThread(function()
                     lastSelectedWaypoint = 0
 
                     DeleteCheckpoint(raceCheckpoint)
-                    checkpointDeleted = true
+                    raceCheckpoint = nil
 
                     if #waypoints > 0 then
                         SetBlipRoute(waypoints[1], true)
@@ -663,7 +679,7 @@ Citizen.CreateThread(function()
                         raceState = STATE_IDLE
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
                         DeleteCheckpoint(raceCheckpoint)
-                        checkpointDeleted = true
+                        raceCheckpoint = nil
 
                         SetBlipRoute(waypoints[1], true)
                         SetBlipRouteColour(waypoints[1], blipRouteColor)
@@ -672,7 +688,7 @@ Citizen.CreateThread(function()
                 end
 
                 local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
-                if true == checkpointDeleted then
+                if nil == raceCheckpoint then
                     local checkpointType = (currentWaypoint == #waypoints and currentLap == numLaps) and 9 or 45
                     createRaceCheckpoint(checkpointType, blipCoord)
                 end
@@ -680,7 +696,7 @@ Citizen.CreateThread(function()
                 if STATE_RACING == raceState then
                     if #(GetEntityCoords(player) - blipCoord) < 10.0 then
                         DeleteCheckpoint(raceCheckpoint)
-                        checkpointDeleted = true
+                        raceCheckpoint = nil
 
                         numWaypointsPassed = numWaypointsPassed + 1
 
