@@ -62,20 +62,23 @@ local function loadPlayerData(public, source)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "loadPlayerData: Error opening file for read")
+            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read")
+            return nil
         end
 
-        if raceData ~= nil then
-            playerData = raceData[license]
-        else
+        if nil == raceData then
             notifyPlayer(source, "loadPlayerData: No race data")
+            return nil
+        end
+
+        playerData = raceData[license]
+
+        if nil == playerData then
+            playerData = {}
         end
     else
         notifyPlayer(source, "loadPlayerData: Could not get license")
-    end
-
-    if nil == playerData then
-        playerData = {}
+        return nil
     end
 
     return playerData
@@ -96,13 +99,13 @@ local function savePlayerData(public, source, data)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file for read")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read")
+            return false
         end
 
         if nil == raceData then
-            raceData = {}
-        else
             notifyPlayer(source, "savePlayerData: No race data")
+            return false
         end
 
         raceData[license] = data
@@ -112,11 +115,15 @@ local function savePlayerData(public, source, data)
             file:write(json.encode(raceData))
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file for write")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write")
+            return false
         end
     else
         notifyPlayer(source, "savePlayerData: Could not get license")
+        return false
     end
+
+    return true
 end
 
 RegisterNetEvent("races:load")
@@ -124,11 +131,15 @@ AddEventHandler("races:load", function(public, name)
     if public ~= nil and name ~= nil then
         local source = source
         local playerRaces = loadPlayerData(public, source)
-        local waypoints = playerRaces[name]
-        if waypoints ~= nil then
-            TriggerClientEvent("races:load", source, name, waypoints)
+        if playerRaces ~= nil then
+            local waypoints = playerRaces[name]
+            if waypoints ~= nil then
+                TriggerClientEvent("races:load", source, name, waypoints)
+            else
+                notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.")
+            end
         else
-            notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.")
+            notifyPlayer(source, "Cannot load.  Error loading data.")
         end
     end
 end)
@@ -138,16 +149,23 @@ AddEventHandler("races:save", function(public, name, waypoints)
     if public ~= nil and name ~= nil and waypoints ~= nil then
         local source = source
         local playerRaces = loadPlayerData(public, source)
-        if playerRaces[name] ~= nil then
-            if true == public then
-                notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'"):format(name, name))
+        if playerRaces ~= nil then
+            if nil == playerRaces[name] then
+                playerRaces[name] = waypoints
+                if true == savePlayerData(public, source, playerRaces) then
+                    notifyPlayer(source, "Saved '" .. name .. "'")
+                else
+                    notifyPlayer(source, "Error saving '" .. name .. "'")
+                end
             else
-                notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'"):format(name, name))
+                if true == public then
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'"):format(name, name))
+                else
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'"):format(name, name))
+                end
             end
         else
-            playerRaces[name] = waypoints
-            savePlayerData(public, source, playerRaces)
-            notifyPlayer(source, "Saved '" .. name .. "'")
+            notifyPlayer(source, "Cannot save.  Error loading data.")
         end
     end
 end)
@@ -157,16 +175,23 @@ AddEventHandler("races:overwrite", function(public, name, waypoints)
     if public ~= nil and name ~= nil and waypoints ~= nil then
         local source = source
         local playerRaces = loadPlayerData(public, source)
-        if playerRaces[name] ~= nil then
-            playerRaces[name] = waypoints
-            savePlayerData(public, source, playerRaces)
-            notifyPlayer(source, "Overwrote '" .. name .. "'")
-        else
-            if true == public then
-                notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'"):format(name, name))
+        if playerRaces ~= nil then
+            if playerRaces[name] ~= nil then
+                playerRaces[name] = waypoints
+                if true == savePlayerData(public, source, playerRaces) then
+                    notifyPlayer(source, "Overwrote '" .. name .. "'")
+                else
+                    notifyPlayer(source, "Error overwriting '" .. name .. "'")
+                end
             else
-                notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'"):format(name, name))
+                if true == public then
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'"):format(name, name))
+                else
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'"):format(name, name))
+                end
             end
+        else
+            notifyPlayer(source, "Cannot overwrite.  Error loading data.")
         end
     end
 end)
@@ -176,12 +201,19 @@ AddEventHandler("races:delete", function(public, name)
     if public ~= nil and name ~= nil then
         local source = source
         local playerRaces = loadPlayerData(public, source)
-        if playerRaces[name] ~= nil then
-            playerRaces[name] = nil
-            savePlayerData(public, source, playerRaces)
-            notifyPlayer(source, "Deleted '" .. name .. "'")
+        if playerRaces ~= nil then
+            if playerRaces[name] ~= nil then
+                playerRaces[name] = nil
+                if true == savePlayerData(public, source, playerRaces) then
+                    notifyPlayer(source, "Deleted '" .. name .. "'")
+                else
+                    notifyPlayer(source, "Error deleting '" .. name .. "'")
+                end
+            else
+                notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.")
+            end
         else
-            notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.")
+            notifyPlayer(source, "Cannot delete.  Error loading data.")
         end
     end
 end)
@@ -191,17 +223,21 @@ AddEventHandler("races:list", function(public)
     if public ~= nil then
         local source = source
         local playerRaces = loadPlayerData(public, source)
-        local empty = true
-        local msg = "Saved races: "
-        for name, _ in pairs(playerRaces) do
-            msg = msg .. "'" .. name .. "', "
-            empty = false
-        end
-        if false == empty then
-            msg = string.sub(msg, 1, -3)
-            notifyPlayer(source, msg)
+        if playerRaces ~= nil then
+            local empty = true
+            local msg = "Saved races: "
+            for name, _ in pairs(playerRaces) do
+                msg = msg .. "'" .. name .. "', "
+                empty = false
+            end
+            if false == empty then
+                msg = string.sub(msg, 1, -3)
+                notifyPlayer(source, msg)
+            else
+                notifyPlayer(source, "No saved races")
+            end
         else
-            notifyPlayer(source, "No saved races")
+            notifyPlayer(source, "Cannot list.  Error loading data.")
         end
     end
 end)
