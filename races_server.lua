@@ -62,12 +62,16 @@ local function loadPlayerData(public, source)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "loadPlayerData: Error opening file for read.")
+            notifyPlayer(source, "loadPlayerData: Error opening file for read")
         end
 
         if raceData ~= nil then
             playerData = raceData[license]
+        else
+            notifyPlayer(source, "loadPlayerData: No race data")
         end
+    else
+        notifyPlayer(source, "loadPlayerData: Could not get license")
     end
 
     if nil == playerData then
@@ -92,11 +96,13 @@ local function savePlayerData(public, source, data)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file for read.")
+            notifyPlayer(source, "savePlayerData: Error opening file for read")
         end
 
         if nil == raceData then
             raceData = {}
+        else
+            notifyPlayer(source, "savePlayerData: No race data")
         end
 
         raceData[license] = data
@@ -106,8 +112,10 @@ local function savePlayerData(public, source, data)
             file:write(json.encode(raceData))
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file for write.")
+            notifyPlayer(source, "savePlayerData: Error opening file for write")
         end
+    else
+        notifyPlayer(source, "savePlayerData: Could not get license")
     end
 end
 
