@@ -114,7 +114,7 @@ AddEventHandler("races:load", function(public, name)
         if waypoints ~= nil then
             TriggerClientEvent("races:load", source, name, waypoints)
         else
-            notifyPlayer(source, "No race found with name '" .. name .. "'")
+            notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.")
         end
     end
 end)
@@ -146,7 +146,7 @@ AddEventHandler("races:overwrite", function(public, name, waypoints)
         if playerRaces[name] ~= nil then
             playerRaces[name] = waypoints
             savePlayerData(public, source, playerRaces)
-            notifyPlayer(source, "Saved '" .. name .. "'")
+            notifyPlayer(source, "Overwrote '" .. name .. "'")
         else
             if true == public then
                 notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'"):format(name, name))
@@ -167,7 +167,7 @@ AddEventHandler("races:delete", function(public, name)
             savePlayerData(public, source, playerRaces)
             notifyPlayer(source, "Deleted '" .. name .. "'")
         else
-            notifyPlayer(source, "No race found with name '" .. name .. "'")
+            notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.")
         end
     end
 end)
@@ -226,7 +226,7 @@ AddEventHandler("races:unregister", function()
         TriggerClientEvent("races:unregister", -1, source)
         notifyPlayer(source, "Race unregistered")
     else
-        notifyPlayer(source, "No race registered")
+        notifyPlayer(source, "Cannot unregister.  No race registered")
     end
 end)
 
@@ -258,13 +258,13 @@ AddEventHandler("races:leave", function(index)
                     races[index].players[source] = nil
                     races[index].numRacing = races[index].numRacing - 1
                 else
-                    notifyPlayer(source, "Not a member of this race")
+                    notifyPlayer(source, "Cannot leave.  Not a member of this race")
                 end
             else
-                notifyPlayer(source, "Race already started")
+                notifyPlayer(source, "Cannot leave.  Race already started")
             end
         else
-            notifyPlayer(source, "Race does not exist")
+            notifyPlayer(source, "Cannot leave.  Race does not exist")
         end
     end
 end)
@@ -287,10 +287,10 @@ AddEventHandler("races:rivals", function(index)
                     notifyPlayer(source, "No competitors yet")
                 end
             else
-                notifyPlayer(source, "Not a member of this race")
+                notifyPlayer(source, "Cannot list competitors.  Not a member of this race")
             end
         else
-            notifyPlayer(source, "Race does not exist")
+            notifyPlayer(source, "Cannot list competitors.  Race does not exist")
         end
     end
 end)
@@ -309,16 +309,16 @@ AddEventHandler("races:start", function(delay)
                         end
                         TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
                     else
-                        notifyPlayer(source, "No players have joined race")
+                        notifyPlayer(source, "Cannot start.  No players have joined race")
                     end
                 else
-                    notifyPlayer(source, "Invalid delay")
+                    notifyPlayer(source, "Cannot start.  Invalid delay")
                 end
             else
-                notifyPlayer(source, "Race already started")
+                notifyPlayer(source, "Cannot start.  Race already started")
             end
         else
-            notifyPlayer(source, "No race registered")
+            notifyPlayer(source, "Cannot start.  No race registered")
         end
     end
 end)
@@ -349,13 +349,13 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         races[index] = nil -- delete race after all players finish
                     end
                 else
-                    notifyPlayer(source, "Not a member of this race")
+                    notifyPlayer(source, "Cannot finish.  Not a member of this race")
                 end
             else
-                notifyPlayer(source, "Race not in progress")
+                notifyPlayer(source, "Cannot finish.  Race not in progress")
             end
         else
-            notifyPlayer(source, "Race does not exist")
+            notifyPlayer(source, "Cannot finish.  Race does not exist")
         end
     end
 end)

@@ -92,7 +92,7 @@ local function loadRace(public, name)
             notifyPlayer("Cannot load '" .. name .. "'.  Leave race first.")
         end
     else
-        notifyPlayer("Name required")
+        notifyPlayer("Cannot load.  Name required.")
     end
 end
 
@@ -109,10 +109,10 @@ local function saveRace(public, name)
         if #waypoints > 0 then
             TriggerServerEvent("races:save", public, name, convertWaypoints())
         else
-            notifyPlayer("No waypoints created")
+            notifyPlayer("Cannot save.  No waypoints created.")
         end
     else
-        notifyPlayer("Name required")
+        notifyPlayer("Cannot save.  Name required.")
     end
 end
 
@@ -121,10 +121,10 @@ local function overwriteRace(public, name)
         if #waypoints > 0 then
             TriggerServerEvent("races:overwrite", public, name, convertWaypoints())
         else
-            notifyPlayer("No waypoints created")
+            notifyPlayer("Cannot overwrite.  No waypoints created.")
         end
     else
-        notifyPlayer("Name required")
+        notifyPlayer("Cannot overwrite.  Name required.")
     end
 end
 
@@ -132,7 +132,7 @@ local function deleteRace(public, name)
     if name ~= nil then
         TriggerServerEvent("races:delete", public, name)
      else
-         notifyPlayer("Name required")
+         notifyPlayer("Cannot delete.  Name required.")
      end
 end
 
@@ -327,20 +327,20 @@ RegisterCommand("races", function(_, args)
             speedo = false
             notifyPlayer("Left race")
         else
-            notifyPlayer("Not joined to any race")
+            notifyPlayer("Cannot leave.  Not joined to any race.")
         end
     elseif "rivals" == args[1] then
         if STATE_REGISTERING == raceState or STATE_RACING == raceState then
             TriggerServerEvent("races:rivals", raceIndex)
         else
-            notifyPlayer("Not joined to any race")
+            notifyPlayer("Cannot list competitors.  Not joined to any race.")
         end
     elseif "start" == args[1] then
         local delay = tonumber(args[2]) or 30
         if delay >= 0 then
             TriggerServerEvent("races:start", delay)
         else
-            notifyPlayer("Invalid delay")
+            notifyPlayer("Cannot start.  Invalid delay.")
         end
     elseif "results" == args[1] then
         printResults()
