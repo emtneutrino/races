@@ -80,7 +80,7 @@ local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
         color = {255, 0, 0},
         multiline = true,
-        args = {"[races:client]", msg}
+        args = {"[races:client]", msg .. "\n"}
     })
 end
 
@@ -258,6 +258,7 @@ RegisterCommand("races", function(_, args)
     elseif "clear" == args[1] then
         if STATE_IDLE == raceState then
             deleteWaypoints()
+            notifyPlayer("Waypoints cleared")
         elseif STATE_EDITING == raceState then
             if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
@@ -265,6 +266,7 @@ RegisterCommand("races", function(_, args)
             end
             lastSelectedWaypoint = 0
             deleteWaypoints()
+            notifyPlayer("Waypoints cleared")
         else
             notifyPlayer("Cannot clear waypoints.  Leave race first.")
         end
@@ -346,6 +348,11 @@ RegisterCommand("races", function(_, args)
         printResults()
     elseif "speedo" == args[1] then
         speedo = not speedo
+        if true == speedo then
+            notifyPlayer("Speedometer enabled")
+        else
+            notifyPlayer("Speedometer disabled")
+        end
     elseif "car" == args[1] then
         local vehicleName = args[2] or "adder"
         if 1 == IsModelInCdimage(vehicleName) and 1 == IsModelAVehicle(vehicleName) then
@@ -360,6 +367,7 @@ RegisterCommand("races", function(_, args)
             SetPedIntoVehicle(player, vehicle, -1)
             SetEntityAsNoLongerNeeded(vehicle)
             SetModelAsNoLongerNeeded(vehicleName)
+            notifyPlayer("'" .. vehicleName .. "' spawned")
         else
             notifyPlayer("Invalid vehicle '" .. vehicleName .. "'")
         end

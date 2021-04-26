@@ -41,7 +41,7 @@ local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
         color = {255, 0, 0},
         multiline = true,
-        args = {"[races:server]", msg}
+        args = {"[races:server]", msg .. "\n"}
     })
 end
 
