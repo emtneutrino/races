@@ -61,6 +61,8 @@ local function loadPlayerData(public, source)
         if file ~= nil then
             raceData = json.decode(file:read("*a"));
             io.close(file)
+        else
+            notifyPlayer(source, "loadPlayerData: Error opening file for read.")
         end
 
         if raceData ~= nil then
@@ -89,6 +91,8 @@ local function savePlayerData(public, source, data)
         if file ~= nil then
             raceData = json.decode(file:read("*a"));
             io.close(file)
+        else
+            notifyPlayer(source, "savePlayerData: Error opening file for read.")
         end
 
         if nil == raceData then
@@ -101,6 +105,8 @@ local function savePlayerData(public, source, data)
         if file ~= nil then
             file:write(json.encode(raceData))
             io.close(file)
+        else
+            notifyPlayer(source, "savePlayerData: Error opening file for write.")
         end
     end
 end
