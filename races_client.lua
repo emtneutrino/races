@@ -80,7 +80,7 @@ local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
         color = {255, 0, 0},
         multiline = true,
-        args = {"[races:client]", msg .. "\n"}
+        args = {"[races:client]", msg}
     })
 end
 
@@ -89,10 +89,10 @@ local function loadRace(public, name)
         if STATE_IDLE == raceState or STATE_EDITING == raceState then
             TriggerServerEvent("races:load", public, name)
         else
-            notifyPlayer("Cannot load '" .. name .. "'.  Leave race first.")
+            notifyPlayer("Cannot load '" .. name .. "'.  Leave race first.\n")
         end
     else
-        notifyPlayer("Cannot load.  Name required.")
+        notifyPlayer("Cannot load.  Name required.\n")
     end
 end
 
@@ -109,10 +109,10 @@ local function saveRace(public, name)
         if #waypoints > 0 then
             TriggerServerEvent("races:save", public, name, convertWaypoints())
         else
-            notifyPlayer("Cannot save.  No waypoints created.")
+            notifyPlayer("Cannot save.  No waypoints created.\n")
         end
     else
-        notifyPlayer("Cannot save.  Name required.")
+        notifyPlayer("Cannot save.  Name required.\n")
     end
 end
 
@@ -121,10 +121,10 @@ local function overwriteRace(public, name)
         if #waypoints > 0 then
             TriggerServerEvent("races:overwrite", public, name, convertWaypoints())
         else
-            notifyPlayer("Cannot overwrite.  No waypoints created.")
+            notifyPlayer("Cannot overwrite.  No waypoints created.\n")
         end
     else
-        notifyPlayer("Cannot overwrite.  Name required.")
+        notifyPlayer("Cannot overwrite.  Name required.\n")
     end
 end
 
@@ -132,7 +132,7 @@ local function deleteRace(public, name)
     if name ~= nil then
         TriggerServerEvent("races:delete", public, name)
      else
-         notifyPlayer("Cannot delete.  Name required.")
+         notifyPlayer("Cannot delete.  Name required.\n")
      end
 end
 
@@ -192,7 +192,7 @@ local function printResults()
         end
         notifyPlayer(msg)
     else
-        notifyPlayer("No results")
+        notifyPlayer("No results.\n")
     end
 end
 
@@ -240,7 +240,7 @@ RegisterCommand("races", function(_, args)
         if STATE_IDLE == raceState then
             raceState = STATE_EDITING
             SetWaypointOff()
-            notifyPlayer("Editing started")
+            notifyPlayer("Editing started.\n")
         elseif STATE_EDITING == raceState then
             raceState = STATE_IDLE
             if raceCheckpoint ~= nil then
@@ -251,14 +251,14 @@ RegisterCommand("races", function(_, args)
                 SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
                 lastSelectedWaypoint = 0
             end
-            notifyPlayer("Editing stopped")
+            notifyPlayer("Editing stopped.\n")
         else
-            notifyPlayer("Cannot edit waypoints.  Leave race first.")
+            notifyPlayer("Cannot edit waypoints.  Leave race first.\n")
         end
     elseif "clear" == args[1] then
         if STATE_IDLE == raceState then
             deleteWaypoints()
-            notifyPlayer("Waypoints cleared")
+            notifyPlayer("Waypoints cleared.\n")
         elseif STATE_EDITING == raceState then
             if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
@@ -266,9 +266,9 @@ RegisterCommand("races", function(_, args)
             end
             lastSelectedWaypoint = 0
             deleteWaypoints()
-            notifyPlayer("Waypoints cleared")
+            notifyPlayer("Waypoints cleared.\n")
         else
-            notifyPlayer("Cannot clear waypoints.  Leave race first.")
+            notifyPlayer("Cannot clear waypoints.  Leave race first.\n")
         end
     elseif "load" == args[1] then
         loadRace(false, args[2])
@@ -299,18 +299,18 @@ RegisterCommand("races", function(_, args)
                     if #waypoints > 0 then
                         TriggerServerEvent("races:register", GetEntityCoords(PlayerPedId()), laps, timeout, convertWaypoints())
                     else
-                        notifyPlayer("No waypoints loaded")
+                        notifyPlayer("No waypoints loaded.\n")
                     end
                 elseif STATE_EDITING == raceState then
-                    notifyPlayer("Cannot register. Stop editing first.")
+                    notifyPlayer("Cannot register. Stop editing first.\n")
                 else
-                    notifyPlayer("Cannot register. Leave race first.")
+                    notifyPlayer("Cannot register. Leave race first.\n")
                 end
             else
-                notifyPlayer("Invalid DNF timeout")
+                notifyPlayer("Invalid DNF timeout.\n")
             end
         else
-            notifyPlayer("Invalid laps number")
+            notifyPlayer("Invalid laps number.\n")
         end
     elseif "unregister" == args[1] then
         TriggerServerEvent("races:unregister")
@@ -318,7 +318,7 @@ RegisterCommand("races", function(_, args)
         if STATE_REGISTERING == raceState then
             raceState = STATE_IDLE
             TriggerServerEvent("races:leave", raceIndex)
-            notifyPlayer("Left race")
+            notifyPlayer("Left race.\n")
         elseif STATE_RACING == raceState then
             raceState = STATE_IDLE
             TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
@@ -327,31 +327,31 @@ RegisterCommand("races", function(_, args)
             SetBlipRoute(waypoints[1], true)
             SetBlipRouteColour(waypoints[1], blipRouteColor)
             speedo = false
-            notifyPlayer("Left race")
+            notifyPlayer("Left race.\n")
         else
-            notifyPlayer("Cannot leave.  Not joined to any race.")
+            notifyPlayer("Cannot leave.  Not joined to any race.\n")
         end
     elseif "rivals" == args[1] then
         if STATE_REGISTERING == raceState or STATE_RACING == raceState then
             TriggerServerEvent("races:rivals", raceIndex)
         else
-            notifyPlayer("Cannot list competitors.  Not joined to any race.")
+            notifyPlayer("Cannot list competitors.  Not joined to any race.\n")
         end
     elseif "start" == args[1] then
         local delay = tonumber(args[2]) or 30
         if delay >= 0 then
             TriggerServerEvent("races:start", delay)
         else
-            notifyPlayer("Cannot start.  Invalid delay.")
+            notifyPlayer("Cannot start.  Invalid delay.\n")
         end
     elseif "results" == args[1] then
         printResults()
     elseif "speedo" == args[1] then
         speedo = not speedo
         if true == speedo then
-            notifyPlayer("Speedometer enabled")
+            notifyPlayer("Speedometer enabled.\n")
         else
-            notifyPlayer("Speedometer disabled")
+            notifyPlayer("Speedometer disabled.\n")
         end
     elseif "car" == args[1] then
         local vehicleName = args[2] or "adder"
@@ -367,12 +367,12 @@ RegisterCommand("races", function(_, args)
             SetPedIntoVehicle(player, vehicle, -1)
             SetEntityAsNoLongerNeeded(vehicle)
             SetModelAsNoLongerNeeded(vehicleName)
-            notifyPlayer("'" .. vehicleName .. "' spawned")
+            notifyPlayer("'" .. vehicleName .. "' spawned.\n")
         else
-            notifyPlayer("Invalid vehicle '" .. vehicleName .. "'")
+            notifyPlayer("Invalid vehicle '" .. vehicleName .. "'.\n")
         end
     else
-        notifyPlayer("Unknown command")
+        notifyPlayer("Unknown command.\n")
     end
 end)
 
@@ -381,7 +381,7 @@ AddEventHandler("races:load", function(name, raceWaypoints)
     if name ~= nil and raceWaypoints ~= nil then
         if STATE_IDLE == raceState then
             loadWaypoints(raceWaypoints)
-            notifyPlayer("Loaded '" .. name .. "'")
+            notifyPlayer("Loaded '" .. name .. "'.\n")
         elseif STATE_EDITING == raceState then
             if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
@@ -389,9 +389,9 @@ AddEventHandler("races:load", function(name, raceWaypoints)
             end
             lastSelectedWaypoint = 0
             loadWaypoints(raceWaypoints)
-            notifyPlayer("Loaded '" .. name .. "'")
+            notifyPlayer("Loaded '" .. name .. "'.\n")
         else
-            notifyPlayer("Ignoring load event.  Currently joined to race.")
+            notifyPlayer("Ignoring load event.  Currently joined to race.\n")
         end
     end
 end)
@@ -417,7 +417,7 @@ AddEventHandler("races:unregister", function(index)
         if raceIndex == index then
             if STATE_REGISTERING == raceState then
                 raceState = STATE_IDLE
-                notifyPlayer("Race canceled")
+                notifyPlayer("Race canceled.\n")
             elseif STATE_RACING == raceState then
                 raceState = STATE_IDLE
                 SetBlipRoute(waypoints[1], true)
@@ -425,7 +425,7 @@ AddEventHandler("races:unregister", function(index)
                 DeleteCheckpoint(raceCheckpoint)
                 raceCheckpoint = nil
                 speedo = false
-                notifyPlayer("Race canceled")
+                notifyPlayer("Race canceled.\n")
             end
         end
     end
@@ -440,11 +440,11 @@ AddEventHandler("races:join", function(index, laps, timeout, raceWaypoints)
             numLaps = laps
             DNFTimeout = timeout * 1000
             loadWaypoints(raceWaypoints)
-            notifyPlayer(("Joined race owned by %s : %d lap(s)"):format(starts[index].owner, laps))
+            notifyPlayer(("Joined race owned by %s : %d lap(s).\n"):format(starts[index].owner, laps))
         elseif STATE_EDITING == raceState then
-            notifyPlayer("Ignoring race join event.  Currently editing.")
+            notifyPlayer("Ignoring race join event.  Currently editing.\n")
         else
-            notifyPlayer("Ignoring race join event.  Already joined to a race.")
+            notifyPlayer("Ignoring race join event.  Already joined to a race.\n")
         end
     end
 end)
@@ -470,16 +470,16 @@ AddEventHandler("races:start", function(delay)
                 raceCheckpoint = nil
                 frozen = true
                 speedo = true
-                notifyPlayer("Race started")
+                notifyPlayer("Race started.\n")
             elseif STATE_RACING == raceState then
-                notifyPlayer("Ignoring race start event.  Already in a race.")
+                notifyPlayer("Ignoring race start event.  Already in a race.\n")
             elseif STATE_EDITING == raceState then
-                notifyPlayer("Ignoring race start event.  Currently editing.")
+                notifyPlayer("Ignoring race start event.  Currently editing.\n")
             else
-                notifyPlayer("Ignoring race start event.  Currently idle.")
+                notifyPlayer("Ignoring race start event.  Currently idle.\n")
             end
         else
-            notifyPlayer("Ignoring race start event.  Invalid delay.")
+            notifyPlayer("Ignoring race start event.  Invalid delay.\n")
         end
     end
 end)
@@ -511,10 +511,10 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
     if playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil then
         if -1 == raceFinishTime then
             if -1 == raceBestLapTime then
-                notifyPlayer(playerName .. " did not finish")
+                notifyPlayer(playerName .. " did not finish.\n")
             else
                 local minutes, seconds = minutesSeconds(raceBestLapTime)
-                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f"):format(playerName, minutes, seconds))
+                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f\n"):format(playerName, minutes, seconds))
             end
         else
             if false == beginDNFTimeout then
@@ -524,7 +524,7 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
 
             local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
             local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
-            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds))
+            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds))
         end
     end
 end)

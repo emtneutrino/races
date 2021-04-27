@@ -41,7 +41,7 @@ local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
         color = {255, 0, 0},
         multiline = true,
-        args = {"[races:server]", msg .. "\n"}
+        args = {"[races:server]", msg}
     })
 end
 
@@ -62,12 +62,12 @@ local function loadPlayerData(public, source)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read")
+            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
             return nil
         end
 
         if nil == raceData then
-            notifyPlayer(source, "loadPlayerData: No race data")
+            notifyPlayer(source, "loadPlayerData: No race data.\n")
             return nil
         end
 
@@ -77,7 +77,7 @@ local function loadPlayerData(public, source)
             playerData = {}
         end
     else
-        notifyPlayer(source, "loadPlayerData: Could not get license")
+        notifyPlayer(source, "loadPlayerData: Could not get license.\n")
         return nil
     end
 
@@ -99,12 +99,12 @@ local function savePlayerData(public, source, data)
             raceData = json.decode(file:read("*a"));
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
             return false
         end
 
         if nil == raceData then
-            notifyPlayer(source, "savePlayerData: No race data")
+            notifyPlayer(source, "savePlayerData: No race data.\n")
             return false
         end
 
@@ -115,11 +115,11 @@ local function savePlayerData(public, source, data)
             file:write(json.encode(raceData))
             io.close(file)
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write.\n")
             return false
         end
     else
-        notifyPlayer(source, "savePlayerData: Could not get license")
+        notifyPlayer(source, "savePlayerData: Could not get license.\n")
         return false
     end
 
@@ -136,10 +136,10 @@ AddEventHandler("races:load", function(public, name)
             if waypoints ~= nil then
                 TriggerClientEvent("races:load", source, name, waypoints)
             else
-                notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.")
+                notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.\n")
             end
         else
-            notifyPlayer(source, "Cannot load.  Error loading data.")
+            notifyPlayer(source, "Cannot load.  Error loading data.\n")
         end
     end
 end)
@@ -153,19 +153,19 @@ AddEventHandler("races:save", function(public, name, waypoints)
             if nil == playerRaces[name] then
                 playerRaces[name] = waypoints
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Saved '" .. name .. "'")
+                    notifyPlayer(source, "Saved '" .. name .. "'.\n")
                 else
-                    notifyPlayer(source, "Error saving '" .. name .. "'")
+                    notifyPlayer(source, "Error saving '" .. name .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'"):format(name, name))
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'.\n"):format(name, name))
                 else
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'"):format(name, name))
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'.\n"):format(name, name))
                 end
             end
         else
-            notifyPlayer(source, "Cannot save.  Error loading data.")
+            notifyPlayer(source, "Cannot save.  Error loading data.\n")
         end
     end
 end)
@@ -179,19 +179,19 @@ AddEventHandler("races:overwrite", function(public, name, waypoints)
             if playerRaces[name] ~= nil then
                 playerRaces[name] = waypoints
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Overwrote '" .. name .. "'")
+                    notifyPlayer(source, "Overwrote '" .. name .. "'.\n")
                 else
-                    notifyPlayer(source, "Error overwriting '" .. name .. "'")
+                    notifyPlayer(source, "Error overwriting '" .. name .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'"):format(name, name))
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'.\n"):format(name, name))
                 else
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'"):format(name, name))
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'.\n"):format(name, name))
                 end
             end
         else
-            notifyPlayer(source, "Cannot overwrite.  Error loading data.")
+            notifyPlayer(source, "Cannot overwrite.  Error loading data.\n")
         end
     end
 end)
@@ -205,15 +205,15 @@ AddEventHandler("races:delete", function(public, name)
             if playerRaces[name] ~= nil then
                 playerRaces[name] = nil
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Deleted '" .. name .. "'")
+                    notifyPlayer(source, "Deleted '" .. name .. "'.\n")
                 else
-                    notifyPlayer(source, "Error deleting '" .. name .. "'")
+                    notifyPlayer(source, "Error deleting '" .. name .. "'.\n")
                 end
             else
-                notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.")
+                notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.\n")
             end
         else
-            notifyPlayer(source, "Cannot delete.  Error loading data.")
+            notifyPlayer(source, "Cannot delete.  Error loading data.\n")
         end
     end
 end)
@@ -225,19 +225,18 @@ AddEventHandler("races:list", function(public)
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
             local empty = true
-            local msg = "Saved races: "
+            local msg = "Saved races:\n"
             for name, _ in pairs(playerRaces) do
-                msg = msg .. "'" .. name .. "', "
+                msg = msg .. name .. "\n"
                 empty = false
             end
             if false == empty then
-                msg = string.sub(msg, 1, -3)
                 notifyPlayer(source, msg)
             else
-                notifyPlayer(source, "No saved races")
+                notifyPlayer(source, "No saved races.\n")
             end
         else
-            notifyPlayer(source, "Cannot list.  Error loading data.")
+            notifyPlayer(source, "Cannot list.  Error loading data.\n")
         end
     end
 end)
@@ -251,19 +250,19 @@ AddEventHandler("races:register", function(coord, laps, timeout, waypoints)
                 if nil == races[source] then
                     races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypoints = waypoints, numRacing = 0, players = {}, results = {}}
                     TriggerClientEvent("races:register", -1, source, GetPlayerName(source), coord)
-                    notifyPlayer(source, "Race registered")
+                    notifyPlayer(source, "Race registered.\n")
                 else
                     if STATE_RACING == races[source].state then
-                        notifyPlayer(source, "Previous race already started")
+                        notifyPlayer(source, "Previous race already started.\n")
                     else
-                        notifyPlayer(source, "Previous race registered.  Unregister first.")
+                        notifyPlayer(source, "Previous race registered.  Unregister first.\n")
                     end
                 end
             else
-                notifyPlayer(source, "Invalid timeout")
+                notifyPlayer(source, "Invalid timeout.\n")
             end
         else
-            notifyPlayer(source, "Invalid laps")
+            notifyPlayer(source, "Invalid laps.\n")
         end
     end
 end)
@@ -274,9 +273,9 @@ AddEventHandler("races:unregister", function()
     if races[source] ~= nil then
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
-        notifyPlayer(source, "Race unregistered")
+        notifyPlayer(source, "Race unregistered.\n")
     else
-        notifyPlayer(source, "Cannot unregister.  No race registered")
+        notifyPlayer(source, "Cannot unregister.  No race registered.\n")
     end
 end)
 
@@ -290,10 +289,10 @@ AddEventHandler("races:join", function(index)
                 races[index].players[source] = {numWaypointsPassed = -1, data = -1}
                 TriggerClientEvent("races:join", source, index, races[index].laps, races[index].timeout, races[index].waypoints)
             else
-                notifPlayer(source, "Cannot join race in progress")
+                notifyPlayer(source, "Cannot join race in progress.\n")
             end
         else
-            notifyPlayer(source, "Cannot join unkown race")
+            notifyPlayer(source, "Cannot join unkown race.\n")
         end
     end
 end)
@@ -308,13 +307,13 @@ AddEventHandler("races:leave", function(index)
                     races[index].players[source] = nil
                     races[index].numRacing = races[index].numRacing - 1
                 else
-                    notifyPlayer(source, "Cannot leave.  Not a member of this race")
+                    notifyPlayer(source, "Cannot leave.  Not a member of this race.\n")
                 end
             else
-                notifyPlayer(source, "Cannot leave.  Race already started")
+                notifyPlayer(source, "Cannot leave.  Race already started.\n")
             end
         else
-            notifyPlayer(source, "Cannot leave.  Race does not exist")
+            notifyPlayer(source, "Cannot leave.  Race does not exist.\n")
         end
     end
 end)
@@ -334,13 +333,13 @@ AddEventHandler("races:rivals", function(index)
                 if false == empty then
                     notifyPlayer(source, msg)
                 else
-                    notifyPlayer(source, "No competitors yet")
+                    notifyPlayer(source, "No competitors yet.\n")
                 end
             else
-                notifyPlayer(source, "Cannot list competitors.  Not a member of this race")
+                notifyPlayer(source, "Cannot list competitors.  Not a member of this race.\n")
             end
         else
-            notifyPlayer(source, "Cannot list competitors.  Race does not exist")
+            notifyPlayer(source, "Cannot list competitors.  Race does not exist.\n")
         end
     end
 end)
@@ -359,16 +358,16 @@ AddEventHandler("races:start", function(delay)
                         end
                         TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
                     else
-                        notifyPlayer(source, "Cannot start.  No players have joined race")
+                        notifyPlayer(source, "Cannot start.  No players have joined race.\n")
                     end
                 else
-                    notifyPlayer(source, "Cannot start.  Invalid delay")
+                    notifyPlayer(source, "Cannot start.  Invalid delay.\n")
                 end
             else
-                notifyPlayer(source, "Cannot start.  Race already started")
+                notifyPlayer(source, "Cannot start.  Race already started.\n")
             end
         else
-            notifyPlayer(source, "Cannot start.  No race registered")
+            notifyPlayer(source, "Cannot start.  No race registered.\n")
         end
     end
 end)
@@ -399,13 +398,13 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         races[index] = nil -- delete race after all players finish
                     end
                 else
-                    notifyPlayer(source, "Cannot finish.  Not a member of this race")
+                    notifyPlayer(source, "Cannot finish.  Not a member of this race.\n")
                 end
             else
-                notifyPlayer(source, "Cannot finish.  Race not in progress")
+                notifyPlayer(source, "Cannot finish.  Race not in progress.\n")
             end
         else
-            notifyPlayer(source, "Cannot finish.  Race does not exist")
+            notifyPlayer(source, "Cannot finish.  Race does not exist.\n")
         end
     end
 end)
