@@ -42,7 +42,7 @@ Look for green registration points on the map.  There will be a corresponding gr
 
 COMMAND DETAILS
 ---------------
-Type `/races` to see the list of available races commands.
+Type `/races` to see the list of available races commands.  If you cannot see all the commands type 'T' for chat and use the Page Up and Page Down keys to scroll.  Type Esc when done.
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
@@ -56,7 +56,7 @@ You can delete a waypoint by selecting it, then press spacebar or the X button o
 
 After you've set your waypoints, you can save them as a race.  Type `/races save myrace` to save the waypoints as 'myrace'.  'myrace' must not exist.  If you want to overwrite an existing race, type `/races overwrite myrace`.
 
-To list the races you have saved, type `/races list`.
+To list the races you have saved, type `/races list`.  If you cannot see all the race names type 'T' for chat and use the Page Up and Page Down keys to scroll.  Type Esc when done.
 
 If you want to delete a saved race, type `/races delete myrace` to delete 'myrace'.
 
@@ -70,7 +70,7 @@ After you've set your waypoints, you can register your race.  This will advertis
 
 All players who want to join the race, including you, will need to be near the green register checkpoint.  To join the race, press 'E' or right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  You cannot join a race if you are editing waypoints.  Stop editing first.  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your own race, you will not see the race results.
 
-To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.
+To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors type 'T' for chat and use the Page Up and Page Down keys to scroll.  Type Esc when done.
 
 Once everyone who wants to join your registered race have joined, you can start the race.  Type `/races start 10` to start the race with a delay of 10 seconds before the actual start.  If you do not indicate a delay, the default is 30 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.
 
@@ -84,7 +84,7 @@ As racers finish, their finishing time and best lap time will be broadcast to pl
 
 After all racers finish, the race results will be broadcast to players who joined the race.
 
-If you want to look at the race results again, type `/races results`.
+If you want to look at the race results again, type `/races results`.  If you cannot see all the results type 'T' for chat and use the Page Up and Page Down keys to scroll.  Type Esc when done.
 
 You can unregister your previously registered race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  If you already started the race, it will be canceled.
 

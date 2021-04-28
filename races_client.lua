@@ -41,6 +41,9 @@ local selectedBlipColor = 1 -- red
 local blipColor = 38 -- dark blue
 local blipRouteColor = 18 -- light blue
 
+local leftSide = 0.43 -- left position of HUD
+local rightSide = 0.51 -- right position of HUD
+
 local lastSelectedWaypoint = 0 -- index of last selected waypoint
 
 local raceIndex = -1 -- index of race player has joined
@@ -52,6 +55,7 @@ local currentLap = -1 -- current lap
 
 local numWaypointsPassed = -1 -- number of waypoints player has passed
 local currentWaypoint = -1 -- current waypoint
+local waypointCoord = nil -- coordinates of current waypoint
 
 local raceStart = -1 -- start time of race before delay
 local raceDelay = -1 -- delay before official start of race
@@ -239,17 +243,17 @@ RegisterCommand("races", function(_, args)
     elseif "edit" == args[1] then
         if STATE_IDLE == raceState then
             raceState = STATE_EDITING
+            raceCheckpoint = nil
+            lastSelectedWaypoint = 0
             SetWaypointOff()
             notifyPlayer("Editing started.\n")
         elseif STATE_EDITING == raceState then
             raceState = STATE_IDLE
             if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
-                raceCheckpoint = nil
             end
             if lastSelectedWaypoint > 0 then
                 SetBlipColour(waypoints[lastSelectedWaypoint], blipColor)
-                lastSelectedWaypoint = 0
             end
             notifyPlayer("Editing stopped.\n")
         else
@@ -323,7 +327,6 @@ RegisterCommand("races", function(_, args)
             raceState = STATE_IDLE
             TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
             DeleteCheckpoint(raceCheckpoint)
-            raceCheckpoint = nil
             SetBlipRoute(waypoints[1], true)
             SetBlipRouteColour(waypoints[1], blipRouteColor)
             speedo = false
@@ -423,7 +426,6 @@ AddEventHandler("races:unregister", function(index)
                 SetBlipRoute(waypoints[1], true)
                 SetBlipRouteColour(waypoints[1], blipRouteColor)
                 DeleteCheckpoint(raceCheckpoint)
-                raceCheckpoint = nil
                 speedo = false
                 notifyPlayer("Race canceled.\n")
             end
@@ -461,15 +463,19 @@ AddEventHandler("races:start", function(delay)
                 bestLapTime = -1
                 currentLap = 1
                 currentWaypoint = 1
+                waypointCoord = GetBlipCoords(waypoints[currentWaypoint])
                 numWaypointsPassed = 0
                 position = -1
                 numRacers = -1
                 beginDNFTimeout = false
                 timeoutStart = -1
                 results = {}
-                raceCheckpoint = nil
                 frozen = true
                 speedo = true
+
+                local checkpointType = (currentWaypoint == #waypoints and currentLap == numLaps) and 9 or 45
+                createRaceCheckpoint(checkpointType, waypointCoord)
+
                 notifyPlayer("Race started.\n")
             elseif STATE_RACING == raceState then
                 notifyPlayer("Ignoring race start event.  Already in a race.\n")
@@ -551,7 +557,7 @@ end)
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(0)
+        Citizen.Wait(10)
         if STATE_EDITING == raceState then
             if IsWaypointActive() then
                 local waypoint = GetBlipCoords(GetFirstBlipInfoId(8))
@@ -635,9 +641,9 @@ Citizen.CreateThread(function()
         elseif STATE_RACING == raceState then
             local player = PlayerPedId()
             local currentTime = GetGameTimer()
-            local countDown = raceStart + raceDelay * 1000 - currentTime
-            if countDown > 0 then
-                drawMsg(0.41, 0.50, ("Race starting in %05.2f seconds"):format(countDown / 1000.0), 0.7)
+            local elapsedTime = currentTime - raceStart - raceDelay * 1000
+            if elapsedTime < 0 then
+                drawMsg(0.41, 0.50, ("Race starting in %05.2f seconds"):format(-elapsedTime / 1000.0), 0.7)
 
                 if IsPedInAnyVehicle(player, false) then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
@@ -650,9 +656,6 @@ Citizen.CreateThread(function()
                     end
                     frozen = false
                 end
-
-                local leftSide = 0.43
-                local rightSide = 0.51
 
                 drawMsg(leftSide, 0.03, "Position", 0.5)
                 if -1 == position then
@@ -667,7 +670,7 @@ Citizen.CreateThread(function()
                 drawMsg(leftSide, 0.09, "Waypoint", 0.5)
                 drawMsg(rightSide, 0.09, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
 
-                local minutes, seconds = minutesSeconds(-countDown)
+                local minutes, seconds = minutesSeconds(elapsedTime)
                 drawMsg(leftSide, 0.12, "Total time", 0.5)
                 drawMsg(rightSide, 0.12, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
 
@@ -686,7 +689,7 @@ Citizen.CreateThread(function()
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
-                    if milliseconds >= 0 then
+                    if milliseconds > 0 then
                         minutes, seconds = minutesSeconds(milliseconds)
                         drawMsg(leftSide, 0.28, "DNF time", 0.7)
                         drawMsg(rightSide, 0.28, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
@@ -694,7 +697,6 @@ Citizen.CreateThread(function()
                         raceState = STATE_IDLE
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
                         DeleteCheckpoint(raceCheckpoint)
-                        raceCheckpoint = nil
 
                         SetBlipRoute(waypoints[1], true)
                         SetBlipRouteColour(waypoints[1], blipRouteColor)
@@ -702,16 +704,9 @@ Citizen.CreateThread(function()
                     end
                 end
 
-                local blipCoord = GetBlipCoords(waypoints[currentWaypoint])
-                if nil == raceCheckpoint then
-                    local checkpointType = (currentWaypoint == #waypoints and currentLap == numLaps) and 9 or 45
-                    createRaceCheckpoint(checkpointType, blipCoord)
-                end
-
                 if STATE_RACING == raceState then
-                    if #(GetEntityCoords(player) - blipCoord) < 10.0 then
+                    if #(GetEntityCoords(player) - waypointCoord) < 10.0 then
                         DeleteCheckpoint(raceCheckpoint)
-                        raceCheckpoint = nil
 
                         numWaypointsPassed = numWaypointsPassed + 1
 
@@ -727,9 +722,15 @@ Citizen.CreateThread(function()
                                 currentLap = currentLap + 1
                             else
                                 raceState = STATE_IDLE
-                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -countDown, bestLapTime)
+                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime)
                                 speedo = false
                             end
+                        end
+
+                        if STATE_RACING == raceState then
+                            waypointCoord = GetBlipCoords(waypoints[currentWaypoint])
+                            local checkpointType = (currentWaypoint == #waypoints and currentLap == numLaps) and 9 or 45
+                            createRaceCheckpoint(checkpointType, waypointCoord)
                         end
 
                         SetBlipRoute(waypoints[currentWaypoint], true)

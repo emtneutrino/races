@@ -324,8 +324,8 @@ AddEventHandler("races:rivals", function(index)
         local source = source
         if races[index] ~= nil then
             if races[index].players[source] ~= nil then
-                local msg = "Competitors:\n"
                 local empty = true
+                local msg = "Competitors:\n"
                 for i, _ in pairs(races[index].players) do
                     msg = msg .. GetPlayerName(i) .. "\n"
                     empty = false
