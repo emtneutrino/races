@@ -242,14 +242,14 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(coord, laps, timeout, waypoints)
-    if coord ~= nil and laps ~= nil and timeout ~= nil and waypoints ~= nil then
+AddEventHandler("races:register", function(laps, timeout, waypoints)
+    if laps ~= nil and timeout ~= nil and waypoints ~= nil then
         local source = source
         if laps > 0 then
             if timeout >= 0 then
                 if nil == races[source] then
                     races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypoints = waypoints, numRacing = 0, players = {}, results = {}}
-                    TriggerClientEvent("races:register", -1, source, GetPlayerName(source), coord)
+                    TriggerClientEvent("races:register", -1, source, GetPlayerName(source), waypoints[1])
                     notifyPlayer(source, "Race registered.\n")
                 else
                     if STATE_RACING == races[source].state then
