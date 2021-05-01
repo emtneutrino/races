@@ -82,9 +82,11 @@ local DNFTimeout = -1 -- DNF timeout after first player finishes the race
 local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
+local vehicleName = "FEET" -- name of vehicle in which player started
+
 local results = {} -- playerName, finishTime, bestLapTime
 
-local frozen = true -- flag indicating if vehicle is frozen
+local frozen = false -- flag indicating if vehicle is frozen
 
 local starts = {} -- owner, blip, checkpoint - registration points
 
@@ -246,13 +248,13 @@ local function printResults()
                 msg = msg .. "DNF - " .. result.playerName
                 if result.bestLapTime >= 0 then
                     local minutes, seconds = minutesSeconds(result.bestLapTime)
-                    msg = msg .. (" - best lap %02d:%05.2f"):format(minutes, seconds)
+                    msg = msg .. (" - best lap %02d:%05.2f using %s"):format(minutes, seconds, result.vehicleName)
                 end
                 msg = msg .. "\n"
             else
                 local fMinutes, fSeconds = minutesSeconds(result.finishTime)
                 local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
-                msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f\n"):format(pos, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds)
+                msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f using %s\n"):format(pos, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds, result.vehicleName)
             end
         end
         notifyPlayer(msg)
@@ -392,7 +394,7 @@ RegisterCommand("races", function(_, args)
             notifyPlayer("Left race.\n")
         elseif STATE_RACING == raceState then
             raceState = STATE_IDLE
-            TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
+            TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName)
             DeleteCheckpoint(raceCheckpoint)
             SetBlipRoute(waypoints[1], true)
             SetBlipRouteColour(waypoints[1], blipRouteColor)
@@ -424,23 +426,27 @@ RegisterCommand("races", function(_, args)
             notifyPlayer("Speedometer disabled.\n")
         end
     elseif "car" == args[1] then
-        local vehicleName = args[2] or "adder"
-        if 1 == IsModelInCdimage(vehicleName) and 1 == IsModelAVehicle(vehicleName) then
-            RequestModel(vehicleName)
-            while false == HasModelLoaded(vehicleName) do
+        local vehicleHash = args[2] or "adder"
+        if 1 == IsModelInCdimage(vehicleHash) and 1 == IsModelAVehicle(vehicleHash) then
+            RequestModel(vehicleHash)
+            while false == HasModelLoaded(vehicleHash) do
                 Citizen.Wait(500)
             end
 
             local player = PlayerPedId()
             local pedCoord = GetEntityCoords(player)
-            local vehicle = CreateVehicle(vehicleName, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
+            local vehicle = CreateVehicle(vehicleHash, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
             SetPedIntoVehicle(player, vehicle, -1)
             SetEntityAsNoLongerNeeded(vehicle)
-            SetModelAsNoLongerNeeded(vehicleName)
-            notifyPlayer("'" .. vehicleName .. "' spawned.\n")
+            SetModelAsNoLongerNeeded(vehicleHash)
+            notifyPlayer("'" .. GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash)) .. "' spawned.\n")
         else
-            notifyPlayer("Invalid vehicle '" .. vehicleName .. "'.\n")
+            notifyPlayer("Invalid vehicle '" .. vehicleHash .. "'.\n")
         end
+--[[
+    elseif "test" == args[1] then
+        TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+--]]
     else
         notifyPlayer("Unknown command.\n")
     end
@@ -538,8 +544,9 @@ AddEventHandler("races:start", function(delay)
                 numRacers = -1
                 beginDNFTimeout = false
                 timeoutStart = -1
+                vehicleName = "FEET"
                 results = {}
-                frozen = true
+                frozen = false
                 speedo = true
 
                 local checkpointType
@@ -573,7 +580,7 @@ end)
 RegisterNetEvent("races:results")
 AddEventHandler("races:results", function(raceResults)
     if raceResults ~= nil then
-        results = raceResults -- results[] = {playerName, finishTime, bestLapTime}
+        results = raceResults -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
 
         table.sort(results, function(p0, p1)
             return
@@ -593,14 +600,14 @@ AddEventHandler("races:hide", function(index)
 end)
 
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLapTime)
+AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLapTime, raceVehicleName)
     if playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil then
         if -1 == raceFinishTime then
             if -1 == raceBestLapTime then
                 notifyPlayer(playerName .. " did not finish.\n")
             else
                 local minutes, seconds = minutesSeconds(raceBestLapTime)
-                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f\n"):format(playerName, minutes, seconds))
+                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f using %s\n"):format(playerName, minutes, seconds, raceVehicleName))
             end
         else
             if false == beginDNFTimeout then
@@ -610,7 +617,7 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
 
             local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
             local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
-            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds))
+            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f using %s\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds, raceVehicleName))
         end
     end
 end)
@@ -751,7 +758,9 @@ Citizen.CreateThread(function()
             else
                 if true == frozen then
                     if IsPedInAnyVehicle(player, false) then
-                        FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
+                        local vehicle = GetVehiclePedIsIn(player, false)
+                        FreezeEntityPosition(vehicle, false)
+                        vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)))
                     end
                     frozen = false
                 end
@@ -798,7 +807,7 @@ Citizen.CreateThread(function()
                         drawMsg(rightSide, 0.28, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
                         raceState = STATE_IDLE
-                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime)
+                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName)
                         DeleteCheckpoint(raceCheckpoint)
 
                         SetBlipRoute(waypoints[1], true)
@@ -825,7 +834,7 @@ Citizen.CreateThread(function()
                                 currentLap = currentLap + 1
                             else
                                 raceState = STATE_IDLE
-                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime)
+                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, vehicleName)
                                 SetBlipRoute(waypoints[1], true)
                                 SetBlipRouteColour(waypoints[1], blipRouteColor)
                                 speedo = false

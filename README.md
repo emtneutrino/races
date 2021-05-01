@@ -86,7 +86,7 @@ Your current position, lap, waypoint, lap time, best lap time, total time and sp
 
 After the first racer finishes, there will be a DNF timeout for other racers.  They must finish within the timeout, otherwise they DNF.
 
-As racers finish, their finishing time and best lap time will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
+As racers finish, their finishing time, best lap time and vehicle name will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
 
 After all racers finish, the race results will be broadcast to players who joined the race.
 

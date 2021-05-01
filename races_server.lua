@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 local STATE_REGISTERING = 0
 local STATE_RACING = 1
 
-local races = {} -- races[] = {state, laps, timeout, waypoints[] = {x, y, z}, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime}}
+local races = {} -- races[] = {state, laps, timeout, waypoints[] = {x, y, z}, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
 
 local raceDataFile = "./resources/races/raceData.json"
 
@@ -373,8 +373,8 @@ AddEventHandler("races:start", function(delay)
 end)
 
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime)
-    if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil then
+AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime, vehicleName)
+    if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
         local source = source
         if races[index] ~= nil then
             if STATE_RACING == races[index].state then
@@ -385,10 +385,10 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                     local playerName = GetPlayerName(source)
 
                     for i, _ in pairs(races[index].players) do
-                        TriggerClientEvent("races:finish", i, playerName, finishTime, bestLapTime)
+                        TriggerClientEvent("races:finish", i, playerName, finishTime, bestLapTime, vehicleName)
                     end
 
-                    races[index].results[#(races[index].results) + 1] = {playerName = playerName, finishTime = finishTime, bestLapTime = bestLapTime}
+                    races[index].results[#(races[index].results) + 1] = {playerName = playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
 
                     races[index].numRacing = races[index].numRacing - 1
                     if 0 == races[index].numRacing then
