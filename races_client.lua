@@ -200,17 +200,17 @@ end
 local function loadWaypoints(raceWaypoints)
     deleteWaypoints()
 
-    for i, coord in ipairs(raceWaypoints) do
-        raceWaypoints[i] = vector3(coord.x, coord.y, coord.z)
-    end
-
     for i = 1, #raceWaypoints - 1 do
         local blip = AddBlipForCoord(raceWaypoints[i].x, raceWaypoints[i].y, raceWaypoints[i].z)
         SetBlipAsShortRange(blip, true)
         waypoints[i] = blip
     end
 
-    startIsFinish = raceWaypoints[1] == raceWaypoints[#raceWaypoints]
+    startIsFinish =
+        raceWaypoints[1].x == raceWaypoints[#raceWaypoints].x and
+        raceWaypoints[1].y == raceWaypoints[#raceWaypoints].y and
+        raceWaypoints[1].z == raceWaypoints[#raceWaypoints].z
+
     if false == startIsFinish then
         local blip = AddBlipForCoord(raceWaypoints[#raceWaypoints].x, raceWaypoints[#raceWaypoints].y, raceWaypoints[#raceWaypoints].z)
         SetBlipAsShortRange(blip, true)
