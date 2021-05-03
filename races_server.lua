@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 local STATE_REGISTERING = 0
 local STATE_RACING = 1
 
-local races = {} -- races[] = {state, laps, timeout, waypoints[] = {x, y, z}, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, laps, timeout, waypointCoords[] = {x, y, z}, public, loadedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
 
 local raceDataFile = "./resources/races/raceData.json"
 
@@ -45,10 +45,45 @@ local function notifyPlayer(source, msg)
     })
 end
 
+local function convert()
+    local raceData = nil
+
+    local file = io.open(raceDataFile, "r")
+    if file ~= nil then
+        raceData = json.decode(file:read("*a"));
+        io.close(file)
+    end
+
+    for license, playerRaces in pairs(raceData) do
+        local newPlayerRaces = {}
+        for name, waypointCoords in pairs(playerRaces) do
+            newPlayerRaces[name] = {waypointCoords = waypointCoords, bestLaps = {}}
+--[[
+            print(("license: %s; name: %s"):format(license, name))
+            for i, waypoint in ipairs(waypointCoords) do
+                print(("%d: %f, %f, %f"):format(i, waypoint.x, waypoint.y, waypoint.z))
+            end
+--]]
+        end
+        raceData[license] = newPlayerRaces
+    end
+
+    file = io.open("./resources/races/raceData.new.json", "w+")
+    if file ~= nil then
+        file:write(json.encode(raceData))
+        io.close(file)
+    end
+
+--[[
+raceData[license] = playerRaces[name] = waypointCoords[i] = waypoint = {x, y, z}
+raceData[license] = playerRaces[name] = {waypointCoords[] = {x, y, z}, bestLaps[] = {playerName, bestLapTime, vehicleName}}
+--]]
+end
+
 local function loadPlayerData(public, source)
     local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
-    local playerData = nil
+    local playerRaces = nil
 
     if license ~= nil then
         if license ~= "PUBLIC" then
@@ -71,17 +106,17 @@ local function loadPlayerData(public, source)
             return nil
         end
 
-        playerData = raceData[license]
+        playerRaces = raceData[license]
 
-        if nil == playerData then
-            playerData = {}
+        if nil == playerRaces then
+            playerRaces = {}
         end
     else
         notifyPlayer(source, "loadPlayerData: Could not get license.\n")
         return nil
     end
 
-    return playerData
+    return playerRaces
 end
 
 local function savePlayerData(public, source, data)
@@ -126,102 +161,135 @@ local function savePlayerData(public, source, data)
     return true
 end
 
+local function updateBestLapTimes(index)
+    local playerRaces = loadPlayerData(races[index].public, index)
+    if playerRaces ~= nil then
+        local bestLaps = playerRaces[races[index].loadedRaceName].bestLaps
+        for _, result in pairs(races[index].results) do
+            if result.bestLapTime ~= -1 then
+                bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
+            end
+        end
+        table.sort(bestLaps, function(p0, p1)
+            return p0.bestLapTime < p1.bestLapTime
+        end)
+        if #bestLaps > 10 then
+            for i = 11, #bestLaps do
+                bestLaps[i] = nil
+            end
+        end
+        playerRaces[races[index].loadedRaceName].bestLaps = bestLaps
+        if false == savePlayerData(races[index].public, index, playerRaces) then
+            notifyPlayer(index, "Save error updating best lap times.")
+        end
+    else
+        notifyPlayer(index, "Load error updating best lap times.")
+    end
+end
+
 RegisterNetEvent("races:load")
-AddEventHandler("races:load", function(public, name)
-    if public ~= nil and name ~= nil then
-        local source = source
+AddEventHandler("races:load", function(public, raceName)
+    local source = source
+    if public ~= nil and raceName ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
-            local waypoints = playerRaces[name]
-            if waypoints ~= nil then
-                TriggerClientEvent("races:load", source, name, waypoints)
+            if playerRaces[raceName] ~= nil then
+                TriggerClientEvent("races:load", source, public, raceName, playerRaces[raceName].waypointCoords)
             else
-                notifyPlayer(source, "Cannot load.  '" .. name .. "' not found.\n")
+                notifyPlayer(source, "Cannot load.  '" .. raceName .. "' not found.\n")
             end
         else
             notifyPlayer(source, "Cannot load.  Error loading data.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring load event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:save")
-AddEventHandler("races:save", function(public, name, waypoints)
-    if public ~= nil and name ~= nil and waypoints ~= nil then
-        local source = source
+AddEventHandler("races:save", function(public, raceName, waypointCoords)
+    local source = source
+    if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
-            if nil == playerRaces[name] then
-                playerRaces[name] = waypoints
+            if nil == playerRaces[raceName] then
+                playerRaces[raceName] = {waypointCoords = waypointCoords, bestLaps = {}}
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Saved '" .. name .. "'.\n")
+                    TriggerClientEvent("races:save", source, public, raceName)
                 else
-                    notifyPlayer(source, "Error saving '" .. name .. "'.\n")
+                    notifyPlayer(source, "Error saving '" .. raceName .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'.\n"):format(name, name))
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'.\n"):format(raceName, raceName))
                 else
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'.\n"):format(name, name))
+                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'.\n"):format(raceName, raceName))
                 end
             end
         else
             notifyPlayer(source, "Cannot save.  Error loading data.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring save event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:overwrite")
-AddEventHandler("races:overwrite", function(public, name, waypoints)
-    if public ~= nil and name ~= nil and waypoints ~= nil then
-        local source = source
+AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
+    local source = source
+    if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
-            if playerRaces[name] ~= nil then
-                playerRaces[name] = waypoints
+            if playerRaces[raceName] ~= nil then
+                playerRaces[raceName] = {waypointCoords = waypointCoords, bestLaps = {}}
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Overwrote '" .. name .. "'.\n")
+                    TriggerClientEvent("races:overwrite", source, public, raceName)
                 else
-                    notifyPlayer(source, "Error overwriting '" .. name .. "'.\n")
+                    notifyPlayer(source, "Error overwriting '" .. raceName .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'.\n"):format(name, name))
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'.\n"):format(raceName, raceName))
                 else
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'.\n"):format(name, name))
+                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'.\n"):format(raceName, raceName))
                 end
             end
         else
             notifyPlayer(source, "Cannot overwrite.  Error loading data.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring overwrite event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:delete")
-AddEventHandler("races:delete", function(public, name)
-    if public ~= nil and name ~= nil then
-        local source = source
+AddEventHandler("races:delete", function(public, raceName)
+    local source = source
+    if public ~= nil and raceName ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
-            if playerRaces[name] ~= nil then
-                playerRaces[name] = nil
+            if playerRaces[raceName] ~= nil then
+                playerRaces[raceName] = nil
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Deleted '" .. name .. "'.\n")
+                    notifyPlayer(source, "Deleted '" .. raceName .. "'.\n")
                 else
-                    notifyPlayer(source, "Error deleting '" .. name .. "'.\n")
+                    notifyPlayer(source, "Error deleting '" .. raceName .. "'.\n")
                 end
             else
-                notifyPlayer(source, "Cannot delete.  '" .. name .. "' not found.\n")
+                notifyPlayer(source, "Cannot delete.  '" .. raceName .. "' not found.\n")
             end
         else
             notifyPlayer(source, "Cannot delete.  Error loading data.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring delete event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:list")
 AddEventHandler("races:list", function(public)
+    local source = source
     if public ~= nil then
-        local source = source
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
             local empty = true
@@ -238,18 +306,39 @@ AddEventHandler("races:list", function(public)
         else
             notifyPlayer(source, "Cannot list.  Error loading data.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring list event.  Invalid paramaters.")
+   end
+end)
+
+RegisterNetEvent("races:blt")
+AddEventHandler("races:blt", function(public, raceName)
+    local source = source
+    if public ~= nil and raceName ~= nil then
+        local playerRaces = loadPlayerData(public, source)
+        if playerRaces ~= nil then
+            if playerRaces[raceName] ~= nil then
+                TriggerClientEvent("races:blt", source, public, raceName, playerRaces[raceName].bestLaps)
+            else
+                notifyPlayer(source, "Cannot list best lap times.  '" .. raceName .. "' not found.\n")
+            end
+        else
+            notifyPlayer(source, "Cannot list best lap times.  Error loading data.\n")
+        end
+    else
+        notifyPlayer(source, "Ignoring best lap times event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(laps, timeout, waypoints)
-    if laps ~= nil and timeout ~= nil and waypoints ~= nil then
-        local source = source
+AddEventHandler("races:register", function(laps, timeout, waypointCoords, public, loadedRaceName)
+    local source = source
+    if laps ~= nil and timeout ~= nil and waypointCoords ~= nil and public ~= nil then
         if laps > 0 then
             if timeout >= 0 then
                 if nil == races[source] then
-                    races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypoints = waypoints, numRacing = 0, players = {}, results = {}}
-                    TriggerClientEvent("races:register", -1, source, GetPlayerName(source), waypoints[1])
+                    races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypointCoords = waypointCoords, public = public, loadedRaceName = loadedRaceName, numRacing = 0, players = {}, results = {}}
+                    TriggerClientEvent("races:register", -1, source, GetPlayerName(source), laps, waypointCoords[1], public, loadedRaceName)
                     notifyPlayer(source, "Race registered.\n")
                 else
                     if STATE_RACING == races[source].state then
@@ -264,6 +353,8 @@ AddEventHandler("races:register", function(laps, timeout, waypoints)
         else
             notifyPlayer(source, "Invalid laps.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring register event.  Invalid paramaters.")
     end
 end)
 
@@ -281,26 +372,28 @@ end)
 
 RegisterNetEvent("races:join")
 AddEventHandler("races:join", function(index)
+    local source = source
     if index ~= nil then
-        local source = source
         if races[index] ~= nil then
             if STATE_REGISTERING == races[index].state then
                 races[index].numRacing = races[index].numRacing + 1
                 races[index].players[source] = {numWaypointsPassed = -1, data = -1}
-                TriggerClientEvent("races:join", source, index, races[index].laps, races[index].timeout, races[index].waypoints)
+                TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
             else
                 notifyPlayer(source, "Cannot join race in progress.\n")
             end
         else
             notifyPlayer(source, "Cannot join unkown race.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring join event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:leave")
 AddEventHandler("races:leave", function(index)
+    local source = source
     if index ~= nil then
-        local source = source
         if races[index] ~= nil then
             if STATE_REGISTERING == races[index].state then
                 if races[index].players[source] ~= nil then
@@ -315,13 +408,15 @@ AddEventHandler("races:leave", function(index)
         else
             notifyPlayer(source, "Cannot leave.  Race does not exist.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring leave event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:rivals")
 AddEventHandler("races:rivals", function(index)
+    local source = source
     if index ~= nil then
-        local source = source
         if races[index] ~= nil then
             if races[index].players[source] ~= nil then
                 local empty = true
@@ -341,13 +436,15 @@ AddEventHandler("races:rivals", function(index)
         else
             notifyPlayer(source, "Cannot list competitors.  Race does not exist.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring rivals event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
+    local source = source
     if delay ~= nil then
-        local source = source
         if races[source] ~= nil then
             if STATE_REGISTERING == races[source].state then
                 if delay >= 0 then
@@ -369,13 +466,15 @@ AddEventHandler("races:start", function(delay)
         else
             notifyPlayer(source, "Cannot start.  No race registered.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring start event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:finish")
 AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime, vehicleName)
+    local source = source
     if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
-        local source = source
         if races[index] ~= nil then
             if STATE_RACING == races[index].state then
                 if races[index].players[source] ~= nil then
@@ -395,6 +494,9 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         for i, _ in pairs(races[index].players) do
                             TriggerClientEvent("races:results", i, races[index].results)
                         end
+                        if races[index].loadedRaceName ~= nil then
+                            updateBestLapTimes(index)
+                        end
                         races[index] = nil -- delete race after all players finish
                     end
                 else
@@ -406,17 +508,21 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
         else
             notifyPlayer(source, "Cannot finish.  Race does not exist.\n")
         end
+    else
+        notifyPlayer(source, "Ignoring finish event.  Invalid paramaters.")
     end
 end)
 
 RegisterNetEvent("races:report")
 AddEventHandler("races:report", function(index, numWaypointsPassed, dist)
+    local source = source
     if index ~= nil and numWaypointsPassed ~= nil and dist ~= nil then
-        local source = source
         if races[index] ~= nil and races[index].players[source] ~= nil then
             races[index].players[source].numWaypointsPassed = numWaypointsPassed
             races[index].players[source].data = dist
         end
+    else
+        notifyPlayer(source, "Ignoring report event.  Invalid paramaters.")
     end
 end)
 

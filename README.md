@@ -13,11 +13,13 @@ COMMANDS
 `/races save [name]` - save new race waypoints as [name]\
 `/races overwrite [name]` - overwrite existing race waypoints saved as [name]\
 `/races delete [name]` - delete race waypoints saved as [name]\
+`/races blt [name]` - list 10 best lap times of race saved as [name]\
 `/races list` - list saved races\
 `/races loadPublic [name]` - load public race waypoints saved as [name]\
 `/races savePublic [name]` - save new public race waypoints as [name]\
 `/races overwritePublic [name]` - overwrite existing public race waypoints saved as [name]\
 `/races deletePublic [name]` - delete public race waypoints saved as [name]\
+`/races bltPublic [name]` - list 10 best lap times of public race saved as [name]\
 `/races listPublic` - list public saved races\
 `/races register (laps) (DNF timeout)` - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\
 `/races unregister` - unregister your race\
@@ -30,15 +32,15 @@ COMMANDS
 
 SAMPLE RACES
 ------------
-There are four sample races:'00', '01', '02' and '03' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the starting waypoint of the race indicated by a green checkered flag on the waypoint map and a green cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
+There are four sample races:'00', '01', '02' and '03' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the starting waypoint of the race indicated by a green circled star on the waypoint map and a green cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
-Type `/races edit` until you see the message 'Editing started'.  Add waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a green checkered flag will appear in the waypoint map and a green cylinder checkpoint will appear in the world.  All players will see the starting waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the starting waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
+Type `/races edit` until you see the message 'Editing started'.  Add waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a green circled star will appear in the waypoint map and a green cylinder checkpoint will appear in the world.  All players will see the starting waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the starting waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
 
 QUICK GUIDE FOR RACING
 ----------------------
-Look for green checkered flags on the waypoint map.  There will be a corresponding green cylinder checkpoints in the world.  Get close to the starting waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The person who registered the race will be the one to start the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  If you want to see the results again, type `/races results`.
+Look for green circled stars on the waypoint map.  There will be a corresponding green cylinder checkpoints in the world.  Get close to the starting waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The person who registered the race will be the one to start the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  If you want to see the results again, type `/races results`.
 
 COMMAND DETAILS
 ---------------
@@ -46,7 +48,7 @@ Type `/races` to see the list of available races commands.  If you cannot see al
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
-There will be four types of waypoints on the map.  A yellow checkered flag is a combined start/finish waypoint.  A green checkered flag is the start waypoint.  A white checkered flag is a finish waypoint.  A blue numbered circle is a waypoint along the race route.
+There will be five types of waypoints on the map.  A yellow checkered flag is a combined start/finish waypoint.  A green checkered flag is the start waypoint.  A white checkered flag is the finish waypoint.  A blue numbered circle is a waypoint along the race route.  A green circled star is a registration point.
 
 Adding a waypoint will always be added as the last waypoint.  You cannot put a waypoint between two waypoints.  You also cannot put a waypoint before another waypoint.  A yellow checkpoint will appear in the world where you added the waypoint.
 
@@ -68,11 +70,13 @@ If you want to delete a saved race, type `/races delete myrace` to delete 'myrac
 
 You can load saved waypoints by typing `/races load myrace` to load a race named 'myrace'.  This will clear any current waypoints and load the saved ones.  You cannot load saved waypoints if you have joined a race.  Leave the race or finish it first.
 
-`save`, `overwrite`, `list`, `delete` and `load` operate on your private list of races.  No one else will be able to modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic` and `loadPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
+Type `races blt myrace` to see the 10 best lap times recorded for 'myrace'.
+
+`save`, `overwrite`, `list`, `delete`, `load` and `blt` operate on your private list of races.  No one else will be able to modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic`, `loadPublic` and `bltPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
 
 You can clear all waypoints by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  You cannot register unless there is more than one waypoint in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a green checkered flag will appear on the map and a green cylinder checkpoint will appear in the world.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
+After you have set your waypoints, you can register your race.  You cannot register unless there is more than one waypoint in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a green circled star will appear on the map and a green cylinder checkpoint will appear in the world.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
 All players who want to join the race, including you, will need to be near the green starting waypoint.  To join the race, type 'E' or press right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  You cannot join a race if you are editing waypoints.  Stop editing first.  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your own race, you will not see the race results.
 
