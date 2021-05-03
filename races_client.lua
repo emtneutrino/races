@@ -479,7 +479,10 @@ AddEventHandler("races:load", function(public, raceName, waypointCoords)
             publicRace = public
             savedRaceName = raceName
             loadWaypointBlips(waypointCoords)
-            notifyPlayer("Loaded '" .. raceName .. "'.\n")
+            local msg = "Loaded "
+            msg = msg .. (true == public and "public" or "private")
+            msg = msg .. " race '" .. raceName .. "'.\n"
+            notifyPlayer(msg)
         elseif STATE_EDITING == raceState then
             if raceCheckpoint ~= nil then
                 DeleteCheckpoint(raceCheckpoint)
@@ -489,7 +492,10 @@ AddEventHandler("races:load", function(public, raceName, waypointCoords)
             publicRace = public
             savedRaceName = raceName
             loadWaypointBlips(waypointCoords)
-            notifyPlayer("Loaded '" .. raceName .. "'.\n")
+            local msg = "Loaded "
+            msg = msg .. (true == public and "public" or "private")
+            msg = msg .. " race '" .. raceName .. "'.\n"
+            notifyPlayer(msg)
         else
             notifyPlayer("Ignoring load event.  Currently joined to race.\n")
         end
@@ -503,7 +509,10 @@ AddEventHandler("races:save", function(public, raceName)
     if public ~= nil and raceName ~= nil then
         publicRace = public
         savedRaceName = raceName
-        notifyPlayer("Saved '" .. raceName .. "'.\n")
+        local msg = "Saved "
+        msg = msg .. (true == public and "public" or "private")
+        msg = msg .. " race '" .. raceName .. "'.\n"
+        notifyPlayer(msg)
     else
         notifyPlayer("Ignoring save event.  Invalid paramaters.\n")
     end
@@ -514,7 +523,10 @@ AddEventHandler("races:overwrite", function(public, raceName)
     if public ~= nil and raceName ~= nil then
         publicRace = public
         savedRaceName = raceName
-        notifyPlayer("Overwrote '" .. raceName .. "'.\n")
+        local msg = "Overwrote "
+        msg = msg .. (true == public and "public" or "private")
+        msg = msg .. " race '" .. raceName .. "'.\n"
+        notifyPlayer(msg)
     else
         notifyPlayer("Ignoring overwrite event.  Invalid paramaters.\n")
     end

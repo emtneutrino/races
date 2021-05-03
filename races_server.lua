@@ -271,7 +271,10 @@ AddEventHandler("races:delete", function(public, raceName)
             if playerRaces[raceName] ~= nil then
                 playerRaces[raceName] = nil
                 if true == savePlayerData(public, source, playerRaces) then
-                    notifyPlayer(source, "Deleted '" .. raceName .. "'.\n")
+                    local msg = "Deleted "
+                    msg = msg .. (true == public and "public" or "private")
+                    msg = msg .. "race '" .. raceName .. "'.\n"
+                    notifyPlayer(source, msg)
                 else
                     notifyPlayer(source, "Error deleting '" .. raceName .. "'.\n")
                 end
@@ -293,7 +296,9 @@ AddEventHandler("races:list", function(public)
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
             local empty = true
-            local msg = "Saved races:\n"
+            local msg = "Saved "
+            msg = msg .. (true == public and "public" or "private")
+            msg = msg .. " races:\n"
             for name, _ in pairs(playerRaces) do
                 msg = msg .. name .. "\n"
                 empty = false
