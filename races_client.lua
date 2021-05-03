@@ -293,7 +293,7 @@ end
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
-        msg = msg .. "/races - display list of available races commands\n"
+        msg = msg .. "/races - display list of available /races commands\n"
         msg = msg .. "/races edit - toggle editing race waypoints\n"
         msg = msg .. "/races clear - clear race waypoints\n"
         msg = msg .. "/races load [name] - load race waypoints saved as [name]\n"

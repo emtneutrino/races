@@ -6,7 +6,7 @@ Create a 'races' directory under your server 'resources' folder.  Place 'fxmanif
 
 COMMANDS
 --------
-`/races` - display list of available races commands\
+`/races` - display list of available `/races` commands\
 `/races edit` - toggle editing race waypoints\
 `/races clear` - clear race waypoints\
 `/races load [name]` - load race waypoints saved as [name]\
