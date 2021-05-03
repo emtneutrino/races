@@ -273,7 +273,7 @@ AddEventHandler("races:delete", function(public, raceName)
                 if true == savePlayerData(public, source, playerRaces) then
                     local msg = "Deleted "
                     msg = msg .. (true == public and "public" or "private")
-                    msg = msg .. "race '" .. raceName .. "'.\n"
+                    msg = msg .. " race '" .. raceName .. "'.\n"
                     notifyPlayer(source, msg)
                 else
                     notifyPlayer(source, "Error deleting '" .. raceName .. "'.\n")
