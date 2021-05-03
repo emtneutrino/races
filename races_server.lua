@@ -202,7 +202,7 @@ AddEventHandler("races:load", function(public, raceName)
             notifyPlayer(source, "Cannot load.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring load event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring load event.  Invalid parameters.")
     end
 end)
 
@@ -230,7 +230,7 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
             notifyPlayer(source, "Cannot save.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring save event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring save event.  Invalid parameters.")
     end
 end)
 
@@ -258,7 +258,7 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
             notifyPlayer(source, "Cannot overwrite.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring overwrite event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring overwrite event.  Invalid parameters.")
     end
 end)
 
@@ -285,7 +285,7 @@ AddEventHandler("races:delete", function(public, raceName)
             notifyPlayer(source, "Cannot delete.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring delete event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring delete event.  Invalid parameters.")
     end
 end)
 
@@ -312,7 +312,7 @@ AddEventHandler("races:list", function(public)
             notifyPlayer(source, "Cannot list.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring list event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring list event.  Invalid parameters.")
    end
 end)
 
@@ -331,7 +331,7 @@ AddEventHandler("races:blt", function(public, raceName)
             notifyPlayer(source, "Cannot list best lap times.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring best lap times event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring best lap times event.  Invalid parameters.")
     end
 end)
 
@@ -368,7 +368,7 @@ AddEventHandler("races:register", function(laps, timeout, waypointCoords, public
             notifyPlayer(source, "Invalid laps.\n")
         end
     else
-        notifyPlayer(source, "Ignoring register event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring register event.  Invalid parameters.")
     end
 end)
 
@@ -400,7 +400,7 @@ AddEventHandler("races:join", function(index)
             notifyPlayer(source, "Cannot join unkown race.\n")
         end
     else
-        notifyPlayer(source, "Ignoring join event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring join event.  Invalid parameters.")
     end
 end)
 
@@ -423,7 +423,7 @@ AddEventHandler("races:leave", function(index)
             notifyPlayer(source, "Cannot leave.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring leave event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring leave event.  Invalid parameters.")
     end
 end)
 
@@ -451,7 +451,7 @@ AddEventHandler("races:rivals", function(index)
             notifyPlayer(source, "Cannot list competitors.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring rivals event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring rivals event.  Invalid parameters.")
     end
 end)
 
@@ -481,7 +481,7 @@ AddEventHandler("races:start", function(delay)
             notifyPlayer(source, "Cannot start.  No race registered.\n")
         end
     else
-        notifyPlayer(source, "Ignoring start event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring start event.  Invalid parameters.")
     end
 end)
 
@@ -523,7 +523,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
             notifyPlayer(source, "Cannot finish.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring finish event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring finish event.  Invalid parameters.")
     end
 end)
 
@@ -536,7 +536,7 @@ AddEventHandler("races:report", function(index, numWaypointsPassed, dist)
             races[index].players[source].data = dist
         end
     else
-        notifyPlayer(source, "Ignoring report event.  Invalid paramaters.")
+        notifyPlayer(source, "Ignoring report event.  Invalid parameters.")
     end
 end)
 

@@ -500,7 +500,7 @@ AddEventHandler("races:load", function(public, raceName, waypointCoords)
             notifyPlayer("Ignoring load event.  Currently joined to race.\n")
         end
     else
-        notifyPlayer("Ignoring load event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring load event.  Invalid parameters.\n")
     end
 end)
 
@@ -514,7 +514,7 @@ AddEventHandler("races:save", function(public, raceName)
         msg = msg .. " race '" .. raceName .. "'.\n"
         notifyPlayer(msg)
     else
-        notifyPlayer("Ignoring save event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring save event.  Invalid parameters.\n")
     end
 end)
 
@@ -528,7 +528,7 @@ AddEventHandler("races:overwrite", function(public, raceName)
         msg = msg .. " race '" .. raceName .. "'.\n"
         notifyPlayer(msg)
     else
-        notifyPlayer("Ignoring overwrite event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring overwrite event.  Invalid parameters.\n")
     end
 end)
 
@@ -548,7 +548,7 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
         end
         notifyPlayer(msg)
     else
-        notifyPlayer("Ignoring best lap times event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring best lap times event.  Invalid parameters.\n")
     end
 end)
 
@@ -568,7 +568,7 @@ AddEventHandler("races:register", function(index, owner, laps, coord, public, ra
 
         starts[index] = {owner = owner, laps = laps, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
     else
-        notifyPlayer("Ignoring register event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring register event.  Invalid parameters.\n")
     end
 end)
 
@@ -594,7 +594,7 @@ AddEventHandler("races:unregister", function(index)
             notifyPlayer("Ignoring unregister event.  Unknown race.\n")
         end
     else
-        notifyPlayer("Ignoring unregister event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring unregister event.  Invalid parameters.\n")
     end
 end)
 
@@ -626,7 +626,7 @@ AddEventHandler("races:join", function(index, timeout, waypointCoords)
             notifyPlayer("Ignoring join event.  Unknown race.\n")
         end
     else
-        notifyPlayer("Ignoring join event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring join event.  Invalid parameters.\n")
     end
 end)
 
@@ -677,7 +677,7 @@ AddEventHandler("races:start", function(delay)
             notifyPlayer("Ignoring start event.  Invalid delay.\n")
         end
     else
-        notifyPlayer("Ignoring start event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring start event.  Invalid parameters.\n")
     end
 end)
 
@@ -694,7 +694,7 @@ AddEventHandler("races:results", function(raceResults)
 
         printResults()
     else
-        notifyPlayer("Ignoring results event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring results event.  Invalid parameters.\n")
     end
 end)
 
@@ -707,7 +707,7 @@ AddEventHandler("races:hide", function(index)
             notifyPlayer("Ignoring hide event.  Unknown race.\n")
         end
     else
-        notifyPlayer("Ignoring hide event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring hide event.  Invalid parameters.\n")
     end
 end)
 
@@ -732,7 +732,7 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
             notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f using %s\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds, raceVehicleName))
         end
     else
-        notifyPlayer("Ignoring finish event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring finish event.  Invalid parameters.\n")
     end
 end)
 
@@ -746,7 +746,7 @@ AddEventHandler("races:position", function(pos, numR)
             notifyPlayer("Ignoring position event.  Race not in progress.\n")
         end
     else
-        notifyPlayer("Ignoring position event.  Invalid paramaters.\n")
+        notifyPlayer("Ignoring position event.  Invalid parameters.\n")
     end
 end)
 
