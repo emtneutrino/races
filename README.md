@@ -62,7 +62,9 @@ For multi-lap races, the start and finish waypoint must to be the same.  Select 
 
 If you want to separate the start/finish waypoint, add a new waypoint or select the start/finish waypoint first, then select the highest numbered waypoint.
 
-After you have set your waypoints, you can save them as a race.  Type `/races save myrace` to save the waypoints as 'myrace'.  'myrace' must not exist.  You cannot save unless there is more than one waypoint in the race.  If you want to overwrite an existing race, type `/races overwrite myrace`.
+If you are editing waypoints from scratch or you have changed any waypoints of a saved race and start a race, the best lap times will not be saved.  A change to a saved race means adding, deleting, moving, combining start/finish, or separating start/finish waypoints.  Changes can only be undone by reloading the saved race.  If you are starting from scratch or made any changes, you must save or overwrite the race to allow best lap times to be saved.  Note that overwriting a race will delete its existing best lap times.
+
+After you have set your waypoints, you can save them as a race.  Type `/races save myrace` to save the waypoints as 'myrace'.  'myrace' must not exist.  You cannot save unless there are two or more waypoints in the race.  The best lap times for this race will be empty.  If you want to overwrite an existing race, type `/races overwrite myrace`.  Overwriting a race will delete the best lap times of that race.
 
 To list the races you have saved, type `/races list`.  If you cannot see all the race names, type 'T' for chat and use the Page Up and Page Down keys to scroll.  Type Esc when done.
 
