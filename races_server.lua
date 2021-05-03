@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 local STATE_REGISTERING = 0
 local STATE_RACING = 1
 
-local races = {} -- races[] = {state, laps, timeout, waypointCoords[] = {x, y, z}, public, loadedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
 
 local raceDataFile = "./resources/races/raceData.json"
 
@@ -162,9 +162,9 @@ local function savePlayerData(public, source, data)
 end
 
 local function updateBestLapTimes(index)
-    local playerRaces = loadPlayerData(races[index].public, index)
+    local playerRaces = loadPlayerData(races[index].publicRace, index)
     if playerRaces ~= nil then
-        local bestLaps = playerRaces[races[index].loadedRaceName].bestLaps
+        local bestLaps = playerRaces[races[index].savedRaceName].bestLaps
         for _, result in pairs(races[index].results) do
             if result.bestLapTime ~= -1 then
                 bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
@@ -178,8 +178,8 @@ local function updateBestLapTimes(index)
                 bestLaps[i] = nil
             end
         end
-        playerRaces[races[index].loadedRaceName].bestLaps = bestLaps
-        if false == savePlayerData(races[index].public, index, playerRaces) then
+        playerRaces[races[index].savedRaceName].bestLaps = bestLaps
+        if false == savePlayerData(races[index].publicRace, index, playerRaces) then
             notifyPlayer(index, "Save error updating best lap times.")
         end
     else
@@ -336,15 +336,24 @@ AddEventHandler("races:blt", function(public, raceName)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(laps, timeout, waypointCoords, public, loadedRaceName)
+AddEventHandler("races:register", function(laps, timeout, waypointCoords, publicRace, savedRaceName)
     local source = source
-    if laps ~= nil and timeout ~= nil and waypointCoords ~= nil and public ~= nil then
+    if laps ~= nil and timeout ~= nil and waypointCoords ~= nil and publicRace ~= nil then
         if laps > 0 then
             if timeout >= 0 then
                 if nil == races[source] then
-                    races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypointCoords = waypointCoords, public = public, loadedRaceName = loadedRaceName, numRacing = 0, players = {}, results = {}}
-                    TriggerClientEvent("races:register", -1, source, GetPlayerName(source), laps, waypointCoords[1], public, loadedRaceName)
-                    notifyPlayer(source, "Race registered.\n")
+                    local owner = GetPlayerName(source)
+                    races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
+                    TriggerClientEvent("races:register", -1, source, owner, laps, waypointCoords[1], publicRace, savedRaceName)
+                    local msg = "Registered "
+                    if nil == savedRaceName then
+                        msg = msg .. "private race "
+                    else
+                        msg = msg .. (true == publicRace and "public" or "private")
+                        msg = msg .. " race '" .. savedRaceName .. "' "
+                    end
+                    msg = msg .. ("owned by %s : %d lap(s).\n"):format(owner, laps)
+                    notifyPlayer(source, msg)
                 else
                     if STATE_RACING == races[source].state then
                         notifyPlayer(source, "Previous race already started.\n")
@@ -499,7 +508,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         for i, _ in pairs(races[index].players) do
                             TriggerClientEvent("races:results", i, races[index].results)
                         end
-                        if races[index].loadedRaceName ~= nil then
+                        if races[index].savedRaceName ~= nil then
                             updateBestLapTimes(index)
                         end
                         races[index] = nil -- delete race after all players finish

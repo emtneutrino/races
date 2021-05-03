@@ -378,10 +378,10 @@ RegisterCommand("races", function(_, args)
     elseif "listPublic" == args[1] then
         TriggerServerEvent("races:list", true)
     elseif "register" == args[1] then
-        local laps = tonumber(args[2]) or 1
-        if laps > 0 then
-            local timeout = tonumber(args[3]) or (2 * 60)
-            if timeout >= 0 then
+        local laps = nil == args[2] and 1 or tonumber(args[2])
+        if laps ~= nil and laps > 0 then
+            local timeout = nil == args[3] and (2 * 60) or tonumber(args[3])
+            if timeout ~= nil and timeout >= 0 then
                 if STATE_IDLE == raceState then
                     if #waypointBlips > 1 then
                         if laps < 2 then
@@ -430,8 +430,8 @@ RegisterCommand("races", function(_, args)
             notifyPlayer("Cannot list competitors.  Not joined to any race.\n")
         end
     elseif "start" == args[1] then
-        local delay = tonumber(args[2]) or 30
-        if delay >= 0 then
+        local delay = nil == args[2] and 30 or tonumber(args[2])
+        if delay ~= nil and delay >= 0 then
             TriggerServerEvent("races:start", delay)
         else
             notifyPlayer("Cannot start.  Invalid delay.\n")
