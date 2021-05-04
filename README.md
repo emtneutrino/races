@@ -36,7 +36,7 @@ There are four sample races:  '00', '01', '02' and '03' saved in the public race
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
-Type `/races edit` until you see the message 'Editing started'.  Add waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a green circled star will appear in the waypoint map and a green cylinder checkpoint will appear in the world.  All players will see the starting waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the starting waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
+Type `/races edit` until you see the message 'Editing started'.  Add at least 2 waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a green circled star will appear in the waypoint map and a green cylinder checkpoint will appear in the world.  All players will see the starting waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the starting waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
 
 QUICK GUIDE FOR RACING
 ----------------------
