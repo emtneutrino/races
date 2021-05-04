@@ -98,7 +98,7 @@ After all racers finish, the race results will be broadcast to players who joine
 
 If you want to look at the race results again, type `/races results`.  If you cannot see all the results, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-You can unregister your previously registered race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  If you already started the race, it will be canceled.
+You can unregister your previously registered race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
 
 If you want to leave a race you joined, type `/races leave`.  **IF YOU LEAVE AFTER THE RACE HAS STARTED, YOU WILL DNF.**
 
