@@ -32,7 +32,7 @@ COMMANDS
 
 SAMPLE RACES
 ------------
-There are four sample races:  '00', '01', '02' and '03' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the starting waypoint of the race indicated by a green circled star on the waypoint map and a green cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
+There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the starting waypoint of the race indicated by a green circled star on the waypoint map and a green cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
