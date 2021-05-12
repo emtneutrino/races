@@ -86,7 +86,7 @@ To list all competitors in the race that you joined, type `/races rivals`.  You 
 
 Once everyone who wants to join your registered race have joined, you can start the race.  Type `/races start 10` to start the race with a delay of 10 seconds before the actual start.  If you do not indicate a delay, the default is 30 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.
 
-The current race waypoint will have a yellow cylinder checkpoint appear in the world.  A blue route will be shown in your map to the current race waypoint.
+The current race waypoint will have a yellow cylinder checkpoint appear in the world.  Only the next three waypoints will be shown on the minimap at a time.  A blue route will be shown in your map to the current race waypoint.  Once you reach the current waypoint, it will disappear and the next third waypoint along the route will appear.  Once you leave or finish the race, all the race waypoints will reappear.
 
 Your current position, lap, waypoint, lap time, best lap time, total time and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
 

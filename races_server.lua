@@ -347,12 +347,12 @@ AddEventHandler("races:register", function(laps, timeout, waypointCoords, public
                     TriggerClientEvent("races:register", -1, source, owner, laps, waypointCoords[1], publicRace, savedRaceName)
                     local msg = "Registered "
                     if nil == savedRaceName then
-                        msg = msg .. "private race "
+                        msg = msg .. "unsaved race "
                     else
-                        msg = msg .. (true == publicRace and "public" or "private")
-                        msg = msg .. " race '" .. savedRaceName .. "' "
+                        msg = msg .. (true == publicRace and "publicly" or "privately")
+                        msg = msg .. " saved race '" .. savedRaceName .. "' "
                     end
-                    msg = msg .. ("owned by %s : %d lap(s).\n"):format(owner, laps)
+                    msg = msg .. ("by %s : %d lap(s).\n"):format(owner, laps)
                     notifyPlayer(source, msg)
                 else
                     if STATE_RACING == races[source].state then
@@ -462,7 +462,7 @@ AddEventHandler("races:start", function(delay)
         if races[source] ~= nil then
             if STATE_REGISTERING == races[source].state then
                 if delay >= 0 then
-                    if next(races[source].players) ~= nil then
+                    if races[source].numRacing > 0 then
                         races[source].state = STATE_RACING
                         for i, _ in pairs(races[source].players) do
                             TriggerClientEvent("races:start", i, delay)
@@ -555,6 +555,7 @@ Citizen.CreateThread(function()
                         break
                     end
 
+                    -- player.data will be travel distance to next waypoint or finish time; finish time will be -1 if player DNF
                     -- if player.data == -1 then player did not finish race - do not include in sortedPlayers
                     if player.data ~= -1 then
                         sortedPlayers[#sortedPlayers + 1] = {index = i, numWaypointsPassed = player.numWaypointsPassed, data = player.data}
@@ -567,7 +568,7 @@ Citizen.CreateThread(function()
                     end)
                     -- players sorted into sortedPlayers table
                     for position, sortedPlayer in pairs(sortedPlayers) do
-                        TriggerClientEvent("races:position", sortedPlayer.index, position, #sortedPlayers)
+                        TriggerClientEvent("races:position", sortedPlayer.index, position, #sortedPlayers) -- not needed if player finished already
                     end
                 end
             end
