@@ -1074,7 +1074,7 @@ Citizen.CreateThread(function()
                         msg = msg .. " saved race '" .. start.savedRaceName .. "' "
                     end
                     msg = msg .. ("registered by %s : %d lap(s).\n"):format(start.owner, start.laps)
-                    drawMsg(0.34, 0.50, msg, 0.7)
+                    drawMsg(0.24, 0.50, msg, 0.7)
                     if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                         TriggerServerEvent('races:join', index)
                     end
