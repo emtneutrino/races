@@ -220,10 +220,7 @@ end
 
 local function restoreBlips()
     for i = 1, #waypoints do
-        if nil == waypoints[i].blip then
-            waypoints[i].blip = AddBlipForCoord(waypoints[i].coord.x, waypoints[i].coord.y, waypoints[i].coord.z)
-            setBlipProperties(i)
-        end
+        SetBlipDisplay(waypoints[i].blip, 2)
     end
 end
 
@@ -686,8 +683,7 @@ AddEventHandler("races:start", function(delay)
                 waypointCoord = waypoints[2].coord
                 createRaceCheckpoint(checkpointType, waypointCoord)
 
-                RemoveBlip(waypoints[1].blip)
-                waypoints[1].blip = nil
+                SetBlipDisplay(waypoints[1].blip, 0)
 
                 origNumVisible = numVisible
                 if numVisible >= #waypoints then
@@ -695,8 +691,7 @@ AddEventHandler("races:start", function(delay)
                 end
 
                 for i = numVisible + 2, #waypoints do
-                    RemoveBlip(waypoints[i].blip)
-                    waypoints[i].blip = nil
+                    SetBlipDisplay(waypoints[i].blip, 0)
                 end
 
                 SetBlipRoute(waypoints[2].blip, true)
@@ -1053,12 +1048,10 @@ Citizen.CreateThread(function()
                                 checkpointType = (#waypoints == curr and numLaps == currentLap) and finishCheckpoint or midCheckpoint
                             end
 
-                            RemoveBlip(waypoints[prev].blip)
-                            waypoints[prev].blip = nil
+                            SetBlipDisplay(waypoints[prev].blip, 0)
 
                             if true == addLast then
-                                waypoints[last].blip = AddBlipForCoord(waypoints[last].coord.x, waypoints[last].coord.y, waypoints[last].coord.z)
-                                setBlipProperties(last)
+                                SetBlipDisplay(waypoints[last].blip, 2)
                             end
 
                             SetBlipRoute(waypoints[curr].blip, true)
