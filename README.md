@@ -108,7 +108,7 @@ To toggle the display of the speedometer, type `/races speedo`.  The speedometer
 
 To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
-Type `/races panel` to show the command button panel.  All /races commands have a corresponding button and field if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and field if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing `/races save nicerace`.
 
