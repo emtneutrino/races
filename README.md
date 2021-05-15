@@ -74,7 +74,7 @@ If you want to delete a saved race, type `/races delete myrace` to delete 'myrac
 
 You can load saved waypoints by typing `/races load myrace` to load a race named 'myrace'.  This will clear any current waypoints and load the saved ones.  You cannot load saved waypoints if you have joined a race.  Leave the race or finish it first.
 
-Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Best lap times are recorded for a race if it was loaded, saved or overwritten without changing any waypoints afterwards.  If you cannot see all the best lap times, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Best lap times are recorded after a race has finished if it was loaded, saved or overwritten without changing any waypoints after loading, saving or overwriting.  If you cannot see all the best lap times, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
 `save`, `overwrite`, `list`, `delete`, `load` and `blt` operate on your private list of races.  No one else will be able to view or modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic`, `loadPublic` and `bltPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
 
@@ -96,7 +96,7 @@ After the first racer finishes, there will be a DNF timeout for other racers.  T
 
 As racers finish, their finishing time, best lap time and vehicle name will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
 
-After all racers finish, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.
+After all racers finish, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
 
 If you want to look at the race results again, type `/races results`.  If you cannot see all the results, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
@@ -108,7 +108,7 @@ To toggle the display of the speedometer, type `/races speedo`.  The speedometer
 
 To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
-Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and field if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and argument field(s) if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing `/races save nicerace`.
 

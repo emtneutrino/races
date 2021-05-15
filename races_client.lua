@@ -239,17 +239,17 @@ end
 local function edit()
     if STATE_IDLE == raceState then
         raceState = STATE_EDITING
-        raceCheckpoint = nil
-        lastSelectedWaypoint = 0
         SetWaypointOff()
         notifyPlayer("Editing started.\n")
     elseif STATE_EDITING == raceState then
         raceState = STATE_IDLE
         if raceCheckpoint ~= nil then
             DeleteCheckpoint(raceCheckpoint)
+            raceCheckpoint = nil
         end
         if lastSelectedWaypoint > 0 then
             SetBlipColour(waypoints[lastSelectedWaypoint].blip, waypoints[lastSelectedWaypoint].color)
+            lastSelectedWaypoint = 0
         end
         notifyPlayer("Editing stopped.\n")
     else
@@ -259,17 +259,17 @@ end
 
 local function clear()
     if STATE_IDLE == raceState then
-        savedRaceName = nil
         deleteWaypointBlips()
+        savedRaceName = nil
         notifyPlayer("Waypoints cleared.\n")
     elseif STATE_EDITING == raceState then
+        deleteWaypointBlips()
         if raceCheckpoint ~= nil then
             DeleteCheckpoint(raceCheckpoint)
             raceCheckpoint = nil
         end
         lastSelectedWaypoint = 0
         savedRaceName = nil
-        deleteWaypointBlips()
         notifyPlayer("Waypoints cleared.\n")
     else
         notifyPlayer("Cannot clear waypoints.  Leave race first.\n")
@@ -765,6 +765,7 @@ AddEventHandler("races:unregister", function(index)
             restoreBlips()
             SetBlipRoute(waypoints[1].blip, true)
             SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
+            numVisible = origNumVisible
             speedo = false
             notifyPlayer("Race canceled.\n")
         end

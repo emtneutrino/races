@@ -325,9 +325,9 @@ AddEventHandler("races:register", function(laps, timeout, waypointCoords, public
                     notifyPlayer(source, msg)
                 else
                     if STATE_RACING == races[source].state then
-                        notifyPlayer(source, "Previous race already started.\n")
+                        notifyPlayer(source, "Cannot register.  Previous race in progress.\n")
                     else
-                        notifyPlayer(source, "Previous race registered.  Unregister first.\n")
+                        notifyPlayer(source, "Cannot register.  Previous race registered.  Unregister first.\n")
                     end
                 end
             else
@@ -363,10 +363,10 @@ AddEventHandler("races:join", function(index)
                 races[index].players[source] = {numWaypointsPassed = -1, data = -1}
                 TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
             else
-                notifyPlayer(source, "Cannot join race in progress.\n")
+                notifyPlayer(source, "Cannot join.  Race in progress.\n")
             end
         else
-            notifyPlayer(source, "Cannot join unkown race.\n")
+            notifyPlayer(source, "Cannot join.  Race does not exist.\n")
         end
     else
         notifyPlayer(source, "Ignoring join event.  Invalid parameters.")
@@ -386,7 +386,7 @@ AddEventHandler("races:leave", function(index)
                     notifyPlayer(source, "Cannot leave.  Not a member of this race.\n")
                 end
             else
-                notifyPlayer(source, "Cannot leave.  Race already started.\n")
+                notifyPlayer(source, "Cannot leave.  Race in progress.\n")
             end
         else
             notifyPlayer(source, "Cannot leave.  Race does not exist.\n")
@@ -444,10 +444,10 @@ AddEventHandler("races:start", function(delay)
                     notifyPlayer(source, "Cannot start.  Invalid delay.\n")
                 end
             else
-                notifyPlayer(source, "Cannot start.  Race already started.\n")
+                notifyPlayer(source, "Cannot start.  Race in progress.\n")
             end
         else
-            notifyPlayer(source, "Cannot start.  No race registered.\n")
+            notifyPlayer(source, "Cannot start.  Race does not exist.\n")
         end
     else
         notifyPlayer(source, "Ignoring start event.  Invalid parameters.")
@@ -500,9 +500,15 @@ RegisterNetEvent("races:report")
 AddEventHandler("races:report", function(index, numWaypointsPassed, dist)
     local source = source
     if index ~= nil and numWaypointsPassed ~= nil and dist ~= nil then
-        if races[index] ~= nil and races[index].players[source] ~= nil then
-            races[index].players[source].numWaypointsPassed = numWaypointsPassed
-            races[index].players[source].data = dist
+        if races[index] ~= nil then
+            if races[index].players[source] ~= nil then
+                races[index].players[source].numWaypointsPassed = numWaypointsPassed
+                races[index].players[source].data = dist
+            else
+                notifyPlayer(source, "Cannot report.  Not a member of this race.")
+            end
+        else
+            notifyPlayer(source, "Cannot report.  Race does not exist.")
         end
     else
         notifyPlayer(source, "Ignoring report event.  Invalid parameters.")
