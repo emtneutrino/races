@@ -8,8 +8,8 @@ server_script 'races_server.lua'
 
 ui_page "html/index.html"
 files {
+    'html/index.css',
     'html/index.html',
     'html/index.js',
-    'html/index.css',
     'html/reset.css'
 }
