@@ -28,7 +28,9 @@ COMMANDS
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races results` - list latest race results\
 `/races speedo` - toggle display of speedometer\
-`/races car (name)` - spawn a car; (name) defaults to 'adder'
+`/races car (name)` - spawn a car; (name) defaults to 'adder'\
+`/races panel` - display command button panel
+
 
 SAMPLE RACES
 ------------
@@ -106,6 +108,8 @@ To toggle the display of the speedometer, type `/races speedo`.  The speedometer
 
 To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
+Type `/races panel` to show the command button panel.  All /races commands have a corresponding button and field if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing `/races save nicerace`.
 
 Multiple races can be registered and started simultaneously by different players.
@@ -132,6 +136,9 @@ Race results\
 
 Editing waypoints\
 <img src="screenshots/Screenshot%20(7).png" width="800">
+
+Command button panel\
+<img src="screenshots/Screenshot%20(8).png" width="800">
 
 LICENSE
 -------

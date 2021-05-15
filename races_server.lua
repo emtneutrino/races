@@ -45,41 +45,6 @@ local function notifyPlayer(source, msg)
     })
 end
 
-local function convert()
-    local raceData = nil
-
-    local file = io.open(raceDataFile, "r")
-    if file ~= nil then
-        raceData = json.decode(file:read("*a"));
-        io.close(file)
-    end
-
-    for license, playerRaces in pairs(raceData) do
-        local newPlayerRaces = {}
-        for name, waypointCoords in pairs(playerRaces) do
-            newPlayerRaces[name] = {waypointCoords = waypointCoords, bestLaps = {}}
---[[
-            print(("license: %s; name: %s"):format(license, name))
-            for i, waypoint in ipairs(waypointCoords) do
-                print(("%d: %f, %f, %f"):format(i, waypoint.x, waypoint.y, waypoint.z))
-            end
---]]
-        end
-        raceData[license] = newPlayerRaces
-    end
-
-    file = io.open("./resources/races/raceData.new.json", "w+")
-    if file ~= nil then
-        file:write(json.encode(raceData))
-        io.close(file)
-    end
-
---[[
-raceData[license] = playerRaces[name] = waypointCoords[i] = waypoint = {x, y, z}
-raceData[license] = playerRaces[name] = {waypointCoords[] = {x, y, z}, bestLaps[] = {playerName, bestLapTime, vehicleName}}
---]]
-end
-
 local function loadPlayerData(public, source)
     local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
@@ -164,23 +129,27 @@ end
 local function updateBestLapTimes(index)
     local playerRaces = loadPlayerData(races[index].publicRace, index)
     if playerRaces ~= nil then
-        local bestLaps = playerRaces[races[index].savedRaceName].bestLaps
-        for _, result in pairs(races[index].results) do
-            if result.bestLapTime ~= -1 then
-                bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
+        if playerRaces[races[index].savedRaceName] ~= nil then -- saved race still exists - not deleted in middle of race
+            local bestLaps = playerRaces[races[index].savedRaceName].bestLaps
+            for _, result in pairs(races[index].results) do
+                if result.bestLapTime ~= -1 then
+                    bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
+                end
             end
-        end
-        table.sort(bestLaps, function(p0, p1)
-            return p0.bestLapTime < p1.bestLapTime
-        end)
-        if #bestLaps > 10 then
-            for i = 11, #bestLaps do
-                bestLaps[i] = nil
+            table.sort(bestLaps, function(p0, p1)
+                return p0.bestLapTime < p1.bestLapTime
+            end)
+            if #bestLaps > 10 then
+                for i = 11, #bestLaps do
+                    bestLaps[i] = nil
+                end
             end
-        end
-        playerRaces[races[index].savedRaceName].bestLaps = bestLaps
-        if false == savePlayerData(races[index].publicRace, index, playerRaces) then
-            notifyPlayer(index, "Save error updating best lap times.")
+            playerRaces[races[index].savedRaceName].bestLaps = bestLaps
+            if false == savePlayerData(races[index].publicRace, index, playerRaces) then
+                notifyPlayer(index, "Save error updating best lap times.")
+            end
+        else
+            notifyPlayer(index, "Cannot save best lap times.  Race '" .. races[index].savedRaceName .. "' has been deleted.")
         end
     else
         notifyPlayer(index, "Load error updating best lap times.")

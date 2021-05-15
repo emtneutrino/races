@@ -1,0 +1,115 @@
+body {
+    background: none !important;
+}
+
+#main {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(127, 127, 127);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(63, 63, 63);
+    height: 950px;
+    width: 600px;
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#load {
+    width: 15%;
+}
+
+#save {
+    width: 15%;
+}
+
+#overwrite {
+    width: 15%;
+}
+
+#delete {
+    width: 15%;
+}
+
+#blt {
+    width: 15%;
+}
+
+#list {
+    width: 15%;
+}
+
+#loadPublic {
+    width: 15%;
+}
+
+#savePublic {
+    width: 15%;
+}
+
+#overwritePublic {
+    width: 15%;
+}
+
+#deletePublic {
+    width: 15%;
+}
+
+#bltPublic {
+    width: 15%;
+}
+
+#listPublic {
+    width: 15%;
+}
+
+#register {
+    width: 20%;
+}
+
+#laps {
+    width: 35%;
+}
+
+#timeout {
+    width: 35%;
+}
+
+#leave {
+    width: 30%;
+}
+
+#rivals {
+    width: 30%;
+}
+
+#start {
+    width: 30%;
+}
+
+#delay {
+    width: 50%;
+}
+
+#car {
+    width: 30%;
+}
+
+#carName {
+    width: 50%;
+}
+
+button {
+    background-color: rgb(127, 127, 127);
+    padding: 12px;
+}
+
+input {
+    margin-bottom: 5px;
+    width: 90%;
+    font-size: 15px;
+    padding: 12px;
+}
