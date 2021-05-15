@@ -65,8 +65,8 @@ local savedRaceName = nil -- name of saved waypoints - nil if waypoints not save
 local waypoints = {} -- waypoints[] = {blip, coord, sprite, color, number, name}
 local startIsFinish = false -- flag indicating if start and finish are same waypoint
 
-local numVisible = 3 -- maximum number of waypoints visible at one time during race
-local origNumVisible = numVisible -- original value of numVisible
+local maxNumVisible = 3 -- maximum number of waypoints visible during a race
+local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
 
 local numLaps = -1 -- number of laps in current race
 local currentLap = -1 -- current lap
@@ -378,7 +378,6 @@ local function leave()
         restoreBlips()
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
-        numVisible = origNumVisible
         speedo = false
         notifyPlayer("Left race.\n")
     else
@@ -765,7 +764,6 @@ AddEventHandler("races:unregister", function(index)
             restoreBlips()
             SetBlipRoute(waypoints[1].blip, true)
             SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
-            numVisible = origNumVisible
             speedo = false
             notifyPlayer("Race canceled.\n")
         end
@@ -840,9 +838,10 @@ AddEventHandler("races:start", function(delay)
 
                 SetBlipDisplay(waypoints[1].blip, 0)
 
-                origNumVisible = numVisible
-                if numVisible >= #waypoints then
+                if maxNumVisible >= #waypoints then
                     numVisible = #waypoints - 1
+                else
+                    numVisible = maxNumVisible
                 end
 
                 for i = numVisible + 2, #waypoints do
@@ -1156,7 +1155,6 @@ Citizen.CreateThread(function()
                         restoreBlips()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
-                        numVisible = origNumVisible
                         speedo = false
                     end
                 end
@@ -1183,7 +1181,6 @@ Citizen.CreateThread(function()
                                 restoreBlips()
                                 SetBlipRoute(waypoints[1].blip, true)
                                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
-                                numVisible = origNumVisible
                                 speedo = false
                             end
                         end
