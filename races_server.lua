@@ -45,6 +45,10 @@ local function notifyPlayer(source, msg)
     })
 end
 
+local function sendMessage(source, msg)
+    TriggerClientEvent("races:message", source, msg)
+end
+
 local function loadPlayerData(public, source)
     local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
@@ -165,13 +169,13 @@ AddEventHandler("races:load", function(public, raceName)
             if playerRaces[raceName] ~= nil then
                 TriggerClientEvent("races:load", source, public, raceName, playerRaces[raceName].waypointCoords)
             else
-                notifyPlayer(source, "Cannot load.  '" .. raceName .. "' not found.\n")
+                sendMessage(source, "Cannot load.  '" .. raceName .. "' not found.\n")
             end
         else
-            notifyPlayer(source, "Cannot load.  Error loading data.\n")
+            sendMessage(source, "Cannot load.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring load event.  Invalid parameters.")
+        sendMessage(source, "Ignoring load event.  Invalid parameters.")
     end
 end)
 
@@ -186,20 +190,20 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
                 if true == savePlayerData(public, source, playerRaces) then
                     TriggerClientEvent("races:save", source, public, raceName)
                 else
-                    notifyPlayer(source, "Error saving '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error saving '" .. raceName .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwritePublic %s'.\n"):format(raceName, raceName))
+                    sendMessage(source, ("Public race '%s' exists.  Do public overwrite instead.\n"):format(raceName))
                 else
-                    notifyPlayer(source, ("'%s' exists.  Type '/races overwrite %s'.\n"):format(raceName, raceName))
+                    sendMessage(source, ("Private race '%s' exists.  Do private overwrite instead.\n"):format(raceName))
                 end
             end
         else
-            notifyPlayer(source, "Cannot save.  Error loading data.\n")
+            sendMessage(source, "Cannot save.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring save event.  Invalid parameters.")
+        sendMessage(source, "Ignoring save event.  Invalid parameters.")
     end
 end)
 
@@ -214,20 +218,20 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
                 if true == savePlayerData(public, source, playerRaces) then
                     TriggerClientEvent("races:overwrite", source, public, raceName)
                 else
-                    notifyPlayer(source, "Error overwriting '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error overwriting '" .. raceName .. "'.\n")
                 end
             else
                 if true == public then
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races savePublic %s'.\n"):format(raceName, raceName))
+                    sendMessage(source, ("Public race '%s' does not exist.  Do public save instead.\n"):format(raceName))
                 else
-                    notifyPlayer(source, ("'%s' does not exist.  Type '/races save %s'.\n"):format(raceName, raceName))
+                    sendMessage(source, ("Private race '%s' does not exist.  Do private save instead.\n"):format(raceName))
                 end
             end
         else
-            notifyPlayer(source, "Cannot overwrite.  Error loading data.\n")
+            sendMessage(source, "Cannot overwrite.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring overwrite event.  Invalid parameters.")
+        sendMessage(source, "Ignoring overwrite event.  Invalid parameters.")
     end
 end)
 
@@ -243,18 +247,37 @@ AddEventHandler("races:delete", function(public, raceName)
                     local msg = "Deleted "
                     msg = msg .. (true == public and "public" or "private")
                     msg = msg .. " race '" .. raceName .. "'.\n"
-                    notifyPlayer(source, msg)
+                    sendMessage(source, msg)
                 else
-                    notifyPlayer(source, "Error deleting '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error deleting '" .. raceName .. "'.\n")
                 end
             else
-                notifyPlayer(source, "Cannot delete.  '" .. raceName .. "' not found.\n")
+                sendMessage(source, "Cannot delete.  '" .. raceName .. "' not found.\n")
             end
         else
-            notifyPlayer(source, "Cannot delete.  Error loading data.\n")
+            sendMessage(source, "Cannot delete.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring delete event.  Invalid parameters.")
+        sendMessage(source, "Ignoring delete event.  Invalid parameters.")
+    end
+end)
+
+RegisterNetEvent("races:blt")
+AddEventHandler("races:blt", function(public, raceName)
+    local source = source
+    if public ~= nil and raceName ~= nil then
+        local playerRaces = loadPlayerData(public, source)
+        if playerRaces ~= nil then
+            if playerRaces[raceName] ~= nil then
+                TriggerClientEvent("races:blt", source, public, raceName, playerRaces[raceName].bestLaps)
+            else
+                sendMessage(source, "Cannot list best lap times.  '" .. raceName .. "' not found.\n")
+            end
+        else
+            sendMessage(source, "Cannot list best lap times.  Error loading data.\n")
+        end
+    else
+        sendMessage(source, "Ignoring best lap times event.  Invalid parameters.")
     end
 end)
 
@@ -273,35 +296,16 @@ AddEventHandler("races:list", function(public)
                 empty = false
             end
             if false == empty then
-                notifyPlayer(source, msg)
+                sendMessage(source, msg)
             else
-                notifyPlayer(source, "No saved races.\n")
+                sendMessage(source, "No saved races.\n")
             end
         else
-            notifyPlayer(source, "Cannot list.  Error loading data.\n")
+            sendMessage(source, "Cannot list.  Error loading data.\n")
         end
     else
-        notifyPlayer(source, "Ignoring list event.  Invalid parameters.")
+        sendMessage(source, "Ignoring list event.  Invalid parameters.")
    end
-end)
-
-RegisterNetEvent("races:blt")
-AddEventHandler("races:blt", function(public, raceName)
-    local source = source
-    if public ~= nil and raceName ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if playerRaces[raceName] ~= nil then
-                TriggerClientEvent("races:blt", source, public, raceName, playerRaces[raceName].bestLaps)
-            else
-                notifyPlayer(source, "Cannot list best lap times.  '" .. raceName .. "' not found.\n")
-            end
-        else
-            notifyPlayer(source, "Cannot list best lap times.  Error loading data.\n")
-        end
-    else
-        notifyPlayer(source, "Ignoring best lap times event.  Invalid parameters.")
-    end
 end)
 
 RegisterNetEvent("races:register")
@@ -322,22 +326,22 @@ AddEventHandler("races:register", function(laps, timeout, waypointCoords, public
                         msg = msg .. " saved race '" .. savedRaceName .. "' "
                     end
                     msg = msg .. ("by %s : %d lap(s).\n"):format(owner, laps)
-                    notifyPlayer(source, msg)
+                    sendMessage(source, msg)
                 else
                     if STATE_RACING == races[source].state then
-                        notifyPlayer(source, "Cannot register.  Previous race in progress.\n")
+                        sendMessage(source, "Cannot register.  Previous race in progress.\n")
                     else
-                        notifyPlayer(source, "Cannot register.  Previous race registered.  Unregister first.\n")
+                        sendMessage(source, "Cannot register.  Previous race registered.  Unregister first.\n")
                     end
                 end
             else
-                notifyPlayer(source, "Invalid timeout.\n")
+                sendMessage(source, "Invalid timeout.\n")
             end
         else
-            notifyPlayer(source, "Invalid laps.\n")
+            sendMessage(source, "Invalid laps.\n")
         end
     else
-        notifyPlayer(source, "Ignoring register event.  Invalid parameters.")
+        sendMessage(source, "Ignoring register event.  Invalid parameters.")
     end
 end)
 
@@ -347,9 +351,90 @@ AddEventHandler("races:unregister", function()
     if races[source] ~= nil then
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
-        notifyPlayer(source, "Race unregistered.\n")
+        sendMessage(source, "Race unregistered.\n")
     else
-        notifyPlayer(source, "Cannot unregister.  No race registered.\n")
+        sendMessage(source, "Cannot unregister.  No race registered.\n")
+    end
+end)
+
+RegisterNetEvent("races:leave")
+AddEventHandler("races:leave", function(index)
+    local source = source
+    if index ~= nil then
+        if races[index] ~= nil then
+            if STATE_REGISTERING == races[index].state then
+                if races[index].players[source] ~= nil then
+                    races[index].players[source] = nil
+                    races[index].numRacing = races[index].numRacing - 1
+                else
+                    sendMessage(source, "Cannot leave.  Not a member of this race.\n")
+                end
+            else
+                sendMessage(source, "Cannot leave.  Race in progress.\n")
+            end
+        else
+            sendMessage(source, "Cannot leave.  Race does not exist.\n")
+        end
+    else
+        sendMessage(source, "Ignoring leave event.  Invalid parameters.")
+    end
+end)
+
+RegisterNetEvent("races:rivals")
+AddEventHandler("races:rivals", function(index)
+    local source = source
+    if index ~= nil then
+        if races[index] ~= nil then
+            if races[index].players[source] ~= nil then
+                local empty = true
+                local msg = "Competitors:\n"
+                for i, _ in pairs(races[index].players) do
+                    msg = msg .. GetPlayerName(i) .. "\n"
+                    empty = false
+                end
+                if false == empty then
+                    sendMessage(source, msg)
+                else
+                    sendMessage(source, "No competitors yet.\n")
+                end
+            else
+                sendMessage(source, "Cannot list competitors.  Not a member of this race.\n")
+            end
+        else
+            sendMessage(source, "Cannot list competitors.  Race does not exist.\n")
+        end
+    else
+        sendMessage(source, "Ignoring rivals event.  Invalid parameters.")
+    end
+end)
+
+RegisterNetEvent("races:start")
+AddEventHandler("races:start", function(delay)
+    local source = source
+    if delay ~= nil then
+        if races[source] ~= nil then
+            if STATE_REGISTERING == races[source].state then
+                if delay >= 0 then
+                    if races[source].numRacing > 0 then
+                        races[source].state = STATE_RACING
+                        for i, _ in pairs(races[source].players) do
+                            TriggerClientEvent("races:start", i, delay)
+                        end
+                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
+                    else
+                        sendMessage(source, "Cannot start.  No players have joined race.\n")
+                    end
+                else
+                    sendMessage(source, "Cannot start.  Invalid delay.\n")
+                end
+            else
+                sendMessage(source, "Cannot start.  Race in progress.\n")
+            end
+        else
+            sendMessage(source, "Cannot start.  Race does not exist.\n")
+        end
+    else
+        sendMessage(source, "Ignoring start event.  Invalid parameters.")
     end
 end)
 
@@ -370,87 +455,6 @@ AddEventHandler("races:join", function(index)
         end
     else
         notifyPlayer(source, "Ignoring join event.  Invalid parameters.")
-    end
-end)
-
-RegisterNetEvent("races:leave")
-AddEventHandler("races:leave", function(index)
-    local source = source
-    if index ~= nil then
-        if races[index] ~= nil then
-            if STATE_REGISTERING == races[index].state then
-                if races[index].players[source] ~= nil then
-                    races[index].players[source] = nil
-                    races[index].numRacing = races[index].numRacing - 1
-                else
-                    notifyPlayer(source, "Cannot leave.  Not a member of this race.\n")
-                end
-            else
-                notifyPlayer(source, "Cannot leave.  Race in progress.\n")
-            end
-        else
-            notifyPlayer(source, "Cannot leave.  Race does not exist.\n")
-        end
-    else
-        notifyPlayer(source, "Ignoring leave event.  Invalid parameters.")
-    end
-end)
-
-RegisterNetEvent("races:rivals")
-AddEventHandler("races:rivals", function(index)
-    local source = source
-    if index ~= nil then
-        if races[index] ~= nil then
-            if races[index].players[source] ~= nil then
-                local empty = true
-                local msg = "Competitors:\n"
-                for i, _ in pairs(races[index].players) do
-                    msg = msg .. GetPlayerName(i) .. "\n"
-                    empty = false
-                end
-                if false == empty then
-                    notifyPlayer(source, msg)
-                else
-                    notifyPlayer(source, "No competitors yet.\n")
-                end
-            else
-                notifyPlayer(source, "Cannot list competitors.  Not a member of this race.\n")
-            end
-        else
-            notifyPlayer(source, "Cannot list competitors.  Race does not exist.\n")
-        end
-    else
-        notifyPlayer(source, "Ignoring rivals event.  Invalid parameters.")
-    end
-end)
-
-RegisterNetEvent("races:start")
-AddEventHandler("races:start", function(delay)
-    local source = source
-    if delay ~= nil then
-        if races[source] ~= nil then
-            if STATE_REGISTERING == races[source].state then
-                if delay >= 0 then
-                    if races[source].numRacing > 0 then
-                        races[source].state = STATE_RACING
-                        for i, _ in pairs(races[source].players) do
-                            TriggerClientEvent("races:start", i, delay)
-                        end
-                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
-                    else
-                        notifyPlayer(source, "Cannot start.  No players have joined race.\n")
-                    end
-                else
-                    notifyPlayer(source, "Cannot start.  Invalid delay.\n")
-                end
-            else
-                notifyPlayer(source, "Cannot start.  Race in progress.\n")
-            end
-        else
-            notifyPlayer(source, "Cannot start.  Race does not exist.\n")
-        end
-    else
-        notifyPlayer(source, "Ignoring start event.  Invalid parameters.")
     end
 end)
 

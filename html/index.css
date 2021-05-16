@@ -6,7 +6,7 @@ body {
     text-align: center;
     font-size: 25px;
     padding: 25px;
-    color: rgb(127, 127, 127);
+    color: rgb(191, 191, 191);
     position: fixed;
     top: 50%;
     left: 50%;
@@ -100,6 +100,25 @@ body {
 
 #carName {
     width: 50%;
+}
+
+#reply {
+    text-align: center;
+    padding: 25px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(63, 63, 63);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#message {
+    text-align: left;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
 }
 
 button {
