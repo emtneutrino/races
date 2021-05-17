@@ -53,6 +53,11 @@ local registerSprite = 58 -- circled star
 local finishCheckpoint = 4 -- cylinder checkered
 local midCheckpoint = 45 -- cylinder
 
+local defaultLaps = 1 -- default number of laps in a race
+local defaultTimeout = 120 -- default DNF timeout
+local defaultDelay = 30 -- default race start delay
+local defaultVehicle = "adder" -- default spawned vehicle
+
 local leftSide = 0.43 -- left position of HUD
 local rightSide = 0.51 -- right position of HUD
 
@@ -344,9 +349,9 @@ local function list(public)
 end
 
 local function register(laps, timeout)
-    laps = nil == laps and 1 or tonumber(laps)
+    laps = nil == laps and defaultLaps or tonumber(laps)
     if laps ~= nil and laps > 0 then
-        timeout = nil == timeout and 120 or tonumber(timeout)
+        timeout = nil == timeout and defaultTimeout or tonumber(timeout)
         if timeout ~= nil and timeout >= 0 then
             if STATE_IDLE == raceState then
                 if #waypoints > 1 then
@@ -405,7 +410,7 @@ local function rivals()
 end
 
 local function start(delay)
-    delay = nil == delay and 30 or tonumber(delay)
+    delay = nil == delay and defaultDelay or tonumber(delay)
     if delay ~= nil and delay >= 0 then
         TriggerServerEvent("races:start", delay)
     else
@@ -451,7 +456,7 @@ local function setSpeedo()
 end
 
 local function car(vehicleHash)
-    vehicleHash = vehicleHash or "adder"
+    vehicleHash = vehicleHash or defaultVehicle
     if 1 == IsModelInCdimage(vehicleHash) and 1 == IsModelAVehicle(vehicleHash) then
         RequestModel(vehicleHash)
         while false == HasModelLoaded(vehicleHash) do
@@ -474,7 +479,11 @@ local function showPanel()
     panelShown = true
     SetNuiFocus(true, true)
     SendNUIMessage({
-        panel = "main"
+        panel = "main",
+        defaultLaps = defaultLaps,
+        defaultTimeout = defaultTimeout,
+        defaultDelay = defaultDelay,
+        defaultVehicle = defaultVehicle
     })
 end
 

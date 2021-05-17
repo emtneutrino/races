@@ -7,6 +7,10 @@ $(function() {
     window.addEventListener("message", function(event) {
         let data = event.data;
         if ("main" == data.panel) {
+            $("#laps").val(data.defaultLaps)
+            $("#timeout").val(data.defaultTimeout)
+            $("#delay").val(data.defaultDelay)
+            $("#carName").val(data.defaultVehicle)
             $("#main").show();
         } else {
             $("#main").hide();
