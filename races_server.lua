@@ -421,6 +421,7 @@ AddEventHandler("races:start", function(delay)
                             TriggerClientEvent("races:start", i, delay)
                         end
                         TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
+                        sendMessage(source, "Race started.\n")
                     else
                         sendMessage(source, "Cannot start.  No players have joined race.\n")
                     end
