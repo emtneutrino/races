@@ -12,8 +12,6 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgb(63, 63, 63);
-    height: 950px;
-    width: 600px;
     border: 2px solid rgb(255, 255, 255);
     border-radius: 7px;
 }
