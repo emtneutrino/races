@@ -153,7 +153,7 @@ local function updateBestLapTimes(index)
                 notifyPlayer(index, "Save error updating best lap times.")
             end
         else
-            notifyPlayer(index, "Cannot save best lap times.  Race '" .. races[index].savedRaceName .. "' has been deleted.")
+            notifyPlayer(index, "Cannot save best lap times.  Race has been deleted.")
         end
     else
         notifyPlayer(index, "Load error updating best lap times.")
