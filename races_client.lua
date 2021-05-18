@@ -30,36 +30,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local STATE_IDLE = 0
-local STATE_EDITING = 1
-local STATE_REGISTERING = 2
-local STATE_RACING = 3
+local STATE_IDLE <const> = 0
+local STATE_EDITING <const> = 1
+local STATE_REGISTERING <const> = 2
+local STATE_RACING <const> = 3
 local raceState = STATE_IDLE -- race state
 
-local startFinishBlipColor = 5 -- yellow
-local startBlipColor = 2 -- green
-local finishBlipColor = 0 -- white
-local midBlipColor = 38 -- dark blue
-local registerBlipColor = 2 -- green
-local selectedBlipColor = 1 -- red
-local blipRouteColor = 18 -- light blue
+local startFinishBlipColor <const> = 5 -- yellow
+local startBlipColor <const> = 2 -- green
+local finishBlipColor <const> = 0 -- white
+local midBlipColor <const> = 38 -- dark blue
+local registerBlipColor <const> = 2 -- green
+local selectedBlipColor <const> = 1 -- red
+local blipRouteColor <const> = 18 -- light blue
 
-local startFinishSprite = 38 -- checkered flag
-local startSprite = 38 -- checkered flag
-local finishSprite = 38 -- checkered flag
-local midSprite = 1 -- numbered circle
-local registerSprite = 58 -- circled star
+local startFinishSprite <const> = 38 -- checkered flag
+local startSprite <const> = 38 -- checkered flag
+local finishSprite <const> = 38 -- checkered flag
+local midSprite <const> = 1 -- numbered circle
+local registerSprite <const> = 58 -- circled star
 
-local finishCheckpoint = 4 -- cylinder checkered
-local midCheckpoint = 45 -- cylinder
+local finishCheckpoint <const> = 4 -- cylinder checkered
+local midCheckpoint <const> = 45 -- cylinder
 
-local defaultLaps = 1 -- default number of laps in a race
-local defaultTimeout = 120 -- default DNF timeout
-local defaultDelay = 30 -- default race start delay
-local defaultVehicle = "adder" -- default spawned vehicle
+local defaultLaps <const> = 1 -- default number of laps in a race
+local defaultTimeout <const> = 120 -- default DNF timeout
+local defaultDelay <const> = 30 -- default race start delay
+local defaultVehicle <const> = "adder" -- default spawned vehicle
 
-local leftSide = 0.43 -- left position of HUD
-local rightSide = 0.51 -- right position of HUD
+local leftSide <const> = 0.43 -- left position of HUD
+local rightSide <const> = 0.51 -- right position of HUD
 
 local lastSelectedWaypoint = 0 -- index of last selected waypoint
 
@@ -70,7 +70,7 @@ local savedRaceName = nil -- name of saved waypoints - nil if waypoints not save
 local waypoints = {} -- waypoints[] = {blip, coord, sprite, color, number, name}
 local startIsFinish = false -- flag indicating if start and finish are same waypoint
 
-local maxNumVisible = 3 -- maximum number of waypoints visible during a race
+local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
 
 local numLaps = -1 -- number of laps in current race
@@ -95,7 +95,7 @@ local DNFTimeout = -1 -- DNF timeout after first player finishes the race
 local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
-local vehicleName = "FEET" -- name of vehicle in which player started
+local vehicleName = nil -- name of vehicle in which player started
 
 local results = {} -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
 

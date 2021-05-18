@@ -30,12 +30,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local STATE_REGISTERING = 0
-local STATE_RACING = 1
+local STATE_REGISTERING <const> = 0
+local STATE_RACING <const> = 1
+
+local raceDataFile <const> = "./resources/races/raceData.json"
 
 local races = {} -- races[] = {state, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
-
-local raceDataFile = "./resources/races/raceData.json"
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
