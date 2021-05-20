@@ -47,9 +47,9 @@ local startFinishBlipColor <const> = 5 -- yellow
 local startBlipColor <const> = 2 -- green
 local finishBlipColor <const> = 0 -- white
 local midBlipColor <const> = 38 -- dark blue
-local selectedBlipColor <const> = 1 -- red
-
 local registerBlipColor <const> = 83 -- purple
+
+local selectedBlipColor <const> = 1 -- red
 
 local blipRouteColor <const> = 18 -- light blue
 
@@ -79,7 +79,7 @@ local raceIndex = -1 -- index of race player has joined
 local publicRace = false -- flag indicating if saved race is public or not
 local savedRaceName = nil -- name of saved waypoints - nil if waypoints not saved
 
-local waypoints = {} -- waypoints[] = {blip, coord, sprite, color, number, name}
+local waypoints = {} -- waypoints[] = {coord, checkpoint, blip, sprite, color, number, name}
 local startIsFinish = false -- flag indicating if start and finish are same waypoint
 
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
@@ -532,12 +532,16 @@ local function showPanel()
     })
 end
 
-local function editWaypoints(coord)
-
+local function editWaypoints(coord, map)
     selectedWaypoint = 0
     local minDist = -1.0
     for index, waypoint in pairs(waypoints) do
-        local dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
+        local dist = -1.0
+        if true == map then
+            dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, coord.z))
+        else
+            dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
+        end
         if dist < 10.0 then
             if -1.0 == minDist or dist < minDist then
                 minDist = dist
@@ -547,13 +551,16 @@ local function editWaypoints(coord)
     end
 
     if 0 == selectedWaypoint then -- no existing waypoint selected
-        local _, nodeCoord = GetClosestVehicleNode(coord.x, coord.y, coord.z, 1)
+        if true == map then
+            _, coord = GetClosestVehicleNode(coord.x, coord.y, coord.z, 1)
+        end
 
         if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists, add new waypoint
-            local blip = AddBlipForCoord(nodeCoord.x, nodeCoord.y, nodeCoord.z)
+            local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
             SetBlipAsShortRange(blip, true)
 
-            waypoints[#waypoints + 1] = {coord = nodeCoord, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+            waypoints[#waypoints + 1] = {coord = coord, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+
             startIsFinish = 1 == #waypoints and true or false
             setStartToFinishBlips()
             setStartToFinishCheckpoints()
@@ -562,10 +569,10 @@ local function editWaypoints(coord)
             DeleteCheckpoint(waypoints[lastSelectedWaypoint].checkpoint)
             local color = getCheckpointColor(selectedBlipColor)
             local checkpointType = 38 == waypoints[lastSelectedWaypoint].sprite and finishCheckpoint or midCheckpoint
-            waypoints[lastSelectedWaypoint].checkpoint = makeCheckpoint(checkpointType, nodeCoord, color, 127, lastSelectedWaypoint - 1)
+            waypoints[lastSelectedWaypoint].checkpoint = makeCheckpoint(checkpointType, coord, color, 127, lastSelectedWaypoint - 1)
 
-            SetBlipCoords(waypoints[lastSelectedWaypoint].blip, nodeCoord.x, nodeCoord.y, nodeCoord.z)
-            waypoints[lastSelectedWaypoint].coord = nodeCoord
+            SetBlipCoords(waypoints[lastSelectedWaypoint].blip, coord.x, coord.y, coord.z)
+            waypoints[lastSelectedWaypoint].coord = coord
 
             selectedWaypoint = lastSelectedWaypoint
         end
@@ -1215,11 +1222,9 @@ Citizen.CreateThread(function()
 
             if IsWaypointActive() then
                 SetWaypointOff()
-                local blipCoord = GetBlipCoords(GetFirstBlipInfoId(8))
-                local _, nodeCoord = GetClosestVehicleNode(blipCoord.x, blipCoord.y, blipCoord.z, 1)
-                editWaypoints(nodeCoord)
+                editWaypoints(GetBlipCoords(GetFirstBlipInfoId(8)), true)
             elseif IsControlJustReleased(0, 21) then -- left shift or A button or cross button
-                editWaypoints(pedCoord)
+                editWaypoints(pedCoord, false)
             elseif selectedWaypoint > 0 and IsControlJustReleased(2, 203) then -- space or X button or square button
                 DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
                 RemoveBlip(waypoints[selectedWaypoint].blip)
