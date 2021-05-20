@@ -137,11 +137,14 @@ Near finish\
 Race results\
 <img src="screenshots/Screenshot%20(6).png" width="800">
 
-Editing waypoints\
+Editing waypoints in waypoint map\
 <img src="screenshots/Screenshot%20(7).png" width="800">
 
-Command button panel\
+Editing waypoints in world\
 <img src="screenshots/Screenshot%20(8).png" width="800">
+
+Command button panel\
+<img src="screenshots/Screenshot%20(9).png" width="800">
 
 LICENSE
 -------
