@@ -1027,7 +1027,7 @@ AddEventHandler("races:start", function(delay)
                 local checkpointType = nil
                 if true == startIsFinish then
                     currentWaypoint = 1
-                    checkpointType = midCheckpoint
+                    checkpointType = plainCheckpoint
                 else
                     currentWaypoint = 2
                     checkpointType = (#waypoints == currentWaypoint and numLaps == currentLap) and finishCheckpoint or plainCheckpoint
