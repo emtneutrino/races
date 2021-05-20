@@ -31,18 +31,19 @@ COMMANDS
 `/races car (name)` - spawn a car; (name) defaults to 'adder'\
 `/races panel` - display command button panel
 
+**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`.**
 
 SAMPLE RACES
 ------------
-There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the starting waypoint of the race indicated by a green circled star on the waypoint map and a green cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
+There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
-Type `/races edit` until you see the message 'Editing started'.  Add at least 2 waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a green circled star will appear in the waypoint map and a green cylinder checkpoint will appear in the world.  All players will see the starting waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the starting waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
+Type `/races edit` until you see the message 'Editing started'.  Add at least 2 waypoints in the order desired.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  All players will see the registration waypoint of the race.  Racers who want to join, maybe including yourself, need to get close to the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
 
 QUICK GUIDE FOR RACING
 ----------------------
-Look for green circled stars on the waypoint map.  There will be corresponding green cylinder checkpoints in the world.  Get close to the starting waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The person who registered the race will be the one to start the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  If you want to see the results again, type `/races results`.
+Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  Get close to the registration waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The person who registered the race will be the one to start the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  If you want to see the results again, type `/races results`.
 
 COMMAND DETAILS
 ---------------
@@ -50,19 +51,21 @@ Type `/races` to see the list of available `/races` commands.  If you cannot see
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
-There will be five types of waypoints on the map.  A yellow checkered flag is a combined start/finish waypoint.  A green checkered flag is the start waypoint.  A white checkered flag is the finish waypoint.  A blue numbered circle is a waypoint along the race route.  A green circled star is a registration point.
+There are five types of waypoints.  Each waypoint will have a blip on the map and, when editing, a corresponding checkpoint in the world.  When you stop editing, all the checkpoints will disappear, but all the blips on the map will remain.  A combined start/finish waypoint is a yellow checkered flag blip/checkpoint.  A start waypoint is a green checkered flag blip/checkpoint.  A finish waypoint is a white checkered flag blip/checkpoint.  A waypoint that is not a start and/or finish waypoint is a blue numbered blip/checkpoint.  A registration waypoint is a purple blip/checkpoint which will remain even when editing is stopped.
 
-Adding a waypoint will always be added as the last waypoint (white checkered flag).  You cannot put a waypoint between two waypoints.  You also cannot put a waypoint before another waypoint.  A yellow cylinder checkpoint will appear in the world where you added the waypoint.
+Clicking on the waypoint map is done by moving the crosshairs on the map and pressing 'Left Shift' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  'Clicking' in the world is done by moving to the spot you want to 'click' and pressing 'Left Shift' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.
 
-Clicking an existing waypoint will select it and turn it red.  Clicking it again will unselect it and change it to its original color.  If you have a previously selected waypoint colored red, selecting a different waypoint will turn the different waypoint red and unselect your previous waypoint, changing it back to its original color.  A selected waypoint will have a yellow cylinder checkpoint appear in the world.  You can fine tune its placement by moving it to your desired location.
+Selecting a waypoint on the map is done by clicking on an existing blip.  This will turn the blip red.  The corresponding checkpoint in the world will also turn red.  Selecting a waypoint in the world is done by 'clicking' on an existing checkpoint.  This will turn the checkpoint red.  The corresponding blip on the map will also turn red.
 
-You can move an existing waypoint by selecting it, then click on where you want to move it.
+Adding a waypoint is done by clicking on an empty spot on the waypoint map or by 'clicking' on an empty spot in the world.  Waypoints will always be added as the last waypoint.  You cannot make an added waypoint come before an existing waypoint.  The first added waypoint will be a yellow checkered flag blip/checkpoint.  Subsequent added waypoints will be a white checkered flag blip/checkpoint.  Adding a waypoint will add a blip on the map and a corresponding checkpoint in the world.
 
-You can delete a waypoint by selecting it, then press spacebar or the X button on an Xbox controller or the square button on a Dualshock controller.
+You can move an existing blip on the map by selecting it, then clicking an empty spot where you want to move it.  This will also move the corresponding checkpoint in the world.  You can move a checkpoint in the world by selecting it, then 'clicking' on an empty spot where you want to move it.  This will also move the corresponding blip on the map.
+
+You can delete a waypoint by selecting it, then pressing 'Spacebar' on a keyboard, 'X' button on an Xbox controller or 'Square' button on a DualShock controller.
 
 For multi-lap races, the start and finish waypoint must to be the same.  Select the finish waypoint first (white checkered flag), then select the start waypoint (green checkered flag).  The start/finish waypoint will become a yellow checkered flag.
 
-If you want to separate the start/finish waypoint (yellow checkered flag), add a new waypoint (white checkered flag) or select the start/finish waypoint first (yellow checkered flag), then select the highest numbered waypoint (blue numbered circle).
+You can separate the start/finish waypoint (yellow checkered flag) in one of two ways.  The first way is by adding a new waypoint.  The second way is by selecting the start/finish waypoint (yellow checkered flag) first, then selecting the highest numbered blue waypoint.
 
 If you are editing waypoints from scratch or you have changed any waypoints of a saved race, then register and start a race, the best lap times will not be saved.  A change to a saved race means adding, deleting, moving, combining start/finish or separating start/finish waypoints.  Changes can only be undone by reloading the saved race.  If you are starting from scratch or made any changes, you must save or overwrite the race to allow best lap times to be saved.  **NOTE THAT OVERWRITING A RACE WILL DELETE ITS EXISTING BEST LAP TIMES.**
 
@@ -78,11 +81,11 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 
 `save`, `overwrite`, `list`, `delete`, `load` and `blt` operate on your private list of races.  No one else will be able to view or modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic`, `loadPublic` and `bltPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
 
-You can clear all waypoints by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
+You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  You cannot register your race unless there are two or more waypoints in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a green circled star will appear on the map and a green cylinder checkpoint will appear in the world.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
+After you have set your waypoints, you can register your race.  You cannot register your race unless there are two or more waypoints in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a purple circled star will appear on the map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
-All players who want to join the race, including you, will need to be near the green starting waypoint.  To join the race, type 'E' or press right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
+All players who want to join the race, including you, will need to be near the purple registration waypoint.  To join the race, type 'E' or press right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
 
 To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
@@ -108,7 +111,7 @@ To toggle the display of the speedometer, type `/races speedo`.  The speedometer
 
 To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
-Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and argument field(s) if needed.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another window as well as in chat.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing `/races save nicerace`.
 
