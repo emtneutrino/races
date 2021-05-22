@@ -454,7 +454,7 @@ local function rivals()
     end
 end
 
-local function start(delay)
+local function startRace(delay)
     delay = nil == delay and defaultDelay or tonumber(delay)
     if delay ~= nil and delay >= 0 then
         TriggerServerEvent("races:start", delay)
@@ -534,7 +534,7 @@ end
 
 local function editWaypoints(coord, map)
     selectedWaypoint = 0
-    local minDist = -1.0
+    local minDist = 10.0
     for index, waypoint in pairs(waypoints) do
         local dist = -1.0
         if true == map then
@@ -542,11 +542,9 @@ local function editWaypoints(coord, map)
         else
             dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
         end
-        if dist < 10.0 then
-            if -1.0 == minDist or dist < minDist then
-                minDist = dist
-                selectedWaypoint = index
-            end
+        if dist < minDist then
+            minDist = dist
+            selectedWaypoint = index
         end
     end
 
@@ -766,7 +764,7 @@ RegisterNUICallback("start", function(data)
     if "" == delay then
         delay = nil
     end
-    start(delay)
+    startRace(delay)
 end)
 
 RegisterNUICallback("results", function()
@@ -855,7 +853,7 @@ RegisterCommand("races", function(_, args)
     elseif "rivals" == args[1] then
         rivals()
     elseif "start" == args[1] then
-        start(args[2])
+        startRace(args[2])
     elseif "results" == args[1] then
         printResults(true)
     elseif "speedo" == args[1] then
@@ -1024,7 +1022,7 @@ AddEventHandler("races:start", function(delay)
                 frozen = false
                 speedo = true
 
-                local checkpointType = nil
+                local checkpointType = -1
                 if true == startIsFinish then
                     currentWaypoint = 1
                     checkpointType = plainCheckpoint
@@ -1104,7 +1102,7 @@ AddEventHandler("races:join", function(index, timeout, waypointCoords)
                 notifyPlayer("Ignoring join event.  Already joined to a race.\n")
             end
         else
-            notifyPlayer("Ignoring join event.  Unknown race.\n")
+            notifyPlayer("Ignoring join event.  Race does not exist.\n")
         end
     else
         notifyPlayer("Ignoring join event.  Invalid parameters.\n")
@@ -1197,20 +1195,23 @@ Citizen.CreateThread(function()
         Citizen.Wait(10)
         if STATE_EDITING == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
-            local minDist = -1.0
             local closestIndex = 0
+            local minDist = 10.0
             for index, waypoint in pairs(waypoints) do
                 local dist = #(pedCoord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
-                if dist < 10.0 then
-                    if -1.0 == minDist or dist < minDist then
-                        minDist = dist
-                        closestIndex = index
-                    end
+                if dist < minDist then
+                    minDist = dist
+                    closestIndex = index
                 end
             end
 
             if closestIndex ~= 0 then
-                local color = closestIndex == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
+                local color = -1
+                if highlightedCheckpoint ~= 0 then
+                    color = highlightedCheckpoint == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
+                    SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
+                end
+                color = closestIndex == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
                 SetCheckpointRgba(waypoints[closestIndex].checkpoint, color.r, color.g, color.b, 255)
                 highlightedCheckpoint = closestIndex
                 drawMsg(0.29, 0.50, "Press [LEFT SHIFT] key, [A] button or [CROSS] button to select waypoint", 0.7)
@@ -1354,7 +1355,7 @@ Citizen.CreateThread(function()
                             local addLast = true
 
                             local curr = currentWaypoint
-                            local checkpointType = nil
+                            local checkpointType = -1
 
                             if true == startIsFinish then
                                 prev = currentWaypoint
@@ -1392,21 +1393,27 @@ Citizen.CreateThread(function()
             end
         elseif STATE_IDLE == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
+            local closestIndex = -1
+            local minDist = 10.0
             for index, start in pairs(starts) do
-                if #(pedCoord - GetBlipCoords(start.blip)) < 10.0 then
-                    local msg = "Press [E] or right DPAD to join "
-                    if nil == start.savedRaceName then
-                        msg = msg .. "unsaved race "
-                    else
-                        msg = msg .. (true == start.publicRace and "publicly" or "privately")
-                        msg = msg .. " saved race '" .. start.savedRaceName .. "' "
-                    end
-                    msg = msg .. ("registered by %s : %d lap(s).\n"):format(start.owner, start.laps)
-                    drawMsg(0.24, 0.50, msg, 0.7)
-                    if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
-                        TriggerServerEvent('races:join', index)
-                    end
-                    break
+                local dist = #(pedCoord - GetBlipCoords(start.blip))
+                if dist < minDist then
+                    minDist = dist
+                    closestIndex = index
+                end
+            end
+            if closestIndex ~= -1 then
+                local msg = "Press [E] or right DPAD to join "
+                if nil == starts[closestIndex].savedRaceName then
+                    msg = msg .. "unsaved race "
+                else
+                    msg = msg .. (true == starts[closestIndex].publicRace and "publicly" or "privately")
+                    msg = msg .. " saved race '" .. starts[closestIndex].savedRaceName .. "' "
+                end
+                msg = msg .. ("registered by %s : %d lap(s).\n"):format(starts[closestIndex].owner, starts[closestIndex].laps)
+                drawMsg(0.24, 0.50, msg, 0.7)
+                if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
+                    TriggerServerEvent('races:join', closestIndex)
                 end
             end
         end
