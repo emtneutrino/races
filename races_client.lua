@@ -1223,9 +1223,9 @@ Citizen.CreateThread(function()
             if IsWaypointActive() then
                 SetWaypointOff()
                 editWaypoints(GetBlipCoords(GetFirstBlipInfoId(8)), true)
-            elseif IsControlJustReleased(0, 21) then -- left shift or A button or cross button
+            elseif IsControlJustReleased(0, 176) then -- enter or A button or cross button
                 editWaypoints(pedCoord, false)
-            elseif selectedWaypoint > 0 and IsControlJustReleased(2, 203) then -- space or X button or square button
+            elseif selectedWaypoint > 0 and IsControlJustReleased(2, 179) then -- space or X button or square button
                 DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
                 RemoveBlip(waypoints[selectedWaypoint].blip)
                 table.remove(waypoints, selectedWaypoint)
