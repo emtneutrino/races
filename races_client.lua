@@ -1213,7 +1213,7 @@ Citizen.CreateThread(function()
                 color = closestIndex == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
                 SetCheckpointRgba(waypoints[closestIndex].checkpoint, color.r, color.g, color.b, 255)
                 highlightedCheckpoint = closestIndex
-                drawMsg(0.29, 0.50, "Press [LEFT SHIFT] key, [A] button or [CROSS] button to select waypoint", 0.7)
+                drawMsg(0.29, 0.50, "Press [ENTER] key, [A] button or [CROSS] button to select waypoint", 0.7)
             elseif highlightedCheckpoint ~= 0 then
                 local color = highlightedCheckpoint == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
                 SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
@@ -1223,9 +1223,9 @@ Citizen.CreateThread(function()
             if IsWaypointActive() then
                 SetWaypointOff()
                 editWaypoints(GetBlipCoords(GetFirstBlipInfoId(8)), true)
-            elseif IsControlJustReleased(0, 176) then -- enter or A button or cross button
+            elseif IsControlJustReleased(0, 215) then -- enter or A button or cross button
                 editWaypoints(pedCoord, false)
-            elseif selectedWaypoint > 0 and IsControlJustReleased(2, 179) then -- space or X button or square button
+            elseif selectedWaypoint > 0 and IsControlJustReleased(2, 216) then -- space or X button or square button
                 DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
                 RemoveBlip(waypoints[selectedWaypoint].blip)
                 table.remove(waypoints, selectedWaypoint)
