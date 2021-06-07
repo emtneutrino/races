@@ -60,6 +60,10 @@ $(function() {
         $.post("https://races/clear");
     });
 
+    $("#reverse").click(function() {
+        $.post("https://races/reverse");
+    });
+
     $("#load").click(function() {
         let name = $("#name").val();
         $.post("https://races/load", JSON.stringify({

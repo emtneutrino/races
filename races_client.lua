@@ -138,6 +138,50 @@ local function sendMessage(msg)
     notifyPlayer(msg)
 end
 
+local function deleteWaypointCheckpoints()
+    for i = 1, #waypoints do
+        DeleteCheckpoint(waypoints[i].checkpoint)
+    end
+end
+
+local function getCheckpointColor(blipColor)
+    if 0 == blipColor then
+        return white
+    elseif 1 == blipColor then
+        return red
+    elseif 2 == blipColor then
+        return green
+    elseif 38 == blipColor then
+        return blue
+    elseif 5 == blipColor then
+        return yellow
+    elseif 83 == blipColor then
+        return purple
+    else
+        return yellow
+    end
+end
+
+local function makeCheckpoint(checkpointType, coord, rgb, alpha, num)
+    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, rgb.r, rgb.g, rgb.b, alpha, num)
+    SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
+    return checkpoint
+end
+
+local function setStartToFinishCheckpoints()
+    for i = 1, #waypoints do
+        local color = getCheckpointColor(waypoints[i].color)
+        local checkpointType = 38 == waypoints[i].sprite and finishCheckpoint or midCheckpoint
+        waypoints[i].checkpoint = makeCheckpoint(checkpointType, waypoints[i].coord, color, 127, i - 1)
+    end
+end
+
+local function deleteWaypointBlips()
+    for i = 1, #waypoints do
+        RemoveBlip(waypoints[i].blip)
+    end
+end
+
 local function setBlipProperties(index)
     SetBlipSprite(waypoints[index].blip, waypoints[index].sprite)
     SetBlipColour(waypoints[index].blip, waypoints[index].color)
@@ -184,51 +228,6 @@ local function setStartToFinishBlips()
     end
 end
 
-local function getCheckpointColor(blipColor)
-    if 0 == blipColor then
-        return white
-    elseif 1 == blipColor then
-        return red
-    elseif 2 == blipColor then
-        return green
-    elseif 38 == blipColor then
-        return blue
-    elseif 5 == blipColor then
-        return yellow
-    elseif 83 == blipColor then
-        return purple
-    else
-        return yellow
-    end
-end
-
-local function makeCheckpoint(checkpointType, coord, rgb, alpha, num)
-    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, rgb.r, rgb.g, rgb.b, alpha, num)
-    SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
-    return checkpoint
-end
-
-local function setStartToFinishCheckpoints()
-    for i = 1, #waypoints do
-        DeleteCheckpoint(waypoints[i].checkpoint)
-        local color = getCheckpointColor(waypoints[i].color)
-        local checkpointType = 38 == waypoints[i].sprite and finishCheckpoint or midCheckpoint
-        waypoints[i].checkpoint = makeCheckpoint(checkpointType, waypoints[i].coord, color, 127, i - 1)
-    end
-end
-
-local function restoreBlips()
-    for i = 1, #waypoints do
-        SetBlipDisplay(waypoints[i].blip, 2)
-    end
-end
-
-local function deleteWaypointBlips()
-    for i = 1, #waypoints do
-        RemoveBlip(waypoints[i].blip)
-    end
-end
-
 local function loadWaypointBlips(waypointCoords)
     deleteWaypointBlips()
     waypoints = {}
@@ -256,6 +255,12 @@ local function loadWaypointBlips(waypointCoords)
     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
 end
 
+local function restoreBlips()
+    for i = 1, #waypoints do
+        SetBlipDisplay(waypoints[i].blip, 2)
+    end
+end
+
 local function removeRegistrationPoint(index)
     RemoveBlip(starts[index].blip) -- delete registration blip
     DeleteCheckpoint(starts[index].checkpoint) -- delete registration checkpoint
@@ -279,6 +284,19 @@ local function waypointsToCoords()
     end
     if true == startIsFinish then
         waypointCoords[#waypointCoords + 1] = waypointCoords[1]
+    end
+    return waypointCoords
+end
+
+local function waypointsToCoordsRev()
+    local waypointCoords = {}
+    local n = 0
+    if true == startIsFinish then
+        waypointCoords[1] = waypoints[1].coord
+        n = 1
+    end
+    for i = 1, #waypoints do
+        waypointCoords[i + n] = waypoints[#waypoints - i + 1].coord
     end
     return waypointCoords
 end
@@ -319,6 +337,7 @@ local function editWaypoints(coord, map)
 
             startIsFinish = 1 == #waypoints and true or false
             setStartToFinishBlips()
+            deleteWaypointCheckpoints()
             setStartToFinishCheckpoints()
 
         else -- previous selected waypoint exists, move previous selected waypoint to new location
@@ -450,15 +469,13 @@ local function edit()
         sendMessage("Editing started.\n")
     elseif STATE_EDITING == raceState then
         raceState = STATE_IDLE
-        for i = 1, #waypoints do
-            DeleteCheckpoint(waypoints[i].checkpoint)
-        end
         highlightedCheckpoint = 0
         if selectedWaypoint > 0 then
             SetBlipColour(waypoints[selectedWaypoint].blip, waypoints[selectedWaypoint].color)
             selectedWaypoint = 0
         end
         lastSelectedWaypoint = 0
+        deleteWaypointCheckpoints()
         sendMessage("Editing stopped.\n")
     else
         sendMessage("Cannot edit waypoints.  Leave race first.\n")
@@ -473,12 +490,10 @@ local function clear()
         savedRaceName = nil
         sendMessage("Waypoints cleared.\n")
     elseif STATE_EDITING == raceState then
-        for i = 1, #waypoints do
-            DeleteCheckpoint(waypoints[i].checkpoint)
-        end
         highlightedCheckpoint = 0
         selectedWaypoint = 0
         lastSelectedWaypoint = 0
+        deleteWaypointCheckpoints()
         deleteWaypointBlips()
         waypoints = {}
         startIsFinish = false
@@ -486,6 +501,29 @@ local function clear()
         sendMessage("Waypoints cleared.\n")
     else
         sendMessage("Cannot clear waypoints.  Leave race first.\n")
+    end
+end
+
+local function reverse()
+    if #waypoints > 1 then
+        if STATE_IDLE == raceState then
+            savedRaceName = nil
+            loadWaypointBlips(waypointsToCoordsRev())
+            sendMessage("Waypoints reversed.\n")
+        elseif STATE_EDITING == raceState then
+            savedRaceName = nil
+            highlightedCheckpoint = 0
+            selectedWaypoint = 0
+            lastSelectedWaypoint = 0
+            deleteWaypointCheckpoints()
+            loadWaypointBlips(waypointsToCoordsRev())
+            setStartToFinishCheckpoints()
+            sendMessage("Waypoints reversed.\n")
+        else
+            sendMessage("Cannot reverse waypoints.  Leave race first.\n")
+        end
+    else
+        sendMessage("Cannot reverse waypoints.  Race needs to have at least 2 waypoints.\n")
     end
 end
 
@@ -690,6 +728,10 @@ RegisterNUICallback("clear", function()
     clear()
 end)
 
+RegisterNUICallback("reverse", function()
+    reverse()
+end)
+
 RegisterNUICallback("load", function(data)
     local raceName = data.raceName
     if "" == raceName then
@@ -793,6 +835,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races - display list of available /races commands\n"
         msg = msg .. "/races edit - toggle editing race waypoints\n"
         msg = msg .. "/races clear - clear race waypoints\n"
+        msg = msg .. "/races reverse - reverse order of race waypoints\n"
         msg = msg .. "/races load [name] - load race waypoints saved as [name]\n"
         msg = msg .. "/races save [name] - save new race waypoints as [name]\n"
         msg = msg .. "/races overwrite [name] - overwrite existing race waypoints saved as [name]\n"
@@ -819,6 +862,8 @@ RegisterCommand("races", function(_, args)
         edit()
     elseif "clear" == args[1] then
         clear()
+    elseif "reverse" == args[1] then
+        reverse()
     elseif "load" == args[1] then
         loadRace(false, args[2])
     elseif "save" == args[1] then
@@ -889,12 +934,10 @@ AddEventHandler("races:load", function(public, raceName, waypointCoords)
         elseif STATE_EDITING == raceState then
             publicRace = public
             savedRaceName = raceName
-            for i = 1, #waypoints do
-                DeleteCheckpoint(waypoints[i].checkpoint)
-            end
             highlightedCheckpoint = 0
             selectedWaypoint = 0
             lastSelectedWaypoint = 0
+            deleteWaypointCheckpoints()
             loadWaypointBlips(waypointCoords)
             setStartToFinishCheckpoints()
             local msg = "Loaded "
@@ -1243,6 +1286,7 @@ Citizen.CreateThread(function()
                         startIsFinish = true
                     end
                     setStartToFinishBlips()
+                    deleteWaypointCheckpoints()
                     setStartToFinishCheckpoints()
                     SetBlipRoute(waypoints[1].blip, true)
                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)

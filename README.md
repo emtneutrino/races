@@ -9,6 +9,7 @@ COMMANDS
 `/races` - display list of available `/races` commands\
 `/races edit` - toggle editing race waypoints\
 `/races clear` - clear race waypoints\
+`/races reverse` - reverse order of race waypoints\
 `/races load [name]` - load race waypoints saved as [name]\
 `/races save [name]` - save new race waypoints as [name]\
 `/races overwrite [name]` - overwrite existing race waypoints saved as [name]\
@@ -57,7 +58,7 @@ Clicking on the waypoint map is done by moving the crosshairs on the map and pre
 
 Selecting a waypoint on the map is done by clicking on an existing blip.  This will turn the blip red.  The corresponding checkpoint in the world will also turn red.  Selecting a waypoint in the world is done by 'clicking' on an existing checkpoint.  This will turn the checkpoint red.  The corresponding blip on the map will also turn red.
 
-Adding a waypoint is done by clicking on an empty spot on the waypoint map or by 'clicking' on an empty spot in the world.  Waypoints will always be added as the last waypoint.  You cannot make an added waypoint come before an existing waypoint.  The first added waypoint will be a yellow checkered flag blip/checkpoint.  Subsequent added waypoints will be a white checkered flag blip/checkpoint.  Adding a waypoint will add a blip on the map and a corresponding checkpoint in the world.  Placement of a waypoint in the world is finer grained than adding a waypoint on the waypoint map.  You can place waypoints in the world where you can't in the waypoint map.
+Adding a waypoint is done by clicking on an empty spot on the waypoint map or by 'clicking' on an empty spot in the world.  Waypoints will always be added as the last waypoint.  You cannot make an added waypoint come before an existing waypoint.  The first added waypoint will be a yellow checkered flag blip/checkpoint.  Subsequent added waypoints will be a white checkered flag blip/checkpoint.  Adding a waypoint will add a blip on the map and a corresponding checkpoint in the world.  Placement of a waypoint in the world is unrestricted, while placement of a waypoint on the waypoint map is restricted to paths or roads.  You can place waypoints in the world where you can't in the waypoint map.
 
 You can move an existing blip on the map by selecting it, then clicking an empty spot where you want to move it.  This will also move the corresponding checkpoint in the world.  You can move a checkpoint in the world by selecting it, then 'clicking' on an empty spot where you want to move it.  This will also move the corresponding blip on the map.
 
@@ -82,6 +83,8 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 `save`, `overwrite`, `list`, `delete`, `load` and `blt` operate on your private list of races.  No one else will be able to view or modify your private list.  `savePublic`, `overwritePublic`, `listPublic`, `deletePublic`, `loadPublic` and `bltPublic` work like the private versions but operate on the public list of races.  All players have access to the public list of races.
 
 You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
+
+To reverse the order of waypoints, type `/races reverse`.  You cannot reverse waypoints if there are less than 2 waypoints.  You cannot reverse waypoints if you have joined a race. Leave the race or finish it first.
 
 After you have set your waypoints, you can register your race.  You cannot register your race unless there are two or more waypoints in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a purple circled star will appear on the map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
