@@ -39,6 +39,7 @@ $(function() {
     window.addEventListener("message", function(event) {
         let data = event.data;
         if ("main" == data.panel) {
+            $("#buyin").val(data.defaultBuyin)
             $("#laps").val(data.defaultLaps)
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
@@ -157,9 +158,11 @@ $(function() {
     });
 
     $("#register").click(function() {
+        let buyin = $("#buyin").val();
         let laps = $("#laps").val();
         let timeout = $("#timeout").val();
         $.post("https://races/register", JSON.stringify({
+            buyin: buyin,
             laps: laps,
             timeout: timeout
         }));
@@ -167,6 +170,13 @@ $(function() {
 
     $("#unregister").click(function() {
         $.post("https://races/unregister");
+    });
+
+    $("#start").click(function() {
+        let delay = $("#delay").val();
+        $.post("https://races/start", JSON.stringify({
+            delay: delay
+        }));
     });
 
     $("#leave").click(function() {
@@ -177,19 +187,8 @@ $(function() {
         $.post("https://races/rivals");
     });
 
-    $("#start").click(function() {
-        let delay = $("#delay").val();
-        $.post("https://races/start", JSON.stringify({
-            delay: delay
-        }));
-    });
-
     $("#results").click(function() {
         $.post("https://races/results");
-    });
-
-    $("#speedo").click(function() {
-        $.post("https://races/speedo");
     });
 
     $("#car").click(function() {
@@ -199,6 +198,14 @@ $(function() {
         }));
     });
     
+    $("#speedo").click(function() {
+        $.post("https://races/speedo");
+    });
+
+    $("#funds").click(function() {
+        $.post("https://races/funds");
+    });
+
     $("#closeMain").click(function() {
         $("#main").hide();
         $.post("https://races/close");

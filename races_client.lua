@@ -63,6 +63,7 @@ local finishCheckpoint <const> = 4 -- cylinder checkered flag
 local midCheckpoint <const> = 42 -- cylinder with number
 local plainCheckpoint <const> = 45 -- cylinder
 
+local defaultBuyin <const> = 500 -- default race buy-in
 local defaultLaps <const> = 1 -- default number of laps in a race
 local defaultTimeout <const> = 120 -- default DNF timeout
 local defaultDelay <const> = 30 -- default race start delay
@@ -73,6 +74,8 @@ local rightSide <const> = 0.51 -- right position of HUD
 
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
+
+local funds = 5000 -- initial amount of funds used for buy-ins and payouts
 
 local highlightedCheckpoint = 0 -- index of highlighted checkpoint
 local selectedWaypoint = 0 -- index of currently selected waypoint
@@ -113,11 +116,23 @@ local results = {} -- results[] = {playerName, finishTime, bestLapTime, vehicleN
 
 local frozen = false -- flag indicating if vehicle is frozen
 
-local starts = {} -- starts[] = {owner, publicRace, savedRaceName, laps, blip, checkpoint} - registration points
+local starts = {} -- starts[] = {owner, buyin, laps, publicRace, savedRaceName, blip, checkpoint} - registration points
 
 local speedo = false -- flag indicating if speedometer is displayed
 
 local panelShown = false -- flag indicating if command button panel is shown
+
+local function getFunds()
+    return funds
+end
+
+local function withdraw(amount)
+    funds = funds - amount
+end
+
+local function deposit(amount)
+    funds = funds + amount
+end
 
 local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
@@ -272,9 +287,9 @@ local function drawMsg(x, y, msg, scale)
     SetTextScale(0, scale)
     SetTextColour(255, 255, 0, 255)
     SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString(msg)
-    DrawText(x, y)
+    BeginTextCommandDisplayText ("STRING")
+    AddTextComponentSubstringPlayerName (msg)
+    EndTextCommandDisplayText (x, y)
 end
 
 local function waypointsToCoords()
@@ -583,31 +598,36 @@ local function list(public)
     TriggerServerEvent("races:list", public)
 end
 
-local function register(laps, timeout)
-    laps = nil == laps and defaultLaps or tonumber(laps)
-    if laps ~= nil and laps > 0 then
-        timeout = nil == timeout and defaultTimeout or tonumber(timeout)
-        if timeout ~= nil and timeout >= 0 then
-            if STATE_IDLE == raceState then
-                if #waypoints > 1 then
-                    if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                        TriggerServerEvent("races:register", laps, timeout, waypointsToCoords(), publicRace, savedRaceName)
+local function register(buyin, laps, timeout)
+    buyin = nil == buyin and defaultBuyin or tonumber(buyin)
+    if buyin ~= nil and buyin >= 0 then
+        laps = nil == laps and defaultLaps or tonumber(laps)
+        if laps ~= nil and laps > 0 then
+            timeout = nil == timeout and defaultTimeout or tonumber(timeout)
+            if timeout ~= nil and timeout >= 0 then
+                if STATE_IDLE == raceState then
+                    if #waypoints > 1 then
+                        if laps < 2 or (laps >= 2 and true == startIsFinish) then
+                            TriggerServerEvent("races:register", buyin, laps, timeout, waypointsToCoords(), publicRace, savedRaceName)
+                        else
+                            sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
+                        end
                     else
-                        sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
+                        sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
                     end
+                elseif STATE_EDITING == raceState then
+                    sendMessage("Cannot register.  Stop editing first.\n")
                 else
-                    sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+                    sendMessage("Cannot register.  Leave race first.\n")
                 end
-            elseif STATE_EDITING == raceState then
-                sendMessage("Cannot register.  Stop editing first.\n")
             else
-                sendMessage("Cannot register.  Leave race first.\n")
+                sendMessage("Invalid DNF timeout.\n")
             end
         else
-            sendMessage("Invalid DNF timeout.\n")
+            sendMessage("Invalid number of laps.\n")
         end
     else
-        sendMessage("Invalid laps number.\n")
+        sendMessage("Invalid buy-in amount.\n")
     end
 end
 
@@ -615,10 +635,21 @@ local function unregister()
     TriggerServerEvent("races:unregister")
 end
 
+local function startRace(delay)
+    delay = nil == delay and defaultDelay or tonumber(delay)
+    if delay ~= nil and delay >= 0 then
+        TriggerServerEvent("races:start", delay)
+    else
+        sendMessage("Cannot start.  Invalid delay.\n")
+    end
+end
+
 local function leave()
     if STATE_REGISTERING == raceState then
         raceState = STATE_IDLE
         TriggerServerEvent("races:leave", raceIndex)
+        deposit(starts[raceIndex].buyin)
+        sendMessage(starts[raceIndex].buyin .. " was deposited in your funds.\n")
         sendMessage("Left race.\n")
     elseif STATE_RACING == raceState then
         raceState = STATE_IDLE
@@ -642,18 +673,10 @@ local function rivals()
     end
 end
 
-local function startRace(delay)
-    delay = nil == delay and defaultDelay or tonumber(delay)
-    if delay ~= nil and delay >= 0 then
-        TriggerServerEvent("races:start", delay)
-    else
-        sendMessage("Cannot start.  Invalid delay.\n")
-    end
-end
-
-local function printResults(chatOnly)
+local function viewResults(chatOnly)
     local msg = nil
     if #results > 0 then
+        -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
         msg = "Race results:\n"
         for pos, result in ipairs(results) do
             if -1 == result.finishTime then
@@ -679,15 +702,6 @@ local function printResults(chatOnly)
     end
 end
 
-local function setSpeedo()
-    speedo = not speedo
-    if true == speedo then
-        sendMessage("Speedometer enabled.\n")
-    else
-        sendMessage("Speedometer disabled.\n")
-    end
-end
-
 local function car(vehicleHash)
     vehicleHash = vehicleHash or defaultVehicle
     if 1 == IsModelInCdimage(vehicleHash) and 1 == IsModelAVehicle(vehicleHash) then
@@ -708,11 +722,25 @@ local function car(vehicleHash)
     end
 end
 
+local function setSpeedo()
+    speedo = not speedo
+    if true == speedo then
+        sendMessage("Speedometer enabled.\n")
+    else
+        sendMessage("Speedometer disabled.\n")
+    end
+end
+
+local function viewFunds()
+    sendMessage("Available funds: " .. getFunds() .. "\n")
+end
+
 local function showPanel()
     panelShown = true
     SetNuiFocus(true, true)
     SendNUIMessage({
         panel = "main",
+        defaultBuyin = defaultBuyin,
         defaultLaps = defaultLaps,
         defaultTimeout = defaultTimeout,
         defaultDelay = defaultDelay,
@@ -777,6 +805,10 @@ RegisterNUICallback("list", function(data)
 end)
 
 RegisterNUICallback("register", function(data)
+    local buyin = data.buyin
+    if "" == buyin then
+        buyin = nil
+    end
     local laps = data.laps
     if "" == laps then
         laps = nil
@@ -785,19 +817,11 @@ RegisterNUICallback("register", function(data)
     if "" == timeout then
         timeout = nil
     end
-    register(laps, timeout)
+    register(buyin, laps, timeout)
 end)
 
 RegisterNUICallback("unregister", function()
     unregister()
-end)
-
-RegisterNUICallback("leave", function()
-    leave()
-end)
-
-RegisterNUICallback("rivals", function()
-    rivals()
 end)
 
 RegisterNUICallback("start", function(data)
@@ -808,12 +832,16 @@ RegisterNUICallback("start", function(data)
     startRace(delay)
 end)
 
-RegisterNUICallback("results", function()
-    printResults(false)
+RegisterNUICallback("leave", function()
+    leave()
 end)
 
-RegisterNUICallback("speedo", function()
-    setSpeedo()
+RegisterNUICallback("rivals", function()
+    rivals()
+end)
+
+RegisterNUICallback("results", function()
+    viewResults(false)
 end)
 
 RegisterNUICallback("car", function(data)
@@ -822,6 +850,14 @@ RegisterNUICallback("car", function(data)
         carName = nil
     end
     car(carName)
+end)
+
+RegisterNUICallback("speedo", function()
+    setSpeedo()
+end)
+
+RegisterNUICallback("funds", function()
+    viewFunds()
 end)
 
 RegisterNUICallback("close", function()
@@ -848,14 +884,15 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
         msg = msg .. "/races bltPublic [name] - list 10 best lap times of public race saved as [name]\n"
         msg = msg .. "/races listPublic - list public saved races\n"
-        msg = msg .. "/races register (laps) (DNF timeout) - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\n"
         msg = msg .. "/races unregister - unregister your race\n"
+        msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
-        msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
-        msg = msg .. "/races results - list latest race results\n"
-        msg = msg .. "/races speedo - toggle display of speedometer\n"
+        msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races car (name) - spawn a car; (name) defaults to 'adder'\n"
+        msg = msg .. "/races speedo - toggle display of speedometer\n"
+        msg = msg .. "/races funds - view available funds\n"
         msg = msg .. "/races panel - display command button panel\n"
         notifyPlayer(msg)
     elseif "edit" == args[1] then
@@ -889,21 +926,23 @@ RegisterCommand("races", function(_, args)
     elseif "listPublic" == args[1] then
         list(true)
     elseif "register" == args[1] then
-        register(args[2], args[3])
+        register(args[2], args[3], args[4])
     elseif "unregister" == args[1] then
         unregister()
+    elseif "start" == args[1] then
+        startRace(args[2])
     elseif "leave" == args[1] then
         leave()
     elseif "rivals" == args[1] then
         rivals()
-    elseif "start" == args[1] then
-        startRace(args[2])
     elseif "results" == args[1] then
-        printResults(true)
-    elseif "speedo" == args[1] then
-        setSpeedo()
+        viewResults(true)
     elseif "car" == args[1] then
         car(args[2])
+    elseif "speedo" == args[1] then
+        setSpeedo()
+    elseif "funds" == args[1] then
+        viewFunds(args[2])
     elseif "panel" == args[1] then
         showPanel(true)
 --[[
@@ -1001,8 +1040,8 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, owner, laps, coord, public, raceName)
-    if index ~= nil and owner ~= nil and laps ~=nil and coord ~= nil and public ~= nil then
+AddEventHandler("races:register", function(index, owner, buyin, laps, coord, public, raceName)
+    if index ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and coord ~= nil and public ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
         SetBlipSprite(blip, registerSprite)
@@ -1014,7 +1053,7 @@ AddEventHandler("races:register", function(index, owner, laps, coord, public, ra
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, purple, 127, 0) -- registration checkpoint
         SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
 
-        starts[index] = {owner = owner, laps = laps, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
+        starts[index] = {owner = owner, buyin = buyin, laps = laps, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
     else
         notifyPlayer("Ignoring register event.  Invalid parameters.\n")
     end
@@ -1136,8 +1175,10 @@ AddEventHandler("races:join", function(index, timeout, waypointCoords)
                     msg = msg .. (true == starts[index].publicRace and "publicly" or "privately")
                     msg = msg .. " saved race '" .. starts[index].savedRaceName .. "' "
                 end
-                msg = msg .. ("registered by %s : %d lap(s).\n"):format(starts[index].owner, numLaps)
+                msg = msg .. ("registered by %s : %d buy-in : %d lap(s).\n"):format(starts[index].owner, starts[index].buyin, numLaps)
                 notifyPlayer(msg)
+                withdraw(starts[index].buyin)
+                notifyPlayer(starts[index].buyin .. " was withdrawn from your funds.\n")
             elseif STATE_EDITING == raceState then
                 notifyPlayer("Ignoring join event.  Currently editing.\n")
             else
@@ -1177,17 +1218,12 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
 end)
 
 RegisterNetEvent("races:results")
-AddEventHandler("races:results", function(raceResults)
-    if raceResults ~= nil then
-        results = raceResults -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
-
-        table.sort(results, function(p0, p1)
-            return
-                (p0.finishTime >= 0 and (-1 == p1.finishTime or p0.finishTime < p1.finishTime)) or
-                (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
-        end)
-
-        printResults(true)
+AddEventHandler("races:results", function(raceResults, payout)
+    if raceResults ~= nil and payout ~= nil then
+        results = raceResults
+        viewResults(true)
+        deposit(payout)
+        notifyPlayer(payout .. " was deposited in your funds.\n")
     else
         notifyPlayer("Ignoring results event.  Invalid parameters.\n")
     end
@@ -1445,17 +1481,21 @@ Citizen.CreateThread(function()
                 end
             end
             if closestIndex ~= -1 then
-                local msg = "Press [E] or right DPAD to join "
+                local msg = "Join "
                 if nil == starts[closestIndex].savedRaceName then
                     msg = msg .. "unsaved race "
                 else
                     msg = msg .. (true == starts[closestIndex].publicRace and "publicly" or "privately")
                     msg = msg .. " saved race '" .. starts[closestIndex].savedRaceName .. "' "
                 end
-                msg = msg .. ("registered by %s : %d lap(s).\n"):format(starts[closestIndex].owner, starts[closestIndex].laps)
+                msg = msg .. ("registered by %s : %d buy-in : %d lap(s).\n"):format(starts[closestIndex].owner, starts[closestIndex].buyin, starts[closestIndex].laps)
                 drawMsg(0.24, 0.50, msg, 0.7)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
-                    TriggerServerEvent('races:join', closestIndex)
+                    if getFunds() > starts[closestIndex].buyin then
+                        TriggerServerEvent('races:join', closestIndex)
+                    else
+                        notifyPlayer("Insufficient funds to join race.\n")
+                    end
                 end
             end
         end

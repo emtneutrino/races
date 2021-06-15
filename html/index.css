@@ -48,6 +48,18 @@ body {
     border-radius: 7px;
 }
 
+#edit {
+    width: 25%;
+}
+
+#clear {
+    width: 25%;
+}
+
+#reverse {
+    width: 25%;
+}
+
 #load {
     width: 15%;
 }
@@ -97,39 +109,59 @@ body {
 }
 
 #register {
-    width: 20%;
+    width: 25%;
+}
+
+#buyin {
+    width: 10%;
 }
 
 #laps {
-    width: 35%;
+    width: 10%;
 }
 
 #timeout {
-    width: 35%;
+    width: 10%;
 }
 
-#leave {
-    width: 30%;
-}
-
-#rivals {
-    width: 30%;
+#unregister {
+    width: 25%;
 }
 
 #start {
-    width: 30%;
+    width: 25%;
 }
 
 #delay {
-    width: 50%;
+    width: 10%;
+}
+
+#leave {
+    width: 25%;
+}
+
+#rivals {
+    width: 25%;
+}
+
+#results {
+    width: 25%;
 }
 
 #car {
-    width: 30%;
+    width: 25%;
 }
 
 #carName {
-    width: 50%;
+    width: 30%;
+}
+
+#speedo {
+    width: 25%;
+}
+
+#funds {
+    width: 25%;
 }
 
 #reply {

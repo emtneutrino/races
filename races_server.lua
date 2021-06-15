@@ -35,7 +35,28 @@ local STATE_RACING <const> = 1
 
 local raceDataFile <const> = "./resources/races/raceData.json"
 
-local races = {} -- races[] = {state, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {playerName, finishTime, bestLapTime, vehicleName}}
+local dist <const> = {60, 20, 10, 5, 3, 2}
+
+local distValid = true
+if #dist > 0 and dist[1] >= 0 then
+	local sum = dist[1]
+	for i = 2, #dist do
+		if dist[i] >= 0 and dist[i - 1] >= dist[i] then
+			sum = sum + dist[i]
+		else
+			distValid = false
+			break
+		end
+	end
+	distValid = distValid and 100 == sum
+else
+	distValid = false
+end
+if false == distValid then
+    print("^1Prize distribution table is invalid.")
+end
+
+local races = {} -- races[] = {state, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -150,14 +171,18 @@ local function updateBestLapTimes(index)
             end
             playerRaces[races[index].savedRaceName].bestLaps = bestLaps
             if false == savePlayerData(races[index].publicRace, index, playerRaces) then
-                notifyPlayer(index, "Save error updating best lap times.")
+                notifyPlayer(index, "Save error updating best lap times.\n")
             end
         else
-            notifyPlayer(index, "Cannot save best lap times.  Race '" .. races[index].savedRaceName .. "' has been deleted.")
+            notifyPlayer(index, "Cannot save best lap times.  Race '" .. races[index].savedRaceName .. "' has been deleted.\n")
         end
     else
-        notifyPlayer(index, "Load error updating best lap times.")
+        notifyPlayer(index, "Load error updating best lap times.\n")
     end
+end
+
+local function round(f)
+    return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
 
 RegisterNetEvent("races:load")
@@ -175,7 +200,7 @@ AddEventHandler("races:load", function(public, raceName)
             sendMessage(source, "Cannot load.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring load event.  Invalid parameters.")
+        sendMessage(source, "Ignoring load event.  Invalid parameters.\n")
     end
 end)
 
@@ -203,7 +228,7 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
             sendMessage(source, "Cannot save.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring save event.  Invalid parameters.")
+        sendMessage(source, "Ignoring save event.  Invalid parameters.\n")
     end
 end)
 
@@ -231,7 +256,7 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
             sendMessage(source, "Cannot overwrite.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring overwrite event.  Invalid parameters.")
+        sendMessage(source, "Ignoring overwrite event.  Invalid parameters.\n")
     end
 end)
 
@@ -258,7 +283,7 @@ AddEventHandler("races:delete", function(public, raceName)
             sendMessage(source, "Cannot delete.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring delete event.  Invalid parameters.")
+        sendMessage(source, "Ignoring delete event.  Invalid parameters.\n")
     end
 end)
 
@@ -277,7 +302,7 @@ AddEventHandler("races:blt", function(public, raceName)
             sendMessage(source, "Cannot list best lap times.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring best lap times event.  Invalid parameters.")
+        sendMessage(source, "Ignoring best lap times event.  Invalid parameters.\n")
     end
 end)
 
@@ -287,15 +312,18 @@ AddEventHandler("races:list", function(public)
     if public ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
-            local empty = true
-            local msg = "Saved "
-            msg = msg .. (true == public and "public" or "private")
-            msg = msg .. " races:\n"
-            for name, _ in pairs(playerRaces) do
-                msg = msg .. name .. "\n"
-                empty = false
+            local names = {}
+            for name in pairs(playerRaces) do
+                names[#names + 1] = name
             end
-            if false == empty then
+            if #names > 0 then
+                table.sort(names)
+                local msg = "Saved "
+                msg = msg .. (true == public and "public" or "private")
+                msg = msg .. " races:\n"
+                for _, name in ipairs(names) do
+                    msg = msg .. name .. "\n"
+                end
                 sendMessage(source, msg)
             else
                 sendMessage(source, "No saved races.\n")
@@ -304,44 +332,51 @@ AddEventHandler("races:list", function(public)
             sendMessage(source, "Cannot list.  Error loading data.\n")
         end
     else
-        sendMessage(source, "Ignoring list event.  Invalid parameters.")
+        sendMessage(source, "Ignoring list event.  Invalid parameters.\n")
    end
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(laps, timeout, waypointCoords, publicRace, savedRaceName)
+AddEventHandler("races:register", function(buyin, laps, timeout, waypointCoords, publicRace, savedRaceName)
     local source = source
-    if laps ~= nil and timeout ~= nil and waypointCoords ~= nil and publicRace ~= nil then
-        if laps > 0 then
-            if timeout >= 0 then
-                if nil == races[source] then
-                    local owner = GetPlayerName(source)
-                    races[source] = {state = STATE_REGISTERING, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
-                    TriggerClientEvent("races:register", -1, source, owner, laps, waypointCoords[1], publicRace, savedRaceName)
-                    local msg = "Registered "
-                    if nil == savedRaceName then
-                        msg = msg .. "unsaved race "
+    if buyin ~= nil and laps ~= nil and timeout ~= nil and waypointCoords ~= nil and publicRace ~= nil then
+        if buyin >= 0 then
+            if laps > 0 then
+                if timeout >= 0 then
+                    if nil == races[source] then
+                        local owner = GetPlayerName(source)
+                        races[source] = {state = STATE_REGISTERING, buyin = buyin, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
+                        TriggerClientEvent("races:register", -1, source, owner, buyin, laps, waypointCoords[1], publicRace, savedRaceName)
+                        local msg = "Registered "
+                        if nil == savedRaceName then
+                            msg = msg .. "unsaved race "
+                        else
+                            msg = msg .. (true == publicRace and "publicly" or "privately")
+                            msg = msg .. " saved race '" .. savedRaceName .. "' "
+                        end
+                        msg = msg .. ("by %s : %d buy-in : %d lap(s).\n"):format(owner, buyin, laps)
+                        sendMessage(source, msg)
+                        if false == distValid then
+                            sendMessage(source, "Prize distribution table is invalid.\n")
+                        end
                     else
-                        msg = msg .. (true == publicRace and "publicly" or "privately")
-                        msg = msg .. " saved race '" .. savedRaceName .. "' "
+                        if STATE_RACING == races[source].state then
+                            sendMessage(source, "Cannot register.  Previous race in progress.\n")
+                        else
+                            sendMessage(source, "Cannot register.  Previous race registered.  Unregister first.\n")
+                        end
                     end
-                    msg = msg .. ("by %s : %d lap(s).\n"):format(owner, laps)
-                    sendMessage(source, msg)
                 else
-                    if STATE_RACING == races[source].state then
-                        sendMessage(source, "Cannot register.  Previous race in progress.\n")
-                    else
-                        sendMessage(source, "Cannot register.  Previous race registered.  Unregister first.\n")
-                    end
+                    sendMessage(source, "Invalid DNF timeout.\n")
                 end
             else
-                sendMessage(source, "Invalid timeout.\n")
+                sendMessage(source, "Invalid number of laps.\n")
             end
         else
-            sendMessage(source, "Invalid laps.\n")
+            sendMessage(source, "Invalid buy-in amount.\n")
         end
     else
-        sendMessage(source, "Ignoring register event.  Invalid parameters.")
+        sendMessage(source, "Ignoring register event.  Invalid parameters.\n")
     end
 end)
 
@@ -354,6 +389,37 @@ AddEventHandler("races:unregister", function()
         sendMessage(source, "Race unregistered.\n")
     else
         sendMessage(source, "Cannot unregister.  No race registered.\n")
+    end
+end)
+
+RegisterNetEvent("races:start")
+AddEventHandler("races:start", function(delay)
+    local source = source
+    if delay ~= nil then
+        if races[source] ~= nil then
+            if STATE_REGISTERING == races[source].state then
+                if delay >= 0 then
+                    if races[source].numRacing > 0 then
+                        races[source].state = STATE_RACING
+                        for i in pairs(races[source].players) do
+                            TriggerClientEvent("races:start", i, delay)
+                        end
+                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
+                        sendMessage(source, "Race started.\n")
+                    else
+                        sendMessage(source, "Cannot start.  No players have joined race.\n")
+                    end
+                else
+                    sendMessage(source, "Cannot start.  Invalid delay.\n")
+                end
+            else
+                sendMessage(source, "Cannot start.  Race in progress.\n")
+            end
+        else
+            sendMessage(source, "Cannot start.  Race does not exist.\n")
+        end
+    else
+        sendMessage(source, "Ignoring start event.  Invalid parameters.\n")
     end
 end)
 
@@ -376,7 +442,7 @@ AddEventHandler("races:leave", function(index)
             sendMessage(source, "Cannot leave.  Race does not exist.\n")
         end
     else
-        sendMessage(source, "Ignoring leave event.  Invalid parameters.")
+        sendMessage(source, "Ignoring leave event.  Invalid parameters.\n")
     end
 end)
 
@@ -386,13 +452,16 @@ AddEventHandler("races:rivals", function(index)
     if index ~= nil then
         if races[index] ~= nil then
             if races[index].players[source] ~= nil then
-                local empty = true
-                local msg = "Competitors:\n"
-                for i, _ in pairs(races[index].players) do
-                    msg = msg .. GetPlayerName(i) .. "\n"
-                    empty = false
+                local names = {}
+                for i in pairs(races[index].players) do
+                    names[#names + 1] = GetPlayerName(i)
                 end
-                if false == empty then
+                if #names > 0 then
+                    table.sort(names)
+                    local msg = "Competitors:\n"
+                    for _, name in ipairs(names) do
+                        msg = msg .. name .. "\n"
+                    end
                     sendMessage(source, msg)
                 else
                     sendMessage(source, "No competitors yet.\n")
@@ -404,38 +473,7 @@ AddEventHandler("races:rivals", function(index)
             sendMessage(source, "Cannot list competitors.  Race does not exist.\n")
         end
     else
-        sendMessage(source, "Ignoring rivals event.  Invalid parameters.")
-    end
-end)
-
-RegisterNetEvent("races:start")
-AddEventHandler("races:start", function(delay)
-    local source = source
-    if delay ~= nil then
-        if races[source] ~= nil then
-            if STATE_REGISTERING == races[source].state then
-                if delay >= 0 then
-                    if races[source].numRacing > 0 then
-                        races[source].state = STATE_RACING
-                        for i, _ in pairs(races[source].players) do
-                            TriggerClientEvent("races:start", i, delay)
-                        end
-                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
-                        sendMessage(source, "Race started.\n")
-                    else
-                        sendMessage(source, "Cannot start.  No players have joined race.\n")
-                    end
-                else
-                    sendMessage(source, "Cannot start.  Invalid delay.\n")
-                end
-            else
-                sendMessage(source, "Cannot start.  Race in progress.\n")
-            end
-        else
-            sendMessage(source, "Cannot start.  Race does not exist.\n")
-        end
-    else
-        sendMessage(source, "Ignoring start event.  Invalid parameters.")
+        sendMessage(source, "Ignoring rivals event.  Invalid parameters.\n")
     end
 end)
 
@@ -455,7 +493,7 @@ AddEventHandler("races:join", function(index)
             notifyPlayer(source, "Cannot join.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring join event.  Invalid parameters.")
+        notifyPlayer(source, "Ignoring join event.  Invalid parameters.\n")
     end
 end)
 
@@ -471,17 +509,80 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
 
                     local playerName = GetPlayerName(source)
 
-                    for i, _ in pairs(races[index].players) do
+                    for i in pairs(races[index].players) do
                         TriggerClientEvent("races:finish", i, playerName, finishTime, bestLapTime, vehicleName)
                     end
 
-                    races[index].results[#(races[index].results) + 1] = {playerName = playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
+                    races[index].results[#(races[index].results) + 1] = {source = source, playerName = playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
 
                     races[index].numRacing = races[index].numRacing - 1
                     if 0 == races[index].numRacing then
-                        for i, _ in pairs(races[index].players) do
-                            TriggerClientEvent("races:results", i, races[index].results)
+                        table.sort(races[index].results, function(p0, p1)
+                            return
+                                (p0.finishTime >= 0 and (-1 == p1.finishTime or p0.finishTime < p1.finishTime)) or
+                                (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
+                        end)
+
+                        local winningsRL = {}
+                        for _, result in pairs(races[index].results) do
+                            winningsRL[result.source] = races[index].buyin
                         end
+
+                        if true == distValid then
+                            local numRacers = #(races[index].results)
+                            local numFinished = 0
+                            local totalPool = numRacers * races[index].buyin
+                            local pool = totalPool
+                            local winnings = {}
+
+                            for i, result in ipairs(races[index].results) do
+                                winnings[i] = {payout = races[index].buyin, source = result.source}
+                                if result.finishTime ~= -1 then
+                                    numFinished = numFinished + 1
+                                end
+                            end
+
+                            if numFinished >= #dist then
+                                for i = numFinished + 1, numRacers do
+                                    winnings[i].payout = 0
+                                end
+                                local payout = round(dist[#dist] / 100 * totalPool / (numFinished - #dist + 1))
+                                for i = #dist, numFinished do
+                                    winnings[i].payout = payout
+                                    pool = pool - payout
+                                end
+                                for i = 2, #dist - 1 do
+                                    payout = round(dist[i] / 100 * totalPool)
+                                    winnings[i].payout = payout
+                                    pool = pool - payout
+                                end
+                                winnings[1].payout = pool
+                            elseif numFinished > 0 then
+                                for i = numFinished + 1, numRacers do
+                                    winnings[i].payout = 0
+                                end
+                                local bonus = dist[numFinished + 1]
+                                for i = numFinished + 2, #dist do
+                                    bonus = bonus + dist[i]
+                                end
+                                bonus = bonus / numFinished
+                                for i = 2, numFinished do
+                                    local payout = ((dist[i] + bonus) / 100 * totalPool)
+                                    winnings[i].payout = payout
+                                    pool = pool - payout
+                                end
+                                winnings[1].payout = pool
+                            end
+
+                            for _, winning in pairs(winnings) do
+                                winningsRL[winning.source] = winning.payout
+                            end
+                        end
+
+                        for i in pairs(races[index].players) do
+                            TriggerClientEvent("races:results", i, races[index].results, winningsRL[i])
+                        end
+
                         if races[index].savedRaceName ~= nil then
                             updateBestLapTimes(index)
                         end
@@ -497,7 +598,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
             notifyPlayer(source, "Cannot finish.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring finish event.  Invalid parameters.")
+        notifyPlayer(source, "Ignoring finish event.  Invalid parameters.\n")
     end
 end)
 
@@ -510,13 +611,13 @@ AddEventHandler("races:report", function(index, numWaypointsPassed, dist)
                 races[index].players[source].numWaypointsPassed = numWaypointsPassed
                 races[index].players[source].data = dist
             else
-                notifyPlayer(source, "Cannot report.  Not a member of this race.")
+                notifyPlayer(source, "Cannot report.  Not a member of this race.\n")
             end
         else
-            notifyPlayer(source, "Cannot report.  Race does not exist.")
+            notifyPlayer(source, "Cannot report.  Race does not exist.\n")
         end
     else
-        notifyPlayer(source, "Ignoring report event.  Invalid parameters.")
+        notifyPlayer(source, "Ignoring report event.  Invalid parameters.\n")
     end
 end)
 

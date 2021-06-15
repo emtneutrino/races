@@ -22,14 +22,15 @@ COMMANDS
 `/races deletePublic [name]` - delete public race waypoints saved as [name]\
 `/races bltPublic [name]` - list 10 best lap times of public race saved as [name]\
 `/races listPublic` - list public saved races\
-`/races register (laps) (DNF timeout)` - register your race; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\
+`/races register (buy-in) (laps) (DNF timeout)` - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds\
 `/races unregister` - unregister your race\
+`/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races leave` - leave a race that you joined\
 `/races rivals` - list competitors in a race that you joined\
-`/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
-`/races results` - list latest race results\
-`/races speedo` - toggle display of speedometer\
+`/races results` - view latest race results\
 `/races car (name)` - spawn a car; (name) defaults to 'adder'\
+`/races speedo` - toggle display of speedometer\
+`/races funds` - view available funds\
 `/races panel` - display command button panel
 
 **IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`.**
@@ -86,9 +87,11 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 
 You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  You cannot register your race unless there are two or more waypoints in the race.  This will advertise your race to all players.  At the starting waypoint of the race, a purple circled star will appear on the map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  These will be visible to all players.  Type `/races register 2 180` to register your race with 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
+After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star will appear on the map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  These will be visible to all players.  Type `/races register 100 2 180` to register your race with a buy-in of 100, 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the buy-in, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
-All players who want to join the race, including you, will need to be near the purple registration waypoint.  To join the race, type 'E' or press right DPAD.  This will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
+You can unregister your race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
+
+All players who want to join the race, including you, will need to be near the purple registration waypoint.  To join the race, type 'E' or press right DPAD.  All players start with 5000 in their funds.  If you have insufficent funds to pay for the buy-in, you will not be able to join the race.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
 
 To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
@@ -98,27 +101,31 @@ The current race waypoint will have a yellow cylinder checkpoint appear in the w
 
 Your current position, lap, waypoint, lap time, best lap time, total time and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
 
+If you want to leave a race you joined, type `/races leave`.  **IF YOU LEAVE AFTER THE RACE HAS STARTED, YOU WILL DNF.**
+
 After the first racer finishes, there will be a DNF timeout for other racers.  They must finish within the timeout, otherwise they DNF.
 
 As racers finish, their finishing time, best lap time and vehicle name will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
 
-After all racers finish, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
+After all racers finish or DNF, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
+
+Racers are given prize money after all racers finish or DNF.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the distribution, all racers who finished receive any left over placement percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named `dist` in `races_server.lua`.  You can change the total number of values in the table.  You may have fewer placements or more placements.  For the distribution to be valid, the following conditions must be met:  All values in the table `dist` must add up to 100.  All values in the table must be 0 or greater.  First place distribution must be greater than or equal to second place.  Second place distribution must be greater than or equal to 3rd place and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded.
 
 If you want to look at the race results again, type `/races results`.  If you cannot see all the results, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-You can unregister your previously registered race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
-
-If you want to leave a race you joined, type `/races leave`.  **IF YOU LEAVE AFTER THE RACE HAS STARTED, YOU WILL DNF.**
+To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
 To toggle the display of the speedometer, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.
 
-To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
+To view your available funds for race buy-ins, type `/races funds`.
 
 Type `/races panel` to show the command button panel.  All `/races` commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another window as well as in chat.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing `/races save nicerace`.
 
 Multiple races can be registered and started simultaneously by different players.
+
+If you wish to port these scripts to a specific system, such as ESX, you will need to modify the contents of the functions `getFunds`, `withdraw` and `deposit` in `races_client.lua` to work for your system.
 
 SCREENSHOTS
 -----------
