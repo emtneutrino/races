@@ -202,7 +202,7 @@ local function setBlipProperties(index)
     SetBlipColour(waypoints[index].blip, waypoints[index].color)
     ShowNumberOnBlip(waypoints[index].blip, waypoints[index].number)
     BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString(waypoints[index].name)
+    AddTextComponentSubstringPlayerName(waypoints[index].name)
     EndTextCommandSetBlipName(waypoints[index].blip)
 end
 
@@ -1047,7 +1047,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, coord, pub
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString("Registration point")
+        AddTextComponentSubstringPlayerName("Registration point")
         EndTextCommandSetBlipName(blip)
 
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, purple, 127, 0) -- registration checkpoint
