@@ -40,10 +40,10 @@ local ESX = nil
 local dist <const> = {60, 20, 10, 5, 3, 2}
 
 local distValid = true
-if #dist > 0 and dist[1] >= 0 then
+if #dist > 0 and dist[1] > 0 then
 	local sum = dist[1]
 	for i = 2, #dist do
-		if dist[i] >= 0 and dist[i - 1] >= dist[i] then
+		if dist[i] > 0 and dist[i - 1] >= dist[i] then
 			sum = sum + dist[i]
 		else
 			distValid = false
