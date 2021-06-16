@@ -75,8 +75,6 @@ local rightSide <const> = 0.51 -- right position of HUD
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
 
-local funds = 5000 -- initial amount of funds used for buy-ins and payouts
-
 local highlightedCheckpoint = 0 -- index of highlighted checkpoint
 local selectedWaypoint = 0 -- index of currently selected waypoint
 local lastSelectedWaypoint = 0 -- index of last selected waypoint
@@ -122,17 +120,7 @@ local speedo = false -- flag indicating if speedometer is displayed
 
 local panelShown = false -- flag indicating if command button panel is shown
 
-local function getFunds()
-    return funds
-end
-
-local function withdraw(amount)
-    funds = funds - amount
-end
-
-local function deposit(amount)
-    funds = funds + amount
-end
+TriggerServerEvent("races:initFunds", 5000)
 
 local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
@@ -648,8 +636,6 @@ local function leave()
     if STATE_REGISTERING == raceState then
         raceState = STATE_IDLE
         TriggerServerEvent("races:leave", raceIndex)
-        deposit(starts[raceIndex].buyin)
-        sendMessage(starts[raceIndex].buyin .. " was deposited in your funds.\n")
         sendMessage("Left race.\n")
     elseif STATE_RACING == raceState then
         raceState = STATE_IDLE
@@ -732,7 +718,7 @@ local function setSpeedo()
 end
 
 local function viewFunds()
-    sendMessage("Available funds: " .. getFunds() .. "\n")
+    TriggerServerEvent("races:viewFunds")
 end
 
 local function showPanel()
@@ -1177,8 +1163,6 @@ AddEventHandler("races:join", function(index, timeout, waypointCoords)
                 end
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s).\n"):format(starts[index].owner, starts[index].buyin, numLaps)
                 notifyPlayer(msg)
-                withdraw(starts[index].buyin)
-                notifyPlayer(starts[index].buyin .. " was withdrawn from your funds.\n")
             elseif STATE_EDITING == raceState then
                 notifyPlayer("Ignoring join event.  Currently editing.\n")
             else
@@ -1218,12 +1202,10 @@ AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLap
 end)
 
 RegisterNetEvent("races:results")
-AddEventHandler("races:results", function(raceResults, payout)
-    if raceResults ~= nil and payout ~= nil then
+AddEventHandler("races:results", function(raceResults)
+    if raceResults ~= nil then
         results = raceResults
         viewResults(true)
-        deposit(payout)
-        notifyPlayer(payout .. " was deposited in your funds.\n")
     else
         notifyPlayer("Ignoring results event.  Invalid parameters.\n")
     end
@@ -1491,11 +1473,7 @@ Citizen.CreateThread(function()
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s).\n"):format(starts[closestIndex].owner, starts[closestIndex].buyin, starts[closestIndex].laps)
                 drawMsg(0.24, 0.50, msg, 0.7)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
-                    if getFunds() > starts[closestIndex].buyin then
-                        TriggerServerEvent('races:join', closestIndex)
-                    else
-                        notifyPlayer("Insufficient funds to join race.\n")
-                    end
+                    TriggerServerEvent('races:join', closestIndex)
                 end
             end
         end

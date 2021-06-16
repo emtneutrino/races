@@ -185,6 +185,12 @@ local function round(f)
     return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
 
+RegisterNetEvent("races:initFunds")
+AddEventHandler("races:initFunds", function(amount)
+    local source = source
+    SetFunds(source, amount)
+end)
+
 RegisterNetEvent("races:load")
 AddEventHandler("races:load", function(public, raceName)
     local source = source
@@ -432,6 +438,8 @@ AddEventHandler("races:leave", function(index)
                 if races[index].players[source] ~= nil then
                     races[index].players[source] = nil
                     races[index].numRacing = races[index].numRacing - 1
+                    Deposit(source, races[index].buyin)
+                    sendMessage(source, races[index].buyin .. " was deposited in your funds.\n")
                 else
                     sendMessage(source, "Cannot leave.  Not a member of this race.\n")
                 end
@@ -477,17 +485,29 @@ AddEventHandler("races:rivals", function(index)
     end
 end)
 
+RegisterNetEvent("races:viewFunds")
+AddEventHandler("races:viewFunds", function()
+    local source = source
+    sendMessage(source, "Available funds: " .. GetFunds(source) .. "\n")
+end)
+
 RegisterNetEvent("races:join")
 AddEventHandler("races:join", function(index)
     local source = source
     if index ~= nil then
         if races[index] ~= nil then
-            if STATE_REGISTERING == races[index].state then
-                races[index].numRacing = races[index].numRacing + 1
-                races[index].players[source] = {numWaypointsPassed = -1, data = -1}
-                TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
+            if GetFunds(source) >= races[index].buyin then
+                if STATE_REGISTERING == races[index].state then
+                    races[index].numRacing = races[index].numRacing + 1
+                    races[index].players[source] = {numWaypointsPassed = -1, data = -1}
+                    Withdraw(source, races[index].buyin)
+                    sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
+                    TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
+                else
+                    notifyPlayer(source, "Cannot join.  Race in progress.\n")
+                end
             else
-                notifyPlayer(source, "Cannot join.  Race in progress.\n")
+                notifyPlayer(source, "Cannot join.  Insufficient funds.\n")
             end
         else
             notifyPlayer(source, "Cannot join.  Race does not exist.\n")
@@ -580,7 +600,9 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         end
 
                         for i in pairs(races[index].players) do
-                            TriggerClientEvent("races:results", i, races[index].results, winningsRL[i])
+                            TriggerClientEvent("races:results", i, races[index].results)
+                            Deposit(i, winningsRL[i])
+                            notifyPlayer(i, winningsRL[i] .. " was deposited in your funds.\n")
                         end
 
                         if races[index].savedRaceName ~= nil then

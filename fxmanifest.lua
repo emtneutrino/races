@@ -6,7 +6,11 @@ lua54 "yes"
 dependency "chat"
 
 client_script "races_client.lua"
-server_script "races_server.lua"
+
+server_scripts {
+    "races_server.lua",
+    "port.lua"
+}
 
 ui_page "html/index.html"
 files {

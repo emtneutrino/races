@@ -2,7 +2,7 @@ INSTALLATION
 ------------
 Setting up a server:  https://docs.fivem.net/docs/server-manual/setting-up-a-server/
 
-Create a `races/` directory under your server `resources/` folder.  Place `fxmanifest.lua`, `races_client.lua`, `races_server.lua` and `raceData.json` in the `resources/races/` folder.  Create an `html/` directory under `resources/races/`.  Place `index.css`, `index.html`, `index.js` and `reset.css` in the `resources/races/html/` folder.  Add `start races` to your `server.cfg` file.
+Create a `races/` directory under your server `resources/` folder.  Place `fxmanifest.lua`, `races_client.lua`, `races_server.lua`, `port.lua` and `raceData.json` in the `resources/races/` folder.  Create an `html/` directory under `resources/races/`.  Place `index.css`, `index.html`, `index.js` and `reset.css` in the `resources/races/html/` folder.  Add `start races` to your `server.cfg` file.
 
 COMMANDS
 --------
@@ -125,9 +125,9 @@ Leaving a race or finishing it does not clear its waypoints.  If you like the ra
 
 Multiple races can be registered and started simultaneously by different players.
 
-If you wish to port these scripts to a specific system, such as ESX, you will need to modify the contents of the functions `getFunds`, `withdraw` and `deposit` in `races_client.lua` to work for your system.
+If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
 
-An untested attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/races_client.lua` and `esx/races_server.lua` to your server's `resources/races/` folder.
+An untested attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 123 OF `races_client.lua` BY ADDING `--` TO THE LEFT OF `TriggerServerEvent("races:initFunds", 5000)`.**
 
 SCREENSHOTS
 -----------
