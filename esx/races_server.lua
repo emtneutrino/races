@@ -35,7 +35,7 @@ local STATE_RACING <const> = 1
 
 local raceDataFile <const> = "./resources/races/raceData.json"
 
---local ESX = nil
+local ESX = nil
 
 local dist <const> = {60, 20, 10, 5, 3, 2}
 
