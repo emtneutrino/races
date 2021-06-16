@@ -127,6 +127,8 @@ Multiple races can be registered and started simultaneously by different players
 
 If you wish to port these scripts to a specific system, such as ESX, you will need to modify the contents of the functions `getFunds`, `withdraw` and `deposit` in `races_client.lua` to work for your system.
 
+An untested attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/races_client.lua` and `esx/races_server.lua` to your server's `resources/races/` folder.
+
 SCREENSHOTS
 -----------
 Registration point\
