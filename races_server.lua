@@ -390,6 +390,10 @@ RegisterNetEvent("races:unregister")
 AddEventHandler("races:unregister", function()
     local source = source
     if races[source] ~= nil then
+        for i in pairs(races[source].players) do
+            Deposit(i, races[source].buyin)
+            sendMessage(i, races[source].buyin .. " was deposited in your funds.\n")
+        end
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
         sendMessage(source, "Race unregistered.\n")
