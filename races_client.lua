@@ -1033,7 +1033,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, coord, pub
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
-        AddTextComponentSubstringPlayerName("Registration point(" .. buyin .. " buy-in)")
+        AddTextComponentSubstringPlayerName(owner .. " (" .. buyin .. " buy-in)")
         EndTextCommandSetBlipName(blip)
 
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, purple, 127, 0) -- registration checkpoint
