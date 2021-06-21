@@ -165,8 +165,8 @@ local function getCheckpointColor(blipColor)
     end
 end
 
-local function makeCheckpoint(checkpointType, coord, rgb, alpha, num)
-    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, rgb.r, rgb.g, rgb.b, alpha, num)
+local function makeCheckpoint(checkpointType, coord, color, alpha, num)
+    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, color.r, color.g, color.b, alpha, num)
     SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
     return checkpoint
 end
@@ -1033,11 +1033,10 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, coord, pub
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
-        AddTextComponentSubstringPlayerName("Registration point")
+        AddTextComponentSubstringPlayerName("Registration point(" .. buyin .. " buy-in)")
         EndTextCommandSetBlipName(blip)
 
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, purple, 127, 0) -- registration checkpoint
-        SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
 
         starts[index] = {owner = owner, buyin = buyin, laps = laps, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
     else
