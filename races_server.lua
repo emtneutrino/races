@@ -592,7 +592,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                                 end
                                 bonus = bonus / numFinished
                                 for i = 2, numFinished do
-                                    local payout = ((dist[i] + bonus) / 100 * totalPool)
+                                    local payout = round((dist[i] + bonus) / 100 * totalPool)
                                     winnings[i].payout = payout
                                     pool = pool - payout
                                 end
