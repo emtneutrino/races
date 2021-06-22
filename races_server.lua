@@ -56,7 +56,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local races = {} -- races[] = {state, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -503,7 +503,7 @@ AddEventHandler("races:join", function(index)
             if GetFunds(source) >= races[index].buyin then
                 if STATE_REGISTERING == races[index].state then
                     races[index].numRacing = races[index].numRacing + 1
-                    races[index].players[source] = {numWaypointsPassed = -1, data = -1}
+                    races[index].players[source] = {numWaypointsPassed = -1, data = -1, finished = false}
                     Withdraw(source, races[index].buyin)
                     sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
                     TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
@@ -530,6 +530,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                 if races[index].players[source] ~= nil then
                     races[index].players[source].numWaypointsPassed = numWaypointsPassed
                     races[index].players[source].data = finishTime
+                    races[index].players[source].finished = true
 
                     local playerName = GetPlayerName(source)
 
@@ -665,7 +666,7 @@ Citizen.CreateThread(function()
                     -- player.data will be travel distance to next waypoint or finish time; finish time will be -1 if player DNF
                     -- if player.data == -1 then player did not finish race - do not include in sortedPlayers
                     if player.data ~= -1 then
-                        sortedPlayers[#sortedPlayers + 1] = {index = i, numWaypointsPassed = player.numWaypointsPassed, data = player.data}
+                        sortedPlayers[#sortedPlayers + 1] = {index = i, numWaypointsPassed = player.numWaypointsPassed, data = player.data, finished = player.finished}
                     end
                 end
 
@@ -675,7 +676,9 @@ Citizen.CreateThread(function()
                     end)
                     -- players sorted into sortedPlayers table
                     for position, sortedPlayer in pairs(sortedPlayers) do
-                        TriggerClientEvent("races:position", sortedPlayer.index, position, #sortedPlayers) -- not needed if player finished already
+                        if false == sortedPlayer.finished then
+                            TriggerClientEvent("races:position", sortedPlayer.index, position, #sortedPlayers)
+                        end
                     end
                 end
             end

@@ -62,6 +62,7 @@ local registerSprite <const> = 58 -- circled star
 local finishCheckpoint <const> = 4 -- cylinder checkered flag
 local midCheckpoint <const> = 42 -- cylinder with number
 local plainCheckpoint <const> = 45 -- cylinder
+local arrow3Checkpoint <const> = 2 -- cylinder with 3 arrows
 
 local defaultBuyin <const> = 500 -- default race buy-in
 local defaultLaps <const> = 1 -- default number of laps in a race
@@ -165,8 +166,8 @@ local function getCheckpointColor(blipColor)
     end
 end
 
-local function makeCheckpoint(checkpointType, coord, color, alpha, num)
-    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, 0, 0, 0, 10.0, color.r, color.g, color.b, alpha, num)
+local function makeCheckpoint(checkpointType, coord, nextCoord, color, alpha, num)
+    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, nextCoord.x, nextCoord.y, nextCoord.z, 10.0, color.r, color.g, color.b, alpha, num)
     SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, 10.0)
     return checkpoint
 end
@@ -175,7 +176,7 @@ local function setStartToFinishCheckpoints()
     for i = 1, #waypoints do
         local color = getCheckpointColor(waypoints[i].color)
         local checkpointType = 38 == waypoints[i].sprite and finishCheckpoint or midCheckpoint
-        waypoints[i].checkpoint = makeCheckpoint(checkpointType, waypoints[i].coord, color, 127, i - 1)
+        waypoints[i].checkpoint = makeCheckpoint(checkpointType, waypoints[i].coord, waypoints[i].coord, color, 127, i - 1)
     end
 end
 
@@ -351,7 +352,7 @@ local function editWaypoints(coord, map)
             DeleteCheckpoint(waypoints[lastSelectedWaypoint].checkpoint)
             local color = getCheckpointColor(selectedBlipColor)
             local checkpointType = 38 == waypoints[lastSelectedWaypoint].sprite and finishCheckpoint or midCheckpoint
-            waypoints[lastSelectedWaypoint].checkpoint = makeCheckpoint(checkpointType, coord, color, 127, lastSelectedWaypoint - 1)
+            waypoints[lastSelectedWaypoint].checkpoint = makeCheckpoint(checkpointType, coord, coord, color, 127, lastSelectedWaypoint - 1)
 
             selectedWaypoint = lastSelectedWaypoint
         end
@@ -392,7 +393,7 @@ local function editWaypoints(coord, map)
 
                         DeleteCheckpoint(waypoints[#waypoints].checkpoint)
                         color = getCheckpointColor(waypoints[#waypoints].color)
-                        waypoints[#waypoints].checkpoint = makeCheckpoint(finishCheckpoint, waypoints[#waypoints].coord, color, 127, 0)
+                        waypoints[#waypoints].checkpoint = makeCheckpoint(finishCheckpoint, waypoints[#waypoints].coord, waypoints[#waypoints].coord, color, 127, 0)
 
                         selectedWaypoint = 0
                         lastSelectedWaypoint = 0
@@ -432,7 +433,7 @@ local function editWaypoints(coord, map)
 
                         DeleteCheckpoint(waypoints[#waypoints].checkpoint)
                         color = getCheckpointColor(waypoints[#waypoints].color)
-                        waypoints[#waypoints].checkpoint = makeCheckpoint(midCheckpoint, waypoints[#waypoints].coord, color, 127, #waypoints - 1)
+                        waypoints[#waypoints].checkpoint = makeCheckpoint(midCheckpoint, waypoints[#waypoints].coord, waypoints[#waypoints].coord, color, 127, #waypoints - 1)
 
                         selectedWaypoint = 0
                         lastSelectedWaypoint = 0
@@ -1036,7 +1037,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, coord, pub
         AddTextComponentSubstringPlayerName(owner .. " (" .. buyin .. " buy-in)")
         EndTextCommandSetBlipName(blip)
 
-        local checkpoint = makeCheckpoint(plainCheckpoint, coord, purple, 127, 0) -- registration checkpoint
+        local checkpoint = makeCheckpoint(plainCheckpoint, coord, coord, purple, 127, 0) -- registration checkpoint
 
         starts[index] = {owner = owner, buyin = buyin, laps = laps, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
     else
@@ -1088,16 +1089,21 @@ AddEventHandler("races:start", function(delay)
                 frozen = false
                 speedo = true
 
-                local checkpointType = -1
+                local checkpointType = arrow3Checkpoint
                 if true == startIsFinish then
                     currentWaypoint = 1
-                    checkpointType = plainCheckpoint
                 else
                     currentWaypoint = 2
-                    checkpointType = (#waypoints == currentWaypoint and numLaps == currentLap) and finishCheckpoint or plainCheckpoint
+                    if 2 == #waypoints then
+                        checkpointType = finishCheckpoint
+                    end
                 end
                 waypointCoord = waypoints[2].coord
-                raceCheckpoint = makeCheckpoint(checkpointType, waypointCoord, yellow, 127, 0)
+                local nextCoord = waypointCoord
+                if arrow3Checkpoint == checkpointType then
+                    nextCoord = #waypoints > 2 and waypoints[3].coord or waypoints[1].coord
+                end
+                raceCheckpoint = makeCheckpoint(checkpointType, waypointCoord, nextCoord, yellow, 127, 0)
 
                 SetBlipDisplay(waypoints[1].blip, 0)
 
@@ -1217,7 +1223,7 @@ AddEventHandler("races:position", function(pos, numR)
             position = pos
             numRacers = numR
         else
-            notifyPlayer("Ignoring position event.  Race not in progress.\n")
+            notifyPlayer("Ignoring position event.  Not racing.\n")
         end
     else
         notifyPlayer("Ignoring position event.  Invalid parameters.\n")
@@ -1428,12 +1434,12 @@ Citizen.CreateThread(function()
                                     addLast = false
                                 end
                                 curr = curr % #waypoints + 1
-                                checkpointType = (1 == curr and numLaps == currentLap) and finishCheckpoint or plainCheckpoint
+                                checkpointType = (1 == curr and numLaps == currentLap) and finishCheckpoint or arrow3Checkpoint
                             else
                                 if last > #waypoints then
                                     addLast = false
                                 end
-                                checkpointType = (#waypoints == curr and numLaps == currentLap) and finishCheckpoint or plainCheckpoint
+                                checkpointType = #waypoints == curr and finishCheckpoint or arrow3Checkpoint
                             end
 
                             SetBlipDisplay(waypoints[prev].blip, 0)
@@ -1445,7 +1451,11 @@ Citizen.CreateThread(function()
                             SetBlipRoute(waypoints[curr].blip, true)
                             SetBlipRouteColour(waypoints[curr].blip, blipRouteColor)
                             waypointCoord = waypoints[curr].coord
-                            raceCheckpoint = makeCheckpoint(checkpointType, waypointCoord, yellow, 127, 0)
+                            local nextCoord = waypointCoord
+                            if arrow3Checkpoint == checkpointType then
+                                nextCoord = curr < #waypoints and waypoints[curr + 1].coord or waypoints[1].coord
+                            end
+                            raceCheckpoint = makeCheckpoint(checkpointType, waypointCoord, nextCoord, yellow, 127, 0)
                         end
                     end
                 end
