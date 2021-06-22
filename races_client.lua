@@ -1249,8 +1249,8 @@ Citizen.CreateThread(function()
         Citizen.Wait(1000)
         if STATE_RACING == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
-            local dist = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, waypointCoord.x, waypointCoord.y, waypointCoord.z)
-            TriggerServerEvent("races:report", raceIndex, numWaypointsPassed, dist)
+            local distance = CalculateTravelDistanceBetweenPoints(pedCoord.x, pedCoord.y, pedCoord.z, waypointCoord.x, waypointCoord.y, waypointCoord.z)
+            TriggerServerEvent("races:report", raceIndex, numWaypointsPassed, distance)
         end
     end
 end)

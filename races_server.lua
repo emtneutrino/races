@@ -630,13 +630,13 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
 end)
 
 RegisterNetEvent("races:report")
-AddEventHandler("races:report", function(index, numWaypointsPassed, dist)
+AddEventHandler("races:report", function(index, numWaypointsPassed, distance)
     local source = source
-    if index ~= nil and numWaypointsPassed ~= nil and dist ~= nil then
+    if index ~= nil and numWaypointsPassed ~= nil and distance ~= nil then
         if races[index] ~= nil then
             if races[index].players[source] ~= nil then
                 races[index].players[source].numWaypointsPassed = numWaypointsPassed
-                races[index].players[source].data = dist
+                races[index].players[source].data = distance
             else
                 notifyPlayer(source, "Cannot report.  Not a member of this race.\n")
             end
