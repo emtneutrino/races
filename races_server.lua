@@ -164,10 +164,8 @@ local function updateBestLapTimes(index)
             table.sort(bestLaps, function(p0, p1)
                 return p0.bestLapTime < p1.bestLapTime
             end)
-            if #bestLaps > 10 then
-                for i = 11, #bestLaps do
-                    bestLaps[i] = nil
-                end
+            for i = 11, #bestLaps do
+                bestLaps[i] = nil
             end
             playerRaces[races[index].savedRaceName].bestLaps = bestLaps
             if false == savePlayerData(races[index].publicRace, index, playerRaces) then
