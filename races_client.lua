@@ -294,13 +294,11 @@ end
 
 local function waypointsToCoordsRev()
     local waypointCoords = {}
-    local n = 0
     if true == startIsFinish then
         waypointCoords[1] = waypoints[1].coord
-        n = 1
     end
-    for i = 1, #waypoints do
-        waypointCoords[i + n] = waypoints[#waypoints - i + 1].coord
+    for i = #waypoints, 1, -1 do
+        waypointCoords[#waypointCoords + 1] = waypoints[i].coord
     end
     return waypointCoords
 end
@@ -1089,36 +1087,18 @@ AddEventHandler("races:start", function(delay)
                 frozen = false
                 speedo = true
 
-                local checkpointType = arrow3Checkpoint
-                if true == startIsFinish then
-                    currentWaypoint = 1
-                else
-                    currentWaypoint = 2
-                    if 2 == #waypoints then
-                        checkpointType = finishCheckpoint
-                    end
-                end
-                waypointCoord = waypoints[2].coord
-                local nextCoord = waypointCoord
-                if arrow3Checkpoint == checkpointType then
-                    nextCoord = #waypoints > 2 and waypoints[3].coord or waypoints[1].coord
-                end
-                raceCheckpoint = makeCheckpoint(checkpointType, waypointCoord, nextCoord, yellow, 127, 0)
-
-                SetBlipDisplay(waypoints[1].blip, 0)
-
-                if maxNumVisible >= #waypoints then
-                    numVisible = #waypoints - 1
-                else
-                    numVisible = maxNumVisible
-                end
-
-                for i = numVisible + 2, #waypoints do
+                numVisible = maxNumVisible < #waypoints and maxNumVisible or (#waypoints - 1)
+                for i = numVisible + 1, #waypoints do
                     SetBlipDisplay(waypoints[i].blip, 0)
                 end
 
-                SetBlipRoute(waypoints[2].blip, true)
-                SetBlipRouteColour(waypoints[2].blip, blipRouteColor)
+                currentWaypoint = true == startIsFinish and 0 or 1
+
+                waypointCoord = waypoints[1].coord
+                raceCheckpoint = makeCheckpoint(arrow3Checkpoint, waypointCoord, waypoints[2].coord, yellow, 127, 0)
+
+                SetBlipRoute(waypointCoord, true)
+                SetBlipRouteColour(waypointCoord, blipRouteColor)
 
                 notifyPlayer("Race started.\n")
             elseif STATE_RACING == raceState then
