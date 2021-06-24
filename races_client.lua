@@ -314,12 +314,7 @@ local function editWaypoints(coord, map)
     selectedWaypoint = 0
     local minDist = 10.0
     for index, waypoint in pairs(waypoints) do
-        local dist = -1.0
-        if true == map then
-            dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, coord.z))
-        else
-            dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
-        end
+        local dist = true == map and #(coord - vector3(waypoint.coord.x, waypoint.coord.y, coord.z)) or #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
         if dist < minDist then
             minDist = dist
             selectedWaypoint = index
