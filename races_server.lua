@@ -56,7 +56,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local races = {} -- races[] = {state, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, owner, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -183,10 +183,46 @@ local function round(f)
     return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
 
-RegisterNetEvent("races:initFunds")
-AddEventHandler("races:initFunds", function(amount)
+AddEventHandler("playerDropped", function()
     local source = source
-    SetFunds(source, amount)
+
+    -- unregister race registered by dropped player that has not started
+    if races[source] ~= nil and STATE_REGISTERING == races[source].state then
+        for i in pairs(races[source].players) do
+            Deposit(i, races[source].buyin)
+            sendMessage(i, races[source].buyin .. " was deposited in your funds.\n")
+        end
+        races[source] = nil
+        TriggerClientEvent("races:unregister", -1, source)
+    end
+
+    -- remove dropped player from the race they are joined to
+    for i, race in pairs(races) do
+        if race.players[source] ~= nil then
+            if STATE_REGISTERING == race.state then
+                race.players[source] = nil
+                race.numRacing = race.numRacing - 1
+            else
+                TriggerEvent("races:finish", i, 0, -1, -1, "", source)
+            end
+            break
+        end
+    end
+end)
+
+RegisterNetEvent("races:init")
+AddEventHandler("races:init", function()
+    local source = source
+
+    -- set initial funds
+    SetFunds(source, 5000)
+
+    -- register any races created before player joined
+    for i, race in pairs(races) do
+        if STATE_REGISTERING == race.state then
+            TriggerClientEvent("races:register", source, i, race.owner, race.buyin, race.laps, race.waypointCoords[1], race.publicRace, race.savedRaceName)
+        end
+    end
 end)
 
 RegisterNetEvent("races:load")
@@ -349,7 +385,7 @@ AddEventHandler("races:register", function(buyin, laps, timeout, waypointCoords,
                 if timeout >= 0 then
                     if nil == races[source] then
                         local owner = GetPlayerName(source)
-                        races[source] = {state = STATE_REGISTERING, buyin = buyin, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
+                        races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
                         TriggerClientEvent("races:register", -1, source, owner, buyin, laps, waypointCoords[1], publicRace, savedRaceName)
                         local msg = "Registered "
                         if nil == savedRaceName then
@@ -463,19 +499,15 @@ AddEventHandler("races:rivals", function(index)
         if races[index] ~= nil then
             if races[index].players[source] ~= nil then
                 local names = {}
-                for i in pairs(races[index].players) do
-                    names[#names + 1] = GetPlayerName(i)
+                for i, player in pairs(races[index].players) do
+                    names[#names + 1] = player.playerName
                 end
-                if #names > 0 then
-                    table.sort(names)
-                    local msg = "Competitors:\n"
-                    for _, name in ipairs(names) do
-                        msg = msg .. name .. "\n"
-                    end
-                    sendMessage(source, msg)
-                else
-                    sendMessage(source, "No competitors yet.\n")
+                table.sort(names)
+                local msg = "Competitors:\n"
+                for _, name in ipairs(names) do
+                    msg = msg .. name .. "\n"
                 end
+                sendMessage(source, msg)
             else
                 sendMessage(source, "Cannot list competitors.  Not a member of this race.\n")
             end
@@ -501,7 +533,7 @@ AddEventHandler("races:join", function(index)
             if GetFunds(source) >= races[index].buyin then
                 if STATE_REGISTERING == races[index].state then
                     races[index].numRacing = races[index].numRacing + 1
-                    races[index].players[source] = {numWaypointsPassed = -1, data = -1, finished = false}
+                    races[index].players[source] = {playerName = GetPlayerName(source), numWaypointsPassed = -1, data = -1, finished = false}
                     Withdraw(source, races[index].buyin)
                     sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
                     TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
@@ -520,8 +552,8 @@ AddEventHandler("races:join", function(index)
 end)
 
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime, vehicleName)
-    local source = source
+AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime, vehicleName, playerSource)
+    local source = playerSource ~=nil and playerSource or source
     if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
         if races[index] ~= nil then
             if STATE_RACING == races[index].state then
@@ -530,7 +562,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                     races[index].players[source].data = finishTime
                     races[index].players[source].finished = true
 
-                    local playerName = GetPlayerName(source)
+                    local playerName = races[index].players[source].playerName
 
                     for i in pairs(races[index].players) do
                         TriggerClientEvent("races:finish", i, playerName, finishTime, bestLapTime, vehicleName)

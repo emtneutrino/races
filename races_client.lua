@@ -121,7 +121,7 @@ local speedo = false -- flag indicating if speedometer is displayed
 
 local panelShown = false -- flag indicating if command button panel is shown
 
-TriggerServerEvent("races:initFunds", 5000)
+TriggerServerEvent("races:init")
 
 local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
@@ -634,7 +634,7 @@ local function leave()
     elseif STATE_RACING == raceState then
         raceState = STATE_IDLE
         DeleteCheckpoint(raceCheckpoint)
-        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName)
+        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
         restoreBlips()
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -1354,7 +1354,7 @@ Citizen.CreateThread(function()
                     else -- DNF
                         raceState = STATE_IDLE
                         DeleteCheckpoint(raceCheckpoint)
-                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName)
+                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
                         restoreBlips()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -1380,7 +1380,7 @@ Citizen.CreateThread(function()
                                 currentLap = currentLap + 1
                             else
                                 raceState = STATE_IDLE
-                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, vehicleName)
+                                TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, vehicleName, nil)
                                 restoreBlips()
                                 SetBlipRoute(waypoints[1].blip, true)
                                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
