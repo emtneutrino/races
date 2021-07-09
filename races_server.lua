@@ -70,6 +70,143 @@ local function sendMessage(source, msg)
     TriggerClientEvent("races:message", source, msg)
 end
 
+local function getRace(raceName)
+    local raceFile = "./resources/races/" .. raceName .. ".json"
+    local file = io.open(raceFile, "r")
+    if nil == file then
+        print("getRace: Error opening file '" .. raceFile .. "' for read.")
+        return nil
+    end
+
+    local race = json.decode(file:read("a"))
+    file:close()
+
+    if type(race) ~= "table" then
+        print("getRace: race not a table.")
+        return nil
+    end
+
+    if type(race.waypointCoords) ~= "table" or type(race.bestLaps) ~= "table" then
+        print("getRace: race.waypointCoords or race.bestLaps not a table.")
+        return nil
+    end
+
+    local newWaypointCoords = {}
+    for _, waypoint in ipairs(race.waypointCoords) do
+        if type(waypoint) ~= "table" or type(waypoint.x) ~= "number" or type(waypoint.y) ~= "number" or type(waypoint.z) ~= "number" then
+            print("getRace: waypoint not a table or waypoint.x or waypoint.y or waypoint.z not a number.")
+            return nil
+        end
+        newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z}
+    end
+
+    if #newWaypointCoords < 2 then
+        print("getRace: number of waypoints is less than 2.")
+        return nil
+    end
+
+    local newBestLaps = {}
+    for _, bestLap in ipairs(race.bestLaps) do
+        if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
+            print("getRace: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
+            return nil
+        end
+        newBestLaps[#newBestLaps + 1] = {playerName = bestLap.playerName, bestLapTime = bestLap.bestLapTime, vehicleName = bestLap.vehicleName}
+    end
+
+    return {waypointCoords = newWaypointCoords, bestLaps = newBestLaps}
+end
+
+local function export(raceName, withBLT)
+    if raceName ~= nil then
+        local file = io.open(raceDataFile, "r")
+        if file ~= nil then
+            local raceData = json.decode(file:read("a"))
+            file:close()
+            if raceData ~= nil then
+                local publicRaces = raceData["PUBLIC"]
+                if publicRaces ~= nil then
+                    if publicRaces[raceName] ~= nil then
+                        local raceFile = "./resources/races/" .. raceName .. ".json"
+                        file = io.open(raceFile, "r")
+                        if nil == file then
+                            file = io.open(raceFile, "w+")
+                            if file ~= nil then
+                                if false == withBLT then
+                                    publicRaces[raceName].bestLaps = {}
+                                end
+                                file:write(json.encode(publicRaces[raceName]))
+                                file:close()
+                                print("Exported '" .. raceName .. "'.")
+                            else
+                                print("export: Error opening file '" .. raceFile .. "' for write.")
+                            end
+                        else
+                            file:close()
+                            print("export: '" .. raceFile .. "' exists. Remove or rename the existing file, then export again.")
+                        end
+                    else
+                        print("export: No public race named '" .. raceName .. "'.")
+                    end
+                else
+                    print("export: No public race data.")
+                end
+            else
+                print("export: No race data.")
+            end
+        else
+            print("export: Error opening file '" .. raceDataFile .. "' for read.")
+        end
+    else
+        print("export: Name required.")
+    end
+end
+
+local function import(raceName, withBLT)
+    if raceName ~= nil then
+        local file = io.open(raceDataFile, "r")
+        if file ~= nil then
+            local raceData = json.decode(file:read("a"))
+            file:close()
+            if raceData ~= nil then
+                local publicRaces = raceData["PUBLIC"]
+                if publicRaces ~= nil then
+                    if nil == publicRaces[raceName] then
+                        local race = getRace(raceName)
+                        if race ~= nil then
+                            file = io.open(raceDataFile, "w+")
+                            if file ~= nil then
+                                if false == withBLT then
+                                    race.bestLaps = {}
+                                end
+                                publicRaces[raceName] = race
+                                raceData["PUBLIC"] = publicRaces
+                                file:write(json.encode(raceData))
+                                file:close()
+                                print("Imported '" .. raceName .. "'.")
+                            else
+                                print("import: Error opening file '" .. raceDataFile .. "' for write.")
+                            end
+                        else
+                            print("import: Could not open '" .. raceName .. "'.")
+                        end
+                    else
+                        print("import: '" .. raceName .. "' already exists in the public races list.  Rename the file, then import with the new name.")
+                    end
+                else
+                    print("import: No public race data.")
+                end
+            else
+                print("import: No race data.")
+            end
+        else
+            print("import: Error opening file '" .. raceDataFile .. "' for read.")
+        end
+    else
+        print("import: Name required.")
+    end
+end
+
 local function loadPlayerData(public, source)
     local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
@@ -84,8 +221,8 @@ local function loadPlayerData(public, source)
 
         local file = io.open(raceDataFile, "r")
         if file ~= nil then
-            raceData = json.decode(file:read("*a"));
-            io.close(file)
+            raceData = json.decode(file:read("a"))
+            file:close()
         else
             notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
             return nil
@@ -121,8 +258,8 @@ local function savePlayerData(public, source, data)
 
         local file = io.open(raceDataFile, "r")
         if file ~= nil then
-            raceData = json.decode(file:read("*a"));
-            io.close(file)
+            raceData = json.decode(file:read("a"))
+            file:close()
         else
             notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
             return false
@@ -138,7 +275,7 @@ local function savePlayerData(public, source, data)
         file = io.open(raceDataFile, "w+")
         if file ~= nil then
             file:write(json.encode(raceData))
-            io.close(file)
+            file:close()
         else
             notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write.\n")
             return false
@@ -182,6 +319,28 @@ end
 local function round(f)
     return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
+
+RegisterCommand("races", function(_, args)
+    if nil == args[1] then
+        local msg = "Commands:\n"
+        msg = msg .. "races - display list of available races commands\n"
+        msg = msg .. "races export [name] - export public race saved as [name] without best lap times\n"
+        msg = msg .. "races import [name] - import race file named '[name].json' into public races without best lap times\n"
+        msg = msg .. "races exportwblt [name] - export public race saved as [name] with best lap times\n"
+        msg = msg .. "races importwblt [name] - import race file named '[name].json' into public races with best lap times\n"
+        print(msg)
+    elseif "export" == args[1] then
+        export(args[2], false)
+    elseif "import" == args[1] then
+        import(args[2], false)
+    elseif "exportwblt" == args[1] then
+        export(args[2], true)
+    elseif "importwblt" == args[1] then
+        import(args[2], true)
+    else
+        print("Unknown command.")
+    end
+end, true)
 
 AddEventHandler("playerDropped", function()
     local source = source

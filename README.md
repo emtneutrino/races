@@ -4,8 +4,8 @@ Setting up a server:  https://docs.fivem.net/docs/server-manual/setting-up-a-ser
 
 Create a `races/` directory under your server `resources/` folder.  Place `fxmanifest.lua`, `races_client.lua`, `races_server.lua`, `port.lua` and `raceData.json` in the `resources/races/` folder.  Create an `html/` directory under `resources/races/`.  Place `index.css`, `index.html`, `index.js` and `reset.css` in the `resources/races/html/` folder.  Add `start races` to your `server.cfg` file.
 
-COMMANDS
---------
+CLIENT COMMANDS
+---------------
 `/races` - display list of available `/races` commands\
 `/races edit` - toggle editing race waypoints\
 `/races clear` - clear race waypoints\
@@ -35,10 +35,20 @@ COMMANDS
 
 **IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`.**
 
+SERVER COMMANDS
+---------------
+`races` - display list of available races commands\
+`races export [name]` - export public race saved as [name] without best lap times\
+`races import [name]` - import race file named '[name].json' into public races without best lap times\
+`races exportwblt [name]` - export public race saved as [name] with best lap times\
+`races importwblt [name]` - import race file named '[name].json' into public races with best lap times
+
 SAMPLE RACES
 ------------
 There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
+There are backups of the sample races in the `sampleraces` folder with the extension `.json`.  Race `00` is backed up as `00.json`.  If any of the sample races were deleted from the public list of races, you can restore them.  Copy the deleted race from the `sampleraces` folder to the `resources/races/` folder.  In the server console, type `races import 00` to import race `00` back into the public races list.
+  
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
 Type `/races edit` until you see the message 'Editing started'.  Add at least 2 waypoints in the order desired on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type `/races edit` again to stop editing.  You should see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint.  All players will see the registration waypoint of the race.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move close to the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once people have joined, you can start the race by typing `/races start`.
@@ -47,8 +57,8 @@ QUICK GUIDE FOR RACING
 ----------------------
 Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race and the buy-in amount.  If you have enough funds to pay for the buy-in amount, you can join the race.  You can check how much funds you have by typing `/races funds`.  Get close to the registration waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The person who registered the race will be the one to start the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  Prize money will be distributed to all finishers.  If you want to see the results again, type `/races results`.
 
-COMMAND DETAILS
----------------
+CLIENT COMMAND DETAILS
+----------------------
 Type `/races` to see the list of available `/races` commands.  If you cannot see all the commands, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
@@ -125,6 +135,22 @@ Leaving a race or finishing it does not clear its waypoints.  If you like the ra
 
 Multiple races can be registered and started simultaneously by different players.
 
+SERVER COMMAND DETAILS
+----------------------
+Server commands are typed into the server console.  These commands allow server owners to backup individual public races as well as trade races with other server owners.
+
+Type `races` to see the list of available `races` commands.
+
+Type `races export publicrace` to export the public race saved as `publicrace` without best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
+
+Type `races import myrace` to import the race file named `resources/races/myrace.json` into the public races list without best lap times.  You cannot import `myrace` if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+
+Type `races exportwblt publicrace` to export the public race saved as `publicrace` with best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
+
+Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import `myrace` if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+
+PORTING
+-------
 If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
 
 An attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 218 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
