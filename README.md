@@ -153,7 +153,7 @@ PORTING
 -------
 If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
 
-An attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 218 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
+An attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 377 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
 
 SCREENSHOTS
 -----------
