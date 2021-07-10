@@ -2,7 +2,7 @@ INSTALLATION
 ------------
 Setting up a server:  https://docs.fivem.net/docs/server-manual/setting-up-a-server/
 
-Create a `races/` directory under your server `resources/` folder.  Place `fxmanifest.lua`, `races_client.lua`, `races_server.lua`, `port.lua` and `raceData.json` in the `resources/races/` folder.  Create an `html/` directory under `resources/races/`.  Place `index.css`, `index.html`, `index.js` and `reset.css` in the `resources/races/html/` folder.  Add `start races` to your `server.cfg` file.
+Create a `races/` folder under your server `resources/` folder.  Place `fxmanifest.lua`, `races_client.lua`, `races_server.lua`, `port.lua` and `raceData.json` in the `resources/races/` folder.  Create an `html/` folder under your server `resources/races/` folder.  Place `index.css`, `index.html`, `index.js` and `reset.css` in the `resources/races/html/` folder.  Add `start races` to your `server.cfg` file.
 
 CLIENT COMMANDS
 ---------------
@@ -37,7 +37,7 @@ CLIENT COMMANDS
 
 SERVER COMMANDS
 ---------------
-`races` - display list of available races commands\
+`races` - display list of available `races` commands\
 `races export [name]` - export public race saved as [name] without best lap times\
 `races import [name]` - import race file named '[name].json' into public races without best lap times\
 `races exportwblt [name]` - export public race saved as [name] with best lap times\
@@ -47,7 +47,7 @@ SAMPLE RACES
 ------------
 There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
-There are backups of the sample races in the `sampleraces` folder with the extension `.json`.  Race `00` is backed up as `00.json`.  If any of the sample races were deleted from the public list of races, you can restore them.  Copy the deleted race from the `sampleraces` folder to the `resources/races/` folder.  In the server console, type `races import 00` to import race `00` back into the public races list.
+There are backups of the sample races in the `sampleraces/` folder with the extension '.json'.  Race '00' is backed up as `sampleraces/00.json`.  If any of the sample races were deleted from the public list of races, you can restore them.  Copy the deleted race from the `sampleraces/` folder to the `resources/races/` folder.  In the server console, type `races import 00` to import race '00' back into the public races list.
   
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
@@ -75,7 +75,7 @@ You can delete a waypoint by selecting it on the waypoint map or in the world, t
 
 You can move an existing waypoint by selecting it on the waypoint map or in the world, then clicking an empty spot on the waypoint map or in the world where you want to move it.  Moving a waypoint will move the corresponding blip on the waypoint map and the corresponding checkpoint in the world.
 
-For multi-lap races, the start and finish waypoint must be the same.  Select the finish waypoint first (white checkered flag), then select the start waypoint (green checkered flag).  The start/finish waypoint will become a yellow checkered flag.
+For multi-lap races, the start and finish waypoint must be the same.  Select the finish waypoint first (white checkered flag), then select the start waypoint (green checkered flag).  The start/finish waypoint will become a yellow checkered flag.  The original finish waypoint will become a blue numbered waypoint.
 
 You can separate the start/finish waypoint (yellow checkered flag) in one of two ways.  The first way is by adding a new waypoint.  The second way is by selecting the start/finish waypoint (yellow checkered flag) first, then selecting the highest numbered blue waypoint.
 
@@ -97,11 +97,11 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 
 You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This is the registration waypoint.  The registration waypoint on the waypoint map will be labeled with the player who registered the race and the buy-in amount.  This allows racers to determine whether or not they can join the race based on the amount of funds they have without having to drive all the way to the starting waypoint.  Type `/races register 100 2 180` to register your race with a buy-in of 100, 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the buy-in, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
+After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This is the registration waypoint.  The registration waypoint on the waypoint map will be labeled with the player who registered the race and the buy-in amount.  This allows racers to determine whether or not they can join the race based on the amount of funds they have without having to drive all the way to the starting waypoint.  Type `/races register 100 2 180` to register your race with a buy-in amount of 100, 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
 You can unregister your race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
 
-All players begin with 5000 in their funds.  Players who want to join the race, including you, will need to have enough funds to pay for the buy-in and be near the purple registration waypoint.  To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
+All players begin with 5000 in their funds.  Players who want to join the race, including you, will need to have enough funds to pay for the buy-in amount and be near the purple registration waypoint.  To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join your registered race, you will not see the race results.
 
 To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
@@ -119,13 +119,13 @@ As racers finish, their finishing time, best lap time and vehicle name will be b
 
 After all racers finish or DNF, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
 
-Racers are given prize money after all racers finish or DNF.  At the start of every game session, players start with 5000 in their funds.  Race earnings are not saved between different game sessions.  If you win prize money in one game session, it will not carry over to the next game session.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the distribution, all racers who finished receive any left over placement percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named `dist` in `races_server.lua`.  You can change the total number of values in the table.  For the distribution to be valid, the following conditions must be met:  All values in the table `dist` must add up to 100.  All values in the table must be 1 or greater.  First place distribution must be greater than or equal to second place.  Second place distribution must be greater than or equal to 3rd place and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded.
+Racers are given prize money after all racers finish or DNF.  At the start of every game session, players start with 5000 in their funds.  Race earnings are not saved between different game sessions.  If you win prize money in one game session, it will not carry over to the next game session.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the prize distribution, all racers who finished receive any left over placement percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named 'dist' in `races_server.lua`.  The declaration and initialization of 'dist' is `local dist <const> = {60, 20, 10, 5, 3, 2}`.  You can change the total number of values in the table.  For the distribution to be valid, the following conditions must be met:  All values in the table 'dist' must add up to 100.  All values in the table must be 1 or greater.  First place distribution must be greater than or equal to second place distribution.  Second place distribution must be greater than or equal to 3rd place distribution and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded after all racers finish or DNF.
 
 If you want to look at the race results again, type `/races results`.  If you cannot see all the results, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
 To spawn a car, type `/races car elegy2` to spawn an 'elegy2' car.  If you do not indicate a car name, the default is 'adder'.
 
-To toggle the display of the speedometer, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.
+To toggle the display of the speedometer at any time, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.
 
 To view your available funds for race buy-ins, type `/races funds`.
 
@@ -141,19 +141,19 @@ Server commands are typed into the server console.  These commands allow server 
 
 Type `races` to see the list of available `races` commands.
 
-Type `races export publicrace` to export the public race saved as `publicrace` without best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
+Type `races export publicrace` to export the public race saved as 'publicrace' without best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
 
-Type `races import myrace` to import the race file named `resources/races/myrace.json` into the public races list without best lap times.  You cannot import `myrace` if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+Type `races import myrace` to import the race file named `resources/races/myrace.json` into the public races list without best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
 
-Type `races exportwblt publicrace` to export the public race saved as `publicrace` with best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
+Type `races exportwblt publicrace` to export the public race saved as 'publicrace' with best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
 
-Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import `myrace` if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
 
 PORTING
 -------
-If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
+If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the funds functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
 
-An attempt to port the funds functions to ESX is available in the `esx` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 377 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
+An attempt to port the funds functions to ESX is available in the `esx/` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder replacing the existing `port.lua` file.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 377 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
 
 SCREENSHOTS
 -----------
