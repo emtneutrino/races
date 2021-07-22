@@ -1365,6 +1365,7 @@ Citizen.CreateThread(function()
                 if STATE_RACING == raceState then
                     if #(GetEntityCoords(player) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < 10.0 then
                         DeleteCheckpoint(raceCheckpoint)
+                        PlaySoundFrontend(-1, "CHECKPOINT_PERFECT", "HUD_MINI_GAME_SOUNDSET", true)
 
                         numWaypointsPassed = numWaypointsPassed + 1
 
