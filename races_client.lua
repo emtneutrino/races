@@ -633,9 +633,11 @@ local function leave()
         sendMessage("Left race.\n")
     elseif STATE_RACING == raceState then
         raceState = STATE_IDLE
-        local player = PlayerPedId()
-        if IsPedInAnyVehicle(player, false) then
-            FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
+        if true == frozen then
+            local player = PlayerPedId()
+            if IsPedInAnyVehicle(player, false) then
+                FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
+            end
         end
         DeleteCheckpoint(raceCheckpoint)
         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
