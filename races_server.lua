@@ -272,12 +272,14 @@ local function savePlayerData(public, source, data)
 
         raceData[license] = data
 
-        file = io.open(raceDataFile, "w+")
+        local errMsg = nil
+        local errCode = nil
+        file, errMsg, errCode = io.open(raceDataFile, "w+")
         if file ~= nil then
             file:write(json.encode(raceData))
             file:close()
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write.\n")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write : " .. errMsg .. " : " .. errCode .. "\n")
             return false
         end
     else
