@@ -38,9 +38,9 @@ CLIENT COMMANDS
 SERVER COMMANDS
 ---------------
 `races` - display list of available `races` commands\
-`races export [name]` - export public race saved as [name] without best lap times\
+`races export [name]` - export public race saved as [name] without best lap times to file named '[name].json'\
 `races import [name]` - import race file named '[name].json' into public races without best lap times\
-`races exportwblt [name]` - export public race saved as [name] with best lap times\
+`races exportwblt [name]` - export public race saved as [name] with best lap times to file named '[name].json'\
 `races importwblt [name]` - import race file named '[name].json' into public races with best lap times
 
 SAMPLE RACES

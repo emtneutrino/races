@@ -72,9 +72,9 @@ end
 
 local function getRace(raceName)
     local raceFile = "./resources/races/" .. raceName .. ".json"
-    local file = io.open(raceFile, "r")
+    local file, errMsg, errCode = io.open(raceFile, "r")
     if nil == file then
-        print("getRace: Error opening file '" .. raceFile .. "' for read.")
+        print("getRace: Error opening file '" .. raceFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         return nil
     end
 
@@ -119,7 +119,7 @@ end
 
 local function export(raceName, withBLT)
     if raceName ~= nil then
-        local file = io.open(raceDataFile, "r")
+        local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             local raceData = json.decode(file:read("a"))
             file:close()
@@ -130,7 +130,7 @@ local function export(raceName, withBLT)
                         local raceFile = "./resources/races/" .. raceName .. ".json"
                         file = io.open(raceFile, "r")
                         if nil == file then
-                            file = io.open(raceFile, "w+")
+                            file, errMsg, errCode = io.open(raceFile, "w+")
                             if file ~= nil then
                                 if false == withBLT then
                                     publicRaces[raceName].bestLaps = {}
@@ -139,7 +139,7 @@ local function export(raceName, withBLT)
                                 file:close()
                                 print("Exported '" .. raceName .. "'.")
                             else
-                                print("export: Error opening file '" .. raceFile .. "' for write.")
+                                print("export: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
                         else
                             file:close()
@@ -155,7 +155,7 @@ local function export(raceName, withBLT)
                 print("export: No race data.")
             end
         else
-            print("export: Error opening file '" .. raceDataFile .. "' for read.")
+            print("export: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         end
     else
         print("export: Name required.")
@@ -164,7 +164,7 @@ end
 
 local function import(raceName, withBLT)
     if raceName ~= nil then
-        local file = io.open(raceDataFile, "r")
+        local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             local raceData = json.decode(file:read("a"))
             file:close()
@@ -174,7 +174,7 @@ local function import(raceName, withBLT)
                     if nil == publicRaces[raceName] then
                         local race = getRace(raceName)
                         if race ~= nil then
-                            file = io.open(raceDataFile, "w+")
+                            file, errMsg, errCode = io.open(raceDataFile, "w+")
                             if file ~= nil then
                                 if false == withBLT then
                                     race.bestLaps = {}
@@ -185,7 +185,7 @@ local function import(raceName, withBLT)
                                 file:close()
                                 print("Imported '" .. raceName .. "'.")
                             else
-                                print("import: Error opening file '" .. raceDataFile .. "' for write.")
+                                print("import: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
                         else
                             print("import: Could not open '" .. raceName .. "'.")
@@ -200,7 +200,7 @@ local function import(raceName, withBLT)
                 print("import: No race data.")
             end
         else
-            print("import: Error opening file '" .. raceDataFile .. "' for read.")
+            print("import: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         end
     else
         print("import: Name required.")
@@ -219,12 +219,12 @@ local function loadPlayerData(public, source)
 
         local raceData = nil
 
-        local file = io.open(raceDataFile, "r")
+        local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             raceData = json.decode(file:read("a"))
             file:close()
         else
-            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
+            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
             return nil
         end
 
@@ -256,12 +256,12 @@ local function savePlayerData(public, source, data)
 
         local raceData = nil
 
-        local file = io.open(raceDataFile, "r")
+        local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             raceData = json.decode(file:read("a"))
             file:close()
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read.\n")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
             return false
         end
 
@@ -272,14 +272,12 @@ local function savePlayerData(public, source, data)
 
         raceData[license] = data
 
-        local errMsg = nil
-        local errCode = nil
         file, errMsg, errCode = io.open(raceDataFile, "w+")
         if file ~= nil then
             file:write(json.encode(raceData))
             file:close()
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write : " .. errMsg .. " : " .. errCode .. "\n")
+            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode .. "\n")
             return false
         end
     else
@@ -326,9 +324,9 @@ RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
         msg = msg .. "races - display list of available races commands\n"
-        msg = msg .. "races export [name] - export public race saved as [name] without best lap times\n"
+        msg = msg .. "races export [name] - export public race saved as [name] without best lap times to file named '[name].json'\n"
         msg = msg .. "races import [name] - import race file named '[name].json' into public races without best lap times\n"
-        msg = msg .. "races exportwblt [name] - export public race saved as [name] with best lap times\n"
+        msg = msg .. "races exportwblt [name] - export public race saved as [name] with best lap times to file named '[name].json'\n"
         msg = msg .. "races importwblt [name] - import race file named '[name].json' into public races with best lap times\n"
         print(msg)
     elseif "export" == args[1] then
