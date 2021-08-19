@@ -43,6 +43,11 @@ SERVER COMMANDS
 `races exportwblt [name]` - export public race saved as [name] with best lap times to file named '[name].json'\
 `races importwblt [name]` - import race file named '[name].json' into public races with best lap times
 
+**If you want to preserve races from a previous version of these scripts, you should update `raceData.json` and any exported races by executing the following commands before clients connect to the server to use the new new race data format which includes waypoint radius sizes.**
+
+`races updateRaceData` - update 'raceData.json' to new format\
+`races updateRace [name]` - update exported race '[name].json' to new format
+
 SAMPLE RACES
 ------------
 There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
@@ -74,6 +79,8 @@ Adding a waypoint is done by clicking on an empty spot on the waypoint map or by
 You can delete a waypoint by selecting it on the waypoint map or in the world, then pressing 'Spacebar' on a keyboard, 'X' button on an Xbox controller or 'Square' button on a DualShock controller.  Deleting a waypoint will delete the corresponding blip on the waypoint map and the corresponding checkpoint in the world.
 
 You can move an existing waypoint by selecting it on the waypoint map or in the world, then clicking an empty spot on the waypoint map or in the world where you want to move it.  Moving a waypoint will move the corresponding blip on the waypoint map and the corresponding checkpoint in the world.
+
+You can increase or decrease the radius of an existing waypoint only in the world and not in the waypoint map.  There is a minimum and maximum radius limit of a waypoint.  A racer has reached the waypoint if they are within the radius of the waypoint.  To increase the radius of the waypoint, select the waypoint in the world, then press 'Up Arrow' on a keyboard or up DPAD.  To decrease the radius of the waypoint, select the waypoint in the world, then press 'Down Arrow' on a keyboard or down DPAD.
 
 For multi-lap races, the start and finish waypoint must be the same.  Select the finish waypoint first (white checkered flag), then select the start waypoint (green checkered flag).  The start/finish waypoint will become a yellow checkered flag.  The original finish waypoint will become a blue numbered waypoint.
 
@@ -148,6 +155,12 @@ Type `races import myrace` to import the race file named `resources/races/myrace
 Type `races exportwblt publicrace` to export the public race saved as 'publicrace' with best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
 
 Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+
+**If you want to preserve races from a previous version of these scripts, you should update `raceData.json` and any exported races by executing the following commands before clients connect to the server to use the new new race data format which includes waypoint radius sizes.**
+
+Type `races updateRaceData` to update `resources/races/raceData.json` to the new file `resources/races/raceData_updated.json`.  You will need to remove the old `raceData.json` file and then rename `raceData_updated.json` to `raceData.json` to use the new race data format.
+
+Type `races updateRace myrace` to update the exported race `resources/races/myrace.json` to the new file `resources/races/myrace_updated.json`.  You will need to remove the old `myrace.json` file and then rename `myrace_updated.json` to `myrace.json` to use the new race data format.  You will then be able to import the race using the new race data format.
 
 PORTING
 -------
