@@ -88,7 +88,7 @@ You can separate the start/finish waypoint (yellow checkered flag) in one of two
 
 To reverse the order of waypoints, type `/races reverse`.  You cannot reverse waypoints if there are less than 2 waypoints.  You cannot reverse waypoints if you have joined a race. Leave the race or finish it first.
 
-If you are editing waypoints from scratch or you have changed any waypoints of a saved race, then register and start the race, the best lap times will not be saved.  A change to a saved race means adding, deleting, moving, combining start/finish, separating start/finish or reversing waypoints.  Changes can only be undone by reloading the saved race.  If you are starting from scratch or made any changes to waypoints, you must save or overwrite the race to allow best lap times to be saved.  **NOTE THAT OVERWRITING A RACE WILL DELETE ITS EXISTING BEST LAP TIMES.**
+If you are editing waypoints from scratch or you have changed any waypoints of a saved race, then register and start the race, the best lap times will not be saved.  A change to a saved race means adding, deleting, moving, increasing/decreasing radii, combining start/finish, separating start/finish or reversing waypoints.  Changes can only be undone by reloading the saved race.  If you are starting from scratch or made any changes to waypoints, you must save or overwrite the race to allow best lap times to be saved.  **NOTE THAT OVERWRITING A RACE WILL DELETE ITS EXISTING BEST LAP TIMES.**
 
 After you have set your waypoints, you can save them as a race.  Type `/races save myrace` to save the waypoints as 'myrace'.  'myrace' must not exist.  You cannot save unless there are two or more waypoints in the race.  The best lap times for this race will be empty.  If you want to overwrite an existing race named 'myrace', type `/races overwrite myrace`.  **OVERWRITING A RACE WILL DELETE THE BEST LAP TIMES OF THAT RACE.**
 
@@ -166,7 +166,7 @@ PORTING
 -------
 If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the funds functions `GetFunds`, `SetFunds`, `Withdraw` and `Deposit` in `port.lua` to work for your framework.
 
-An attempt to port the funds functions to ESX is available in the `esx/` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder replacing the existing `port.lua` file.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 377 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
+An attempt to port the funds functions to ESX is available in the `esx/` folder.  Copy `esx/port.lua` to your server's `resources/races/` folder replacing the existing `port.lua` file.  **IF YOU DO NOT WANT TO INITIALIZE YOUR FUNDS TO 5000, COMMENT OUT LINE 499 OF `races_server.lua` BY ADDING `--` TO THE LEFT OF `SetFunds(source, 5000)`.**
 
 SCREENSHOTS
 -----------
