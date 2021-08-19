@@ -43,7 +43,7 @@ SERVER COMMANDS
 `races exportwblt [name]` - export public race saved as [name] with best lap times to file named '[name].json'\
 `races importwblt [name]` - import race file named '[name].json' into public races with best lap times
 
-**IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENT CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
+**IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
 `races updateRaceData` - update 'raceData.json' to new format\
 `races updateRace [name]` - update exported race '[name].json' to new format
@@ -156,7 +156,7 @@ Type `races exportwblt publicrace` to export the public race saved as 'publicrac
 
 Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
 
-**IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENT CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
+**IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
 Type `races updateRaceData` to update `resources/races/raceData.json` to the new file `resources/races/raceData_updated.json`.  You will need to remove the old `raceData.json` file and then rename `raceData_updated.json` to `raceData.json` to use the new race data format.
 
