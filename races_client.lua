@@ -316,12 +316,14 @@ end
 
 local function editWaypoints(coord, map)
     selectedWaypoint = 0
-    local minDist = waypoints[1].coord.r
-    for index, waypoint in ipairs(waypoints) do
-        local dist = true == map and #(coord - vector3(waypoint.coord.x, waypoint.coord.y, coord.z)) or #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
-        if dist < waypoint.coord.r and dist < minDist then
-            minDist = dist
-            selectedWaypoint = index
+    if #waypoints > 0 then
+        local minDist = waypoints[1].coord.r
+        for index, waypoint in ipairs(waypoints) do
+            local dist = true == map and #(coord - vector3(waypoint.coord.x, waypoint.coord.y, coord.z)) or #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
+            if dist < waypoint.coord.r and dist < minDist then
+                minDist = dist
+                selectedWaypoint = index
+            end
         end
     end
 
@@ -1248,12 +1250,14 @@ Citizen.CreateThread(function()
         if STATE_EDITING == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
             local closestIndex = 0
-            local minDist = waypoints[1].coord.r
-            for index, waypoint in ipairs(waypoints) do
-                local dist = #(pedCoord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
-                if dist < waypoint.coord.r and dist < minDist then
-                    minDist = dist
-                    closestIndex = index
+            if #waypoints > 0 then
+                local minDist = waypoints[1].coord.r
+                for index, waypoint in ipairs(waypoints) do
+                    local dist = #(pedCoord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
+                    if dist < waypoint.coord.r and dist < minDist then
+                        minDist = dist
+                        closestIndex = index
+                    end
                 end
             end
 
@@ -1471,7 +1475,7 @@ Citizen.CreateThread(function()
         elseif STATE_IDLE == raceState then
             local pedCoord = GetEntityCoords(PlayerPedId())
             local closestIndex = -1
-            local minDist = 10.0
+            local minDist = defaultRadius
             for index, start in pairs(starts) do
                 local dist = #(pedCoord - GetBlipCoords(start.blip))
                 if dist < minDist then
