@@ -56,7 +56,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local races = {} -- races[] = {state, owner, buyin, laps, timeout, waypointCoords[] = {x, y, z}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, owner, buyin, laps, timeout, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -68,127 +68,6 @@ end
 
 local function sendMessage(source, msg)
     TriggerClientEvent("races:message", source, msg)
-end
-
-local function updateRaceData()
-    local defaultRadius <const> = 10.0 -- default waypoint radius
-
-    local file, errMsg, errCode = io.open(raceDataFile, "r")
-    if file ~= nil then
-        local raceData = json.decode(file:read("a"))
-        file:close()
-        if raceData ~= nil then
-            local update = false
-            local newRaceData = {}
-            for license, playerRaces in pairs(raceData) do
-                local newPlayerRaces = {}
-                for raceName, race in pairs(playerRaces) do
-                    local waypointCoords = race.waypointCoords
-                    local newWaypointCoords = {}
-                    local bestLaps = race.bestLaps
-                    for _, waypointCoord in ipairs(waypointCoords) do
-                        if nil == waypointCoord.r then
-                            update = true
-                            newWaypointCoords[#newWaypointCoords + 1] = {x = waypointCoord.x, y = waypointCoord.y, z = waypointCoord.z, r = defaultRadius}
-                        end
-                    end
-                    if true == update then
-                        newPlayerRaces[raceName] = {waypointCoords = newWaypointCoords, bestLaps = bestLaps}
-                    end
-                end
-                if true == update then
-                    newRaceData[license] = newPlayerRaces
-                end
-            end
-            if true == update then
-                local raceFile = "./resources/races/raceData_updated.json"
-                file, errMsg, errCode = io.open(raceFile, "w+")
-                if file ~= nil then
-                    file:write(json.encode(newRaceData))
-                    file:close()
-                    print("updateRaceData: raceData.json updated to new format in '" .. raceFile .. "'.")
-                else
-                    print("updateRaceData: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
-                end
-            else
-                print("updateRaceData: raceData.json not updated.")
-            end
-        else
-            print("updateRaceData: No race data.")
-        end
-    else
-        print("updateRaceData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
-    end
-end
-
-local function updateRace(raceName)
-    if nil == raceName then
-        print("updateRace: Name required.")
-        return
-    end
-
-    local defaultRadius <const> = 10.0 -- default waypoint radius
-
-    local update = false
-    local raceFile = "./resources/races/" .. raceName .. ".json"
-    local file, errMsg, errCode = io.open(raceFile, "r")
-    if nil == file then
-        print("updateRace: Error opening file '" .. raceFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
-        return
-    end
-
-    local race = json.decode(file:read("a"))
-    file:close()
-
-    if type(race) ~= "table" or type(race.waypointCoords) ~= "table" or type(race.bestLaps) ~= "table" then
-        print("updateRace: race or race.waypointCoords or race.bestLaps not a table.")
-        return
-    end
-
-    local newWaypointCoords = {}
-    for _, waypoint in ipairs(race.waypointCoords) do
-        if type(waypoint) ~= "table" or type(waypoint.x) ~= "number" or type(waypoint.y) ~= "number" or type(waypoint.z) ~= "number" then
-            print("updateRace: waypoint not a table or waypoint.x or waypoint.y or waypoint.z not a number.")
-            return
-        end
-        if nil == waypoint.r then
-            update = true
-            newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = defaultRadius}
-        elseif type(waypoint.r) == "number" then
-            newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = waypoint.r}
-        else
-            print("updateRace: waypoint.r not a number.")
-            return
-        end
-    end
-
-    if #newWaypointCoords < 2 then
-        print("updateRace: number of waypoints is less than 2.")
-        return
-    end
-
-    local newBestLaps = {}
-    for _, bestLap in ipairs(race.bestLaps) do
-        if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
-            print("updateRace: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
-            return
-        end
-        newBestLaps[#newBestLaps + 1] = {playerName = bestLap.playerName, bestLapTime = bestLap.bestLapTime, vehicleName = bestLap.vehicleName}
-    end
-
-    if true == update then
-        raceFile = "./resources/races/" .. raceName .. "_updated.json"
-        file, errMsg, errCode = io.open(raceFile, "w+")
-        if file ~= nil then
-            file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = newBestLaps}))
-            file:close()
-            print("updateRace:  '" .. raceName .. ".json' updated to new format in '" .. raceFile .. "'.")
-        else
-            print("updateRace: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
-        end
-    else
-        print("updateRace: '" .. raceName .. ".json' not updated.")
-    end
 end
 
 local function getRace(raceName)
@@ -320,6 +199,127 @@ local function import(raceName, withBLT)
         end
     else
         print("import: Name required.")
+    end
+end
+
+local function updateRaceData()
+    local defaultRadius <const> = 5.0 -- default waypoint radius
+
+    local file, errMsg, errCode = io.open(raceDataFile, "r")
+    if file ~= nil then
+        local raceData = json.decode(file:read("a"))
+        file:close()
+        if raceData ~= nil then
+            local update = false
+            local newRaceData = {}
+            for license, playerRaces in pairs(raceData) do
+                local newPlayerRaces = {}
+                for raceName, race in pairs(playerRaces) do
+                    local waypointCoords = race.waypointCoords
+                    local newWaypointCoords = {}
+                    local bestLaps = race.bestLaps
+                    for _, waypointCoord in ipairs(waypointCoords) do
+                        if nil == waypointCoord.r then
+                            update = true
+                            newWaypointCoords[#newWaypointCoords + 1] = {x = waypointCoord.x, y = waypointCoord.y, z = waypointCoord.z, r = defaultRadius}
+                        end
+                    end
+                    if true == update then
+                        newPlayerRaces[raceName] = {waypointCoords = newWaypointCoords, bestLaps = bestLaps}
+                    end
+                end
+                if true == update then
+                    newRaceData[license] = newPlayerRaces
+                end
+            end
+            if true == update then
+                local raceFile = "./resources/races/raceData_updated.json"
+                file, errMsg, errCode = io.open(raceFile, "w+")
+                if file ~= nil then
+                    file:write(json.encode(newRaceData))
+                    file:close()
+                    print("updateRaceData: raceData.json updated to new format in '" .. raceFile .. "'.")
+                else
+                    print("updateRaceData: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                end
+            else
+                print("updateRaceData: raceData.json not updated.")
+            end
+        else
+            print("updateRaceData: No race data.")
+        end
+    else
+        print("updateRaceData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    end
+end
+
+local function updateRace(raceName)
+    if nil == raceName then
+        print("updateRace: Name required.")
+        return
+    end
+
+    local defaultRadius <const> = 5.0 -- default waypoint radius
+
+    local update = false
+    local raceFile = "./resources/races/" .. raceName .. ".json"
+    local file, errMsg, errCode = io.open(raceFile, "r")
+    if nil == file then
+        print("updateRace: Error opening file '" .. raceFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+        return
+    end
+
+    local race = json.decode(file:read("a"))
+    file:close()
+
+    if type(race) ~= "table" or type(race.waypointCoords) ~= "table" or type(race.bestLaps) ~= "table" then
+        print("updateRace: race or race.waypointCoords or race.bestLaps not a table.")
+        return
+    end
+
+    local newWaypointCoords = {}
+    for _, waypoint in ipairs(race.waypointCoords) do
+        if type(waypoint) ~= "table" or type(waypoint.x) ~= "number" or type(waypoint.y) ~= "number" or type(waypoint.z) ~= "number" then
+            print("updateRace: waypoint not a table or waypoint.x or waypoint.y or waypoint.z not a number.")
+            return
+        end
+        if nil == waypoint.r then
+            update = true
+            newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = defaultRadius}
+        elseif type(waypoint.r) == "number" then
+            newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = waypoint.r}
+        else
+            print("updateRace: waypoint.r not a number.")
+            return
+        end
+    end
+
+    if #newWaypointCoords < 2 then
+        print("updateRace: number of waypoints is less than 2.")
+        return
+    end
+
+    local newBestLaps = {}
+    for _, bestLap in ipairs(race.bestLaps) do
+        if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
+            print("updateRace: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
+            return
+        end
+        newBestLaps[#newBestLaps + 1] = {playerName = bestLap.playerName, bestLapTime = bestLap.bestLapTime, vehicleName = bestLap.vehicleName}
+    end
+
+    if true == update then
+        raceFile = "./resources/races/" .. raceName .. "_updated.json"
+        file, errMsg, errCode = io.open(raceFile, "w+")
+        if file ~= nil then
+            file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = newBestLaps}))
+            file:close()
+            print("updateRace:  '" .. raceName .. ".json' updated to new format in '" .. raceFile .. "'.")
+        else
+            print("updateRace: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+        end
+    else
+        print("updateRace: '" .. raceName .. ".json' not updated.")
     end
 end
 
