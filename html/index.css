@@ -109,7 +109,7 @@ body {
 }
 
 #register {
-    width: 25%;
+    width: 15%;
 }
 
 #buyin {
@@ -121,6 +121,10 @@ body {
 }
 
 #timeout {
+    width: 10%;
+}
+
+#restrict {
     width: 10%;
 }
 
@@ -148,11 +152,11 @@ body {
     width: 25%;
 }
 
-#car {
+#spawn {
     width: 25%;
 }
 
-#carName {
+#vehicle {
     width: 30%;
 }
 

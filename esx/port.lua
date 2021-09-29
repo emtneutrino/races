@@ -34,21 +34,33 @@ local ESX = nil
 
 function GetFunds(source)
     local xPlayer = ESX.GetPlayerFromId(source)
+
     return xPlayer.getMoney()
 end
 
 function SetFunds(source, amount)
     local xPlayer = ESX.GetPlayerFromId(source)
-    xPlayer.setMoney(amount)
+
+    if amount < 0 then
+        xPlayer.setMoney(0)
+    else
+        xPlayer.setMoney(amount)
+    end
 end
 
 function Withdraw(source, amount)
     local xPlayer = ESX.GetPlayerFromId(source)
-    xPlayer.removeMoney(amount)
+
+    if xPlayer.getMoney() < amount then
+        xPlayer.setMoney(0)
+    else
+        xPlayer.removeMoney(amount)
+    end
 end
 
 function Deposit(source, amount)
     local xPlayer = ESX.GetPlayerFromId(source)
+
     xPlayer.addMoney(amount)
 end
 

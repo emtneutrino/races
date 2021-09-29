@@ -33,17 +33,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 local playerFunds = {} -- playerFunds[] = funds
 
 function GetFunds(source)
+    if nil == playerFunds[source] then
+        playerFunds[source] = 0
+    end
     return playerFunds[source]
 end
 
 function SetFunds(source, amount)
-    playerFunds[source] = amount
+    if amount < 0 then
+        playerFunds[source] = 0
+    else
+        playerFunds[source] = amount
+    end
 end
 
 function Withdraw(source, amount)
-    playerFunds[source] = playerFunds[source] - amount
+    if nil == playerFunds[source] or playerFunds[source] < amount then
+        playerFunds[source] = 0
+    else
+        playerFunds[source] = playerFunds[source] - amount
+    end
 end
 
 function Deposit(source, amount)
-    playerFunds[source] = playerFunds[source] + amount
+    if nil == playerFunds[source] then
+        playerFunds[source] = amount
+    else
+        playerFunds[source] = playerFunds[source] + amount
+    end
 end

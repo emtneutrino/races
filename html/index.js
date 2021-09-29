@@ -43,7 +43,7 @@ $(function() {
             $("#laps").val(data.defaultLaps)
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
-            $("#carName").val(data.defaultVehicle)
+            $("#vehicle").val(data.defaultVehicle)
             $("#main").show();
         } else {
             $("#main").hide();
@@ -161,10 +161,12 @@ $(function() {
         let buyin = $("#buyin").val();
         let laps = $("#laps").val();
         let timeout = $("#timeout").val();
+        let restrict = $("#restrict").val();
         $.post("https://races/register", JSON.stringify({
             buyin: buyin,
             laps: laps,
-            timeout: timeout
+            timeout: timeout,
+            restrict: restrict
         }));
     });
 
@@ -191,10 +193,10 @@ $(function() {
         $.post("https://races/results");
     });
 
-    $("#car").click(function() {
-        let carName = $("#carName").val();
-        $.post("https://races/car", JSON.stringify({
-            carName: carName
+    $("#spawn").click(function() {
+        let vehicle = $("#vehicle").val();
+        $.post("https://races/spawn", JSON.stringify({
+            vehicle: vehicle
         }));
     });
     

@@ -56,7 +56,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local races = {} -- races[] = {state, owner, buyin, laps, timeout, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[] = {state, owner, buyin, laps, timeout, restrict, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -495,13 +495,15 @@ RegisterNetEvent("races:init")
 AddEventHandler("races:init", function()
     local source = source
 
-    -- set initial funds
-    SetFunds(source, 5000)
+    -- if funds < 5000, set funds to 5000
+    if GetFunds(source) < 5000 then
+        SetFunds(source, 5000)
+    end
 
     -- register any races created before player joined
     for i, race in pairs(races) do
         if STATE_REGISTERING == race.state then
-            TriggerClientEvent("races:register", source, i, race.owner, race.buyin, race.laps, race.waypointCoords[1], race.publicRace, race.savedRaceName)
+            TriggerClientEvent("races:register", source, i, race.owner, race.buyin, race.laps, race.timeout, race.restrict, race.waypointCoords[1], race.publicRace, race.savedRaceName)
         end
     end
 end)
@@ -658,7 +660,7 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(buyin, laps, timeout, waypointCoords, publicRace, savedRaceName)
+AddEventHandler("races:register", function(buyin, laps, timeout, restrict, waypointCoords, publicRace, savedRaceName)
     local source = source
     if buyin ~= nil and laps ~= nil and timeout ~= nil and waypointCoords ~= nil and publicRace ~= nil then
         if buyin >= 0 then
@@ -666,8 +668,8 @@ AddEventHandler("races:register", function(buyin, laps, timeout, waypointCoords,
                 if timeout >= 0 then
                     if nil == races[source] then
                         local owner = GetPlayerName(source)
-                        races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
-                        TriggerClientEvent("races:register", -1, source, owner, buyin, laps, waypointCoords[1], publicRace, savedRaceName)
+                        races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
+                        TriggerClientEvent("races:register", -1, source, owner, buyin, laps, timeout, restrict, waypointCoords[1], publicRace, savedRaceName)
                         local msg = "Registered "
                         if nil == savedRaceName then
                             msg = msg .. "unsaved race "
@@ -675,7 +677,11 @@ AddEventHandler("races:register", function(buyin, laps, timeout, waypointCoords,
                             msg = msg .. (true == publicRace and "publicly" or "privately")
                             msg = msg .. " saved race '" .. savedRaceName .. "' "
                         end
-                        msg = msg .. ("by %s : %d buy-in : %d lap(s).\n"):format(owner, buyin, laps)
+                        msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
+                        if restrict ~= nil then
+                            msg = msg .. " : using " .. restrict
+                        end
+                        msg = msg .. ".\n"
                         sendMessage(source, msg)
                         if false == distValid then
                             sendMessage(source, "Prize distribution table is invalid.\n")
@@ -817,7 +823,7 @@ AddEventHandler("races:join", function(index)
                     races[index].players[source] = {playerName = GetPlayerName(source), numWaypointsPassed = -1, data = -1, finished = false}
                     Withdraw(source, races[index].buyin)
                     sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
-                    TriggerClientEvent("races:join", source, index, races[index].timeout, races[index].waypointCoords)
+                    TriggerClientEvent("races:join", source, index, races[index].waypointCoords)
                 else
                     notifyPlayer(source, "Cannot join.  Race in progress.\n")
                 end
@@ -967,7 +973,7 @@ Citizen.CreateThread(function()
                 local sortedPlayers = {} -- will contain players still racing and players that finished without DNF
                 local complete = true
 
-                -- race.players[] = {numWaypointsPassed, data}
+                -- race.players[] = {playerName, numWaypointsPassed, data, finished}
                 for i, player in pairs(race.players) do
                     if -1 == player.numWaypointsPassed then -- player client hasn't updated numWaypointsPassed and data
                         complete = false
