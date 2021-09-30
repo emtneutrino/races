@@ -115,6 +115,10 @@ local timeoutStart = -1 -- start time of DNF timeout
 
 local vehicleName = nil -- name of vehicle in which player started
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
+local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles
+local colorPri = -1 -- primary color of original vehicle
+local colorSec = -1 -- secondary color of original vehicle
+local randVehicles = {} -- list of random vehicles used in random vehicle races
 
 local results = {} -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
 
@@ -313,6 +317,35 @@ local function minutesSeconds(milliseconds)
     local minutes = math.floor(seconds / 60.0)
     seconds = seconds - minutes * 60.0
     return minutes, seconds
+end
+
+local function switchVehicle(player, priColor, secColor, vehicleHash)
+    if vehicleHash ~= nil then
+        local speed = GetEntitySpeed(player)
+        local vehicle = nil
+        if IsPedInAnyVehicle(player, false) then
+            vehicle = GetVehiclePedIsIn(player, false)
+        end
+        RequestModel(vehicleHash)
+        while false == HasModelLoaded(vehicleHash) do
+            Citizen.Wait(1)
+        end
+        if vehicle ~= nil then
+            SetEntityAsMissionEntity(vehicle, true, true)
+            DeleteVehicle(vehicle)
+        end
+        local pedCoord = GetEntityCoords(player)
+        vehicle = CreateVehicle(vehicleHash, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
+        SetPedIntoVehicle(player, vehicle, -1)
+        SetEntityAsNoLongerNeeded(vehicle)
+        SetModelAsNoLongerNeeded(vehicleHash)
+        if priColor ~= nil and secColor ~= nil then
+            SetVehicleColours(vehicle, priColor, secColor)
+        end
+        SetVehicleRadioEnabled(vehicle, false)
+        SetVehicleEngineOn(vehicle, true, true, false)
+        SetVehicleForwardSpeed(vehicle, speed)
+    end
 end
 
 local function editWaypoints(coord)
@@ -575,7 +608,7 @@ local function register(buyin, laps, timeout, restrict)
         if laps ~= nil and laps > 0 then
             timeout = nil == timeout and defaultTimeout or tonumber(timeout)
             if timeout ~= nil and timeout >= 0 then
-                if nil == restrict or (restrict ~= nil and 1 == IsModelInCdimage(restrict) and 1 == IsModelAVehicle(restrict)) then
+                if nil == restrict or "rand" == restrict or (restrict ~= nil and 1 == IsModelInCdimage(restrict) and 1 == IsModelAVehicle(restrict)) then
                     if STATE_IDLE == raceState then
                         if #waypoints > 1 then
                             if laps < 2 or (laps >= 2 and true == startIsFinish) then
@@ -620,13 +653,12 @@ end
 
 local function leave()
     if STATE_REGISTERING == raceState then
-        raceState = STATE_IDLE
         TriggerServerEvent("races:leave", raceIndex)
         sendMessage("Left race.\n")
-    elseif STATE_RACING == raceState then
         raceState = STATE_IDLE
+    elseif STATE_RACING == raceState then
+        local player = PlayerPedId()
         if true == frozen then
-            local player = PlayerPedId()
             if IsPedInAnyVehicle(player, false) then
                 FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
             end
@@ -637,7 +669,11 @@ local function leave()
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
         speedo = false
+        if #randVehicles > 0 then
+            switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+        end
         sendMessage("Left race.\n")
+        raceState = STATE_IDLE
     else
         sendMessage("Cannot leave.  Not joined to any race.\n")
     end
@@ -1029,11 +1065,12 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, r
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
+        local msg = owner .. " (" .. buyin .. " buy-in"
         if restrict ~= nil then
-            AddTextComponentSubstringPlayerName(owner .. " (" .. buyin .. " buy-in, using " .. restrict .. ")")
-        else
-            AddTextComponentSubstringPlayerName(owner .. " (" .. buyin .. " buy-in)")
+            msg = msg .. ", using " .. restrict
         end
+        msg = msg .. ")"
+        AddTextComponentSubstringPlayerName(msg)
         EndTextCommandSetBlipName(blip)
 
         coord.r = defaultRadius
@@ -1085,6 +1122,7 @@ AddEventHandler("races:start", function(delay)
                 beginDNFTimeout = false
                 timeoutStart = -1
                 vehicleName = "FEET"
+                originalVehicleHash = nil
                 results = {}
                 frozen = false
                 speedo = true
@@ -1132,7 +1170,7 @@ AddEventHandler("races:hide", function(index)
 end)
 
 RegisterNetEvent("races:join")
-AddEventHandler("races:join", function(index, waypointCoords)
+AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
     if index ~= nil and waypointCoords ~= nil then
         if starts[index] ~= nil then
             if STATE_IDLE == raceState then
@@ -1140,10 +1178,18 @@ AddEventHandler("races:join", function(index, waypointCoords)
                 raceIndex = index
                 numLaps = starts[index].laps
                 DNFTimeout = starts[index].timeout * 1000
-                if starts[index].restrict ~= nil then
+                restrictedHash = nil
+                randVehicles = {}
+                if "rand" == starts[index].restrict then
+                    if vehicleList ~= nil then
+                        for _, vehicle in pairs(vehicleList) do
+                            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
+                                randVehicles[#randVehicles + 1] = vehicle
+                            end
+                        end
+                    end
+                elseif starts[index].restrict ~= nil then
                     restrictedHash = GetHashKey(starts[index].restrict)
-                else
-                    restrictedHash = nil
                 end
                 loadWaypointBlips(waypointCoords)
                 local msg = "Joined "
@@ -1338,11 +1384,13 @@ Citizen.CreateThread(function()
                 if true == frozen then
                     if IsPedInAnyVehicle(player, false) then
                         local vehicle = GetVehiclePedIsIn(player, false)
+                        originalVehicleHash = GetEntityModel(vehicle)
+                        colorPri, colorSec = GetVehicleColours(vehicle)
                         FreezeEntityPosition(vehicle, false)
                         if restrictedHash ~= nil then
                             vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(restrictedHash))
                         else
-                            vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)))
+                            vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(originalVehicleHash))
                         end
                     end
                     frozen = false
@@ -1389,13 +1437,16 @@ Citizen.CreateThread(function()
                         drawMsg(leftSide, 0.28, "DNF time", 0.7)
                         drawMsg(rightSide, 0.28, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
-                        raceState = STATE_IDLE
                         DeleteCheckpoint(raceCheckpoint)
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
                         restoreBlips()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                         speedo = false
+                        if #randVehicles > 0 then
+                            switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+                        end
+                        raceState = STATE_IDLE
                     end
                 end
 
@@ -1428,13 +1479,19 @@ Citizen.CreateThread(function()
                                 end
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
+                                    if #randVehicles > 0 then
+                                        switchVehicle(player, nil, nil, randVehicles[math.random(#randVehicles)])
+                                    end
                                 else
-                                    raceState = STATE_IDLE
                                     TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, vehicleName, nil)
                                     restoreBlips()
                                     SetBlipRoute(waypoints[1].blip, true)
                                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                                     speedo = false
+                                    if #randVehicles > 0 then
+                                        switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+                                    end
+                                    raceState = STATE_IDLE
                                 end
                             end
 
@@ -1513,7 +1570,7 @@ Citizen.CreateThread(function()
                 drawMsg(0.24, 0.50, msg, 0.7)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                     local joinRace = true
-                    if starts[closestIndex].restrict ~= nil then
+                    if starts[closestIndex].restrict ~= nil and starts[closestIndex].restrict ~= "rand" then
                         if IsPedInAnyVehicle(player, false) then
                             if GetEntityModel(GetVehiclePedIsIn(player, false)) ~= GetHashKey(starts[closestIndex].restrict) then
                                 joinRace = false

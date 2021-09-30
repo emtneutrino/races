@@ -34,27 +34,47 @@ local STATE_REGISTERING <const> = 0
 local STATE_RACING <const> = 1
 
 local raceDataFile <const> = "./resources/races/raceData.json"
+local randomVehicleFile <const> = "./resources/races/random.txt"
 
 local dist <const> = {60, 20, 10, 5, 3, 2}
-
 local distValid = true
-if #dist > 0 and dist[1] > 0 then
-	local sum = dist[1]
-	for i = 2, #dist do
-		if dist[i] > 0 and dist[i - 1] >= dist[i] then
-			sum = sum + dist[i]
-		else
-			distValid = false
-			break
-		end
-	end
-	distValid = distValid and 100 == sum
-else
-	distValid = false
+
+local randVehicles = {}
+
+local function initialize()
+    if #dist > 0 and dist[1] > 0 then
+        local sum = dist[1]
+        for i = 2, #dist do
+            if dist[i] > 0 and dist[i - 1] >= dist[i] then
+                sum = sum + dist[i]
+            else
+                distValid = false
+                break
+            end
+        end
+        distValid = distValid and 100 == sum
+    else
+        distValid = false
+    end
+    if false == distValid then
+        print("^1Prize distribution table is invalid.")
+    end
+
+    local file, errMsg, errCode = io.open(randomVehicleFile, "r")
+    if nil == file then
+        print("^1Error opening file '" .. randomVehicleFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    else
+        for vehicle in file:lines() do
+            if string.len(vehicle) > 0 then
+                randVehicles[#randVehicles + 1] = vehicle
+            end
+        end
+    end
 end
-if false == distValid then
-    print("^1Prize distribution table is invalid.")
-end
+
+initialize()
+
+local randAllowed = #randVehicles > 0
 
 local races = {} -- races[] = {state, owner, buyin, laps, timeout, restrict, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
@@ -667,24 +687,34 @@ AddEventHandler("races:register", function(buyin, laps, timeout, restrict, waypo
             if laps > 0 then
                 if timeout >= 0 then
                     if nil == races[source] then
-                        local owner = GetPlayerName(source)
-                        races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
-                        TriggerClientEvent("races:register", -1, source, owner, buyin, laps, timeout, restrict, waypointCoords[1], publicRace, savedRaceName)
-                        local msg = "Registered "
-                        if nil == savedRaceName then
-                            msg = msg .. "unsaved race "
-                        else
-                            msg = msg .. (true == publicRace and "publicly" or "privately")
-                            msg = msg .. " saved race '" .. savedRaceName .. "' "
+                        local registerRace = true
+                        if "rand" == restrict then
+                            buyin = 0
+                            if false == randAllowed then
+                                registerRace = false
+                                sendMessage(source, "Cannot register.  Random vehicle list not loaded.\n")
+                            end
                         end
-                        msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
-                        if restrict ~= nil then
-                            msg = msg .. " : using " .. restrict
-                        end
-                        msg = msg .. ".\n"
-                        sendMessage(source, msg)
-                        if false == distValid then
-                            sendMessage(source, "Prize distribution table is invalid.\n")
+                        if true == registerRace then
+                            local owner = GetPlayerName(source)
+                            races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
+                            TriggerClientEvent("races:register", -1, source, owner, buyin, laps, timeout, restrict, waypointCoords[1], publicRace, savedRaceName)
+                            local msg = "Registered "
+                            if nil == savedRaceName then
+                                msg = msg .. "unsaved race "
+                            else
+                                msg = msg .. (true == publicRace and "publicly" or "privately")
+                                msg = msg .. " saved race '" .. savedRaceName .. "' "
+                            end
+                            msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
+                            if restrict ~= nil then
+                                msg = msg .. " : using " .. restrict
+                            end
+                            msg = msg .. ".\n"
+                            sendMessage(source, msg)
+                            if false == distValid then
+                                sendMessage(source, "Prize distribution table is invalid.\n")
+                            end
                         end
                     else
                         if STATE_RACING == races[source].state then
@@ -763,8 +793,10 @@ AddEventHandler("races:leave", function(index)
                 if races[index].players[source] ~= nil then
                     races[index].players[source] = nil
                     races[index].numRacing = races[index].numRacing - 1
-                    Deposit(source, races[index].buyin)
-                    sendMessage(source, races[index].buyin .. " was deposited in your funds.\n")
+                    if races[index].restrict ~= "rand" then
+                        Deposit(source, races[index].buyin)
+                        sendMessage(source, races[index].buyin .. " was deposited in your funds.\n")
+                    end
                 else
                     sendMessage(source, "Cannot leave.  Not a member of this race.\n")
                 end
@@ -821,9 +853,17 @@ AddEventHandler("races:join", function(index)
                 if STATE_REGISTERING == races[index].state then
                     races[index].numRacing = races[index].numRacing + 1
                     races[index].players[source] = {playerName = GetPlayerName(source), numWaypointsPassed = -1, data = -1, finished = false}
-                    Withdraw(source, races[index].buyin)
-                    sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
-                    TriggerClientEvent("races:join", source, index, races[index].waypointCoords)
+                    if "rand" == races[index].restrict then
+                        if true == randAllowed then
+                            TriggerClientEvent("races:join", source, index, races[index].waypointCoords, randVehicles)
+                        else
+                            notifyPlayer(source, "Cannot join.  Random vehicle list not loaded.\n")
+                        end
+                    else
+                        TriggerClientEvent("races:join", source, index, races[index].waypointCoords, nil)
+                        Withdraw(source, races[index].buyin)
+                        sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
+                    end
                 else
                     notifyPlayer(source, "Cannot join.  Race in progress.\n")
                 end
@@ -870,7 +910,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                             winningsRL[result.source] = races[index].buyin
                         end
 
-                        if true == distValid then
+                        if true == distValid and races[index].restrict ~= "rand" then
                             local numRacers = #(races[index].results)
                             local numFinished = 0
                             local totalPool = numRacers * races[index].buyin
@@ -923,8 +963,10 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
 
                         for i in pairs(races[index].players) do
                             TriggerClientEvent("races:results", i, races[index].results)
-                            Deposit(i, winningsRL[i])
-                            notifyPlayer(i, winningsRL[i] .. " was deposited in your funds.\n")
+                            if races[index].restrict ~= "rand" then
+                                Deposit(i, winningsRL[i])
+                                notifyPlayer(i, winningsRL[i] .. " was deposited in your funds.\n")
+                            end
                         end
 
                         if races[index].savedRaceName ~= nil then
