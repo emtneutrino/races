@@ -118,7 +118,7 @@ Once everyone who wants to join your registered race have joined, you can start 
 
 The current race waypoint will have a yellow cylinder checkpoint appear in the world.  It will have an arrow indicating the direction of the next checkpoint.  If a restricted vehicle was specified at the race registration point, you will need to be in the restricted vehicle when passing the checkpoint to make the next checkpoint appear.  If a restricted vehicle was not specified, you can pass the checkpoint in any vehicle or on foot to make the next checkpoint appear.  Once you pass the checkpoint, it will disappear, a sound will play and the next checkpoint will appear in the world.  Only the next three waypoints will be shown on the minimap at a time.  A blue route will be shown in your minimap to the current race waypoint.  Once you reach the current waypoint, it will disappear on the minimap and the next third waypoint along the route will appear on the minimap.  Once you leave or finish the race, all the race waypoints will reappear on the minimap.
 
-Your current position, lap, waypoint, lap time, best lap time, total time and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
+Your current position, lap, waypoint, lap time, best lap time, total time, vehicle name and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
 
 If you want to leave a race you joined, type `/races leave`.  **IF YOU LEAVE AFTER THE RACE HAS STARTED, YOU WILL DNF.**
 
