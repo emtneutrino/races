@@ -59,10 +59,10 @@ local finishSprite <const> = 38 -- checkered flag
 local midSprite <const> = 1 -- numbered circle
 local registerSprite <const> = 58 -- circled star
 
-local finishCheckpoint <const> = 4 -- cylinder checkered flag
+local finishCheckpoint <const> = 9 -- cylinder checkered flag
 local midCheckpoint <const> = 42 -- cylinder with number
 local plainCheckpoint <const> = 45 -- cylinder
-local arrow3Checkpoint <const> = 2 -- cylinder with 3 arrows
+local arrow3Checkpoint <const> = 7 -- cylinder with 3 arrows
 
 local defaultBuyin <const> = 500 -- default race buy-in
 local defaultLaps <const> = 1 -- default number of laps in a race
@@ -176,7 +176,11 @@ local function getCheckpointColor(blipColor)
 end
 
 local function makeCheckpoint(checkpointType, coord, nextCoord, color, alpha, num)
-    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, coord.z, nextCoord.x, nextCoord.y, nextCoord.z, coord.r * 2.0, color.r, color.g, color.b, alpha, num)
+    local zCoord = coord.z
+    if checkpointType ~= 42 and checkpointType ~= 45 then
+        zCoord = zCoord + coord.r
+    end
+    local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, zCoord, nextCoord.x, nextCoord.y, nextCoord.z, coord.r * 2.0, color.r, color.g, color.b, alpha, num)
     SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, coord.r * 2.0)
     return checkpoint
 end
@@ -883,6 +887,14 @@ RegisterNUICallback("close", function()
     SetNuiFocus(false, false)
 end)
 
+--[[
+local function test(cptype)
+    local pedCoord = GetEntityCoords(PlayerPedId())
+    local coord = {x = pedCoord.x, y = pedCoord.y, z = pedCoord.z, r = 5.0}
+    local checkpoint = makeCheckpoint(tonumber(cptype), coord, coord, yellow, 127, 5)
+end
+--]]
+
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
@@ -965,6 +977,7 @@ RegisterCommand("races", function(_, args)
         showPanel(true)
 --[[
     elseif "test" == args[1] then
+        test(args[2])
         TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
 --]]
     else
