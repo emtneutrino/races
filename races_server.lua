@@ -334,7 +334,7 @@ local function updateRace(raceName)
         if file ~= nil then
             file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = newBestLaps}))
             file:close()
-            print("updateRace:  '" .. raceName .. ".json' updated to new format in '" .. raceFile .. "'.")
+            print("updateRace: '" .. raceName .. ".json' updated to new format in '" .. raceFile .. "'.")
         else
             print("updateRace: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
         end
