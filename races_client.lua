@@ -118,6 +118,7 @@ local restrictedHash = nil -- vehicle hash of race with restricted vehicle
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles
 local colorPri = -1 -- primary color of original vehicle
 local colorSec = -1 -- secondary color of original vehicle
+local currentVehicle = nil -- name of current vehicle being driven in 'rand' races
 local randVehicles = {} -- list of random vehicles used in random vehicle races
 
 local results = {} -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
@@ -349,6 +350,7 @@ local function switchVehicle(player, priColor, secColor, vehicleHash)
         SetVehicleRadioEnabled(vehicle, false)
         SetVehicleEngineOn(vehicle, true, true, false)
         SetVehicleForwardSpeed(vehicle, speed)
+        currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
     end
 end
 
@@ -1405,6 +1407,7 @@ Citizen.CreateThread(function()
                         else
                             vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(originalVehicleHash))
                         end
+                        currentVehicle = vehicleName
                     end
                     frozen = false
                 end
@@ -1442,6 +1445,11 @@ Citizen.CreateThread(function()
                     minutes, seconds = minutesSeconds(bestLapTime)
                     drawMsg(rightSide, 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                 end
+                if #randVehicles > 0 then
+                    drawMsg(leftSide, 0.28, "Vehicle", 0.7)
+                    drawMsg(rightSide, 0.28, currentVehicle, 0.7)
+                end
+
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
