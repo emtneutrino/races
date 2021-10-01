@@ -1445,18 +1445,16 @@ Citizen.CreateThread(function()
                     minutes, seconds = minutesSeconds(bestLapTime)
                     drawMsg(rightSide, 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                 end
-                if #randVehicles > 0 then
-                    drawMsg(leftSide, 0.28, "Vehicle", 0.7)
-                    drawMsg(rightSide, 0.28, currentVehicle, 0.7)
-                end
 
+                drawMsg(leftSide, 0.28, "Vehicle", 0.7)
+                drawMsg(rightSide, 0.28, currentVehicle, 0.7)
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
                     if milliseconds > 0 then
                         minutes, seconds = minutesSeconds(milliseconds)
-                        drawMsg(leftSide, 0.28, "DNF time", 0.7)
-                        drawMsg(rightSide, 0.28, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                        drawMsg(leftSide, 0.32, "DNF time", 0.7)
+                        drawMsg(rightSide, 0.32, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
