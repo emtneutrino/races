@@ -1581,12 +1581,13 @@ Citizen.CreateThread(function()
                     msg = msg .. (true == starts[closestIndex].publicRace and "publicly" or "privately")
                     msg = msg .. " saved race '" .. starts[closestIndex].savedRaceName .. "' "
                 end
-                msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[closestIndex].owner, starts[closestIndex].buyin, starts[closestIndex].laps)
+                msg = msg .. ("registered by %s :"):format(starts[closestIndex].owner)
+                drawMsg(0.30, 0.50, msg, 0.7)
+                msg = ("%d buy-in : %d lap(s)"):format(starts[closestIndex].buyin, starts[closestIndex].laps)
                 if starts[closestIndex].restrict ~= nil then
-                    msg = msg .. " : using " .. starts[closestIndex].restrict
+                    msg = msg .. " : using '" .. starts[closestIndex].restrict .. "'"
                 end
-                msg = msg .. ".\n"
-                drawMsg(0.24, 0.50, msg, 0.7)
+                drawMsg(0.36, 0.54, msg, 0.7)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                     local joinRace = true
                     if starts[closestIndex].restrict ~= nil and starts[closestIndex].restrict ~= "rand" then
