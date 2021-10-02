@@ -113,17 +113,17 @@ local DNFTimeout = -1 -- DNF timeout after first player finishes the race
 local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
-local vehicleName = nil -- name of vehicle in which player started
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
-local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles
+local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in 'rand' races
 local colorPri = -1 -- primary color of original vehicle
 local colorSec = -1 -- secondary color of original vehicle
-local currentVehicle = nil -- name of current vehicle being driven in 'rand' races
+local currentVehicle = nil -- name of current vehicle being driven
+local bestLapVehicle = nil -- name of vehicle in which player recorded best lap time
 local randVehicles = {} -- list of random vehicles used in random vehicle races
 
-local results = {} -- results[] = {playerName, finishTime, bestLapTime, vehicleName}
+local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
 
-local frozen = false -- flag indicating if vehicle is frozen
+local started = false -- flag indicating if race started
 
 local starts = {} -- starts[] = {owner, buyin, laps, timeout, restrict, publicRace, savedRaceName, blip, checkpoint} - registration points
 
@@ -664,13 +664,11 @@ local function leave()
         raceState = STATE_IDLE
     elseif STATE_RACING == raceState then
         local player = PlayerPedId()
-        if true == frozen then
-            if IsPedInAnyVehicle(player, false) then
-                FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
-            end
+        if IsPedInAnyVehicle(player, false) then
+            FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
         end
         DeleteCheckpoint(raceCheckpoint)
-        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
+        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
         restoreBlips()
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -1136,10 +1134,11 @@ AddEventHandler("races:start", function(delay)
                 numRacers = -1
                 beginDNFTimeout = false
                 timeoutStart = -1
-                vehicleName = "FEET"
+                currentVehicle = "FEET"
+                bestLapVehicle = currentVehicle
                 originalVehicleHash = nil
                 results = {}
-                frozen = false
+                started = false
                 speedo = true
 
                 numVisible = maxNumVisible < #waypoints and maxNumVisible or (#waypoints - 1)
@@ -1393,23 +1392,23 @@ Citizen.CreateThread(function()
 
                 if IsPedInAnyVehicle(player, false) then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
-                    frozen = true
                 end
             else
-                if true == frozen then
-                    if IsPedInAnyVehicle(player, false) then
-                        local vehicle = GetVehiclePedIsIn(player, false)
+                local vehicle = nil
+                if IsPedInAnyVehicle(player, false) then
+                    vehicle = GetVehiclePedIsIn(player, false)
+                    FreezeEntityPosition(vehicle, false)
+                    currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)))
+                else
+                    currentVehicle = "FEET"
+                end
+                if false == started then
+                    started = true
+                    if vehicle ~= nil then
                         originalVehicleHash = GetEntityModel(vehicle)
                         colorPri, colorSec = GetVehicleColours(vehicle)
-                        FreezeEntityPosition(vehicle, false)
-                        if restrictedHash ~= nil then
-                            vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(restrictedHash))
-                        else
-                            vehicleName = GetLabelText(GetDisplayNameFromVehicleModel(originalVehicleHash))
-                        end
-                        currentVehicle = vehicleName
                     end
-                    frozen = false
+                    bestLapVehicle = currentVehicle
                 end
 
                 drawMsg(leftSide, 0.03, "Position", 0.5)
@@ -1457,7 +1456,7 @@ Citizen.CreateThread(function()
                         drawMsg(rightSide, 0.32, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
-                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, vehicleName, nil)
+                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
                         restoreBlips()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -1473,8 +1472,8 @@ Citizen.CreateThread(function()
                     if #(GetEntityCoords(player) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
                         local waypointPassed = true
                         if restrictedHash ~= nil then
-                            if IsPedInAnyVehicle(player, false) then
-                                if GetEntityModel(GetVehiclePedIsIn(player, false)) ~= restrictedHash then
+                            if vehicle ~= nil then
+                                if GetEntityModel(vehicle) ~= restrictedHash then
                                     waypointPassed = false
                                 end
                             else
@@ -1495,6 +1494,7 @@ Citizen.CreateThread(function()
                                 lapTimeStart = currentTime
                                 if -1 == bestLapTime or lapTime < bestLapTime then
                                     bestLapTime = lapTime
+                                    bestLapVehicle = currentVehicle
                                 end
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
@@ -1502,7 +1502,7 @@ Citizen.CreateThread(function()
                                         switchVehicle(player, nil, nil, randVehicles[math.random(#randVehicles)])
                                     end
                                 else
-                                    TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, vehicleName, nil)
+                                    TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, bestLapVehicle, nil)
                                     restoreBlips()
                                     SetBlipRoute(waypoints[1].blip, true)
                                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
