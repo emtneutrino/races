@@ -1321,7 +1321,7 @@ end)
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(10)
+        Citizen.Wait(0)
         local player = PlayerPedId()
         if STATE_EDITING == raceState then
             local pedCoord = GetEntityCoords(player)
