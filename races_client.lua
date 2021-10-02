@@ -69,6 +69,7 @@ local defaultLaps <const> = 1 -- default number of laps in a race
 local defaultTimeout <const> = 120 -- default DNF timeout
 local defaultDelay <const> = 30 -- default race start delay
 local defaultVehicle <const> = "adder" -- default spawned vehicle
+local defaultFilename <const> = "random.txt"
 local defaultRadius <const> = 5.0 -- default waypoint radius
 
 local minRadius <const> = 0.5 -- minimum waypoint radius
@@ -132,6 +133,8 @@ local speedo = false -- flag indicating if speedometer is displayed
 local panelShown = false -- flag indicating if command button panel is shown
 
 TriggerServerEvent("races:init")
+
+math.randomseed(GetCloudTimeAsInt())
 
 local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
@@ -607,7 +610,7 @@ local function list(public)
     TriggerServerEvent("races:list", public)
 end
 
-local function register(buyin, laps, timeout, restrict)
+local function register(buyin, laps, timeout, restrict, filename)
     buyin = nil == buyin and defaultBuyin or tonumber(buyin)
     if buyin ~= nil and buyin >= 0 then
         laps = nil == laps and defaultLaps or tonumber(laps)
@@ -618,7 +621,7 @@ local function register(buyin, laps, timeout, restrict)
                     if STATE_IDLE == raceState then
                         if #waypoints > 1 then
                             if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                TriggerServerEvent("races:register", buyin, laps, timeout, restrict, waypointsToCoords(), publicRace, savedRaceName)
+                                TriggerServerEvent("races:register", buyin, laps, timeout, restrict, filename, waypointsToCoords(), publicRace, savedRaceName)
                             else
                                 sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
                             end
@@ -750,7 +753,7 @@ local function setSpeedo()
 end
 
 local function viewFunds()
-    TriggerServerEvent("races:viewFunds")
+    TriggerServerEvent("races:funds")
 end
 
 local function showPanel()
@@ -762,7 +765,8 @@ local function showPanel()
         defaultLaps = defaultLaps,
         defaultTimeout = defaultTimeout,
         defaultDelay = defaultDelay,
-        defaultVehicle = defaultVehicle
+        defaultVehicle = defaultVehicle,
+        defaultFilename = defaultFilename
     })
 end
 
@@ -839,7 +843,11 @@ RegisterNUICallback("register", function(data)
     if "" == restrict then
         restrict = nil
     end
-    register(buyin, laps, timeout, restrict)
+    local filename = data.filename
+    if "" == filename then
+        filename = nil
+    end
+    register(buyin, laps, timeout, restrict, filename)
 end)
 
 RegisterNUICallback("unregister", function()
@@ -914,7 +922,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
         msg = msg .. "/races bltPublic [name] - list 10 best lap times of public race saved as [name]\n"
         msg = msg .. "/races listPublic - list public saved races\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (restrict) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (restrict) (filename) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'\n"
         msg = msg .. "/races unregister - unregister your race\n"
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
@@ -956,7 +964,7 @@ RegisterCommand("races", function(_, args)
     elseif "listPublic" == args[1] then
         list(true)
     elseif "register" == args[1] then
-        register(args[2], args[3], args[4], args[5])
+        register(args[2], args[3], args[4], args[5], args[6])
     elseif "unregister" == args[1] then
         unregister()
     elseif "start" == args[1] then
@@ -1071,7 +1079,7 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, restrict, coord, public, raceName)
+AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, restrict, filename, coord, public, raceName)
     if index ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and coord ~= nil and public ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
@@ -1080,7 +1088,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, r
         BeginTextCommandSetBlipName("STRING")
         local msg = owner .. " (" .. buyin .. " buy-in"
         if restrict ~= nil then
-            msg = msg .. ", using " .. restrict
+            msg = msg .. ", using '" .. restrict .. "'"
         end
         msg = msg .. ")"
         AddTextComponentSubstringPlayerName(msg)
@@ -1089,7 +1097,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, r
         coord.r = defaultRadius
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, coord, purple, 127, 0) -- registration checkpoint
 
-        starts[index] = {owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
+        starts[index] = {owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, filename = filename, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
     else
         notifyPlayer("Ignoring register event.  Invalid parameters.\n")
     end
@@ -1192,19 +1200,6 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                 raceIndex = index
                 numLaps = starts[index].laps
                 DNFTimeout = starts[index].timeout * 1000
-                restrictedHash = nil
-                randVehicles = {}
-                if "rand" == starts[index].restrict then
-                    if vehicleList ~= nil then
-                        for _, vehicle in pairs(vehicleList) do
-                            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
-                                randVehicles[#randVehicles + 1] = vehicle
-                            end
-                        end
-                    end
-                elseif starts[index].restrict ~= nil then
-                    restrictedHash = GetHashKey(starts[index].restrict)
-                end
                 loadWaypointBlips(waypointCoords)
                 local msg = "Joined "
                 if nil == starts[index].savedRaceName then
@@ -1215,9 +1210,27 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                 end
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, numLaps)
                 if starts[index].restrict ~= nil then
-                    msg = msg .. " : using " .. starts[index].restrict
+                    msg = msg .. " : using '" .. starts[index].restrict .. "'"
                 end
                 msg = msg .. ".\n"
+                restrictedHash = nil
+                randVehicles = {}
+                if "rand" == starts[index].restrict then
+                    if vehicleList ~= nil then
+                        for _, vehicle in pairs(vehicleList) do
+                            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
+                                randVehicles[#randVehicles + 1] = vehicle
+                            end
+                        end
+                        if 0 == #randVehicles then
+                            msg = msg .. "No random vehicles loaded.\n"
+                        end
+                    else
+                        msg = msg .. "No random vehicles loaded.\n"
+                    end
+                elseif starts[index].restrict ~= nil then
+                    restrictedHash = GetHashKey(starts[index].restrict)
+                end
                 notifyPlayer(msg)
             elseif STATE_EDITING == raceState then
                 notifyPlayer("Ignoring join event.  Currently editing.\n")

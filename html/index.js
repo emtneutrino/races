@@ -44,6 +44,7 @@ $(function() {
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
             $("#vehicle").val(data.defaultVehicle)
+            $("#filename").val(data.defaultFilename)
             $("#main").show();
         } else {
             $("#main").hide();
@@ -162,11 +163,13 @@ $(function() {
         let laps = $("#laps").val();
         let timeout = $("#timeout").val();
         let restrict = $("#restrict").val();
+        let filename = $("#filename").val();
         $.post("https://races/register", JSON.stringify({
             buyin: buyin,
             laps: laps,
             timeout: timeout,
-            restrict: restrict
+            restrict: restrict,
+            filename: filename
         }));
     });
 

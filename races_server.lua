@@ -34,49 +34,29 @@ local STATE_REGISTERING <const> = 0
 local STATE_RACING <const> = 1
 
 local raceDataFile <const> = "./resources/races/raceData.json"
-local randomVehicleFile <const> = "./resources/races/random.txt"
+
+local races = {} -- races[] = {state, owner, buyin, laps, timeout, restrict, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local dist <const> = {60, 20, 10, 5, 3, 2}
 local distValid = true
 
-local randVehicles = {}
-
-local function initialize()
-    if #dist > 0 and dist[1] > 0 then
-        local sum = dist[1]
-        for i = 2, #dist do
-            if dist[i] > 0 and dist[i - 1] >= dist[i] then
-                sum = sum + dist[i]
-            else
-                distValid = false
-                break
-            end
-        end
-        distValid = distValid and 100 == sum
-    else
-        distValid = false
-    end
-    if false == distValid then
-        print("^1Prize distribution table is invalid.")
-    end
-
-    local file, errMsg, errCode = io.open(randomVehicleFile, "r")
-    if nil == file then
-        print("^1Error opening file '" .. randomVehicleFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
-    else
-        for vehicle in file:lines() do
-            if string.len(vehicle) > 0 then
-                randVehicles[#randVehicles + 1] = vehicle
-            end
+if #dist > 0 and dist[1] > 0 then
+    local sum = dist[1]
+    for i = 2, #dist do
+        if dist[i] > 0 and dist[i - 1] >= dist[i] then
+            sum = sum + dist[i]
+        else
+            distValid = false
+            break
         end
     end
+    distValid = distValid and 100 == sum
+else
+    distValid = false
 end
-
-initialize()
-
-local randAllowed = #randVehicles > 0
-
-local races = {} -- races[] = {state, owner, buyin, laps, timeout, restrict, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+if false == distValid then
+    print("^1Prize distribution table is invalid.")
+end
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -424,6 +404,21 @@ local function savePlayerData(public, source, data)
     return true
 end
 
+local function loadRandomVehicleFile(source, randomVehicleFile)
+    local randVehicles = {}
+    local file, errMsg, errCode = io.open("./resources/races/" .. randomVehicleFile, "r")
+    if nil == file then
+        notifyPlayer(source, "Error opening file '" .. randomVehicleFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    else
+        for vehicle in file:lines() do
+            if string.len(vehicle) > 0 then
+                randVehicles[#randVehicles + 1] = vehicle
+            end
+        end
+    end
+    return randVehicles
+end
+
 local function updateBestLapTimes(index)
     local playerRaces = loadPlayerData(races[index].publicRace, index)
     if playerRaces ~= nil then
@@ -491,7 +486,7 @@ AddEventHandler("playerDropped", function()
     if races[source] ~= nil and STATE_REGISTERING == races[source].state then
         for i in pairs(races[source].players) do
             Deposit(i, races[source].buyin)
-            sendMessage(i, races[source].buyin .. " was deposited in your funds.\n")
+            notifyPlayer(i, races[source].buyin .. " was deposited in your funds.\n")
         end
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
@@ -523,7 +518,7 @@ AddEventHandler("races:init", function()
     -- register any races created before player joined
     for i, race in pairs(races) do
         if STATE_REGISTERING == race.state then
-            TriggerClientEvent("races:register", source, i, race.owner, race.buyin, race.laps, race.timeout, race.restrict, race.waypointCoords[1], race.publicRace, race.savedRaceName)
+            TriggerClientEvent("races:register", source, i, race.owner, race.buyin, race.laps, race.timeout, race.restrict, race.filename, race.waypointCoords[1], race.publicRace, race.savedRaceName)
         end
     end
 end)
@@ -562,9 +557,9 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
                 end
             else
                 if true == public then
-                    sendMessage(source, ("Public race '%s' exists.  Do public overwrite instead.\n"):format(raceName))
+                    sendMessage(source, ("Public race '%s' exists.  Use 'overwritePublic' command instead.\n"):format(raceName))
                 else
-                    sendMessage(source, ("Private race '%s' exists.  Do private overwrite instead.\n"):format(raceName))
+                    sendMessage(source, ("Private race '%s' exists.  Use 'overwrite' command instead.\n"):format(raceName))
                 end
             end
         else
@@ -590,9 +585,9 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
                 end
             else
                 if true == public then
-                    sendMessage(source, ("Public race '%s' does not exist.  Do public save instead.\n"):format(raceName))
+                    sendMessage(source, ("Public race '%s' does not exist.  Use 'savePublic' command instead.\n"):format(raceName))
                 else
-                    sendMessage(source, ("Private race '%s' does not exist.  Do private save instead.\n"):format(raceName))
+                    sendMessage(source, ("Private race '%s' does not exist.  Use 'save' command instead.\n"):format(raceName))
                 end
             end
         else
@@ -680,7 +675,7 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(buyin, laps, timeout, restrict, waypointCoords, publicRace, savedRaceName)
+AddEventHandler("races:register", function(buyin, laps, timeout, restrict, filename, waypointCoords, publicRace, savedRaceName)
     local source = source
     if buyin ~= nil and laps ~= nil and timeout ~= nil and waypointCoords ~= nil and publicRace ~= nil then
         if buyin >= 0 then
@@ -690,15 +685,33 @@ AddEventHandler("races:register", function(buyin, laps, timeout, restrict, waypo
                         local registerRace = true
                         if "rand" == restrict then
                             buyin = 0
-                            if false == randAllowed then
+                            if nil == filename then
+                                filename = "random.txt"
+                            end
+                            local file, errMsg, errCode = io.open("./resources/races/" .. filename, "r")
+                            if nil == file then
+                                sendMessage(source, "Error opening file '" .. filename .. "' for read : '" .. errMsg .. "' : " .. errCode)
                                 registerRace = false
-                                sendMessage(source, "Cannot register.  Random vehicle list not loaded.\n")
                             end
                         end
                         if true == registerRace then
                             local owner = GetPlayerName(source)
-                            races[source] = {state = STATE_REGISTERING, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, waypointCoords = waypointCoords, publicRace = publicRace, savedRaceName = savedRaceName, numRacing = 0, players = {}, results = {}}
-                            TriggerClientEvent("races:register", -1, source, owner, buyin, laps, timeout, restrict, waypointCoords[1], publicRace, savedRaceName)
+                            races[source] = {
+                                state = STATE_REGISTERING,
+                                owner = owner,
+                                buyin = buyin,
+                                laps = laps,
+                                timeout = timeout,
+                                restrict = restrict,
+                                filename = filename,
+                                waypointCoords = waypointCoords,
+                                publicRace = publicRace,
+                                savedRaceName = savedRaceName,
+                                numRacing = 0,
+                                players = {},
+                                results = {}
+                            }
+                            TriggerClientEvent("races:register", -1, source, owner, buyin, laps, timeout, restrict, filename, waypointCoords[1], publicRace, savedRaceName)
                             local msg = "Registered "
                             if nil == savedRaceName then
                                 msg = msg .. "unsaved race "
@@ -708,13 +721,13 @@ AddEventHandler("races:register", function(buyin, laps, timeout, restrict, waypo
                             end
                             msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
                             if restrict ~= nil then
-                                msg = msg .. " : using " .. restrict
+                                msg = msg .. " : using '" .. restrict .. "'"
                             end
                             msg = msg .. ".\n"
-                            sendMessage(source, msg)
                             if false == distValid then
-                                sendMessage(source, "Prize distribution table is invalid.\n")
+                                msg = msg .. "Prize distribution table is invalid.\n"
                             end
+                            sendMessage(source, msg)
                         end
                     else
                         if STATE_RACING == races[source].state then
@@ -743,7 +756,7 @@ AddEventHandler("races:unregister", function()
     if races[source] ~= nil then
         for i in pairs(races[source].players) do
             Deposit(i, races[source].buyin)
-            sendMessage(i, races[source].buyin .. " was deposited in your funds.\n")
+            notifyPlayer(i, races[source].buyin .. " was deposited in your funds.\n")
         end
         races[source] = nil
         TriggerClientEvent("races:unregister", -1, source)
@@ -838,8 +851,8 @@ AddEventHandler("races:rivals", function(index)
     end
 end)
 
-RegisterNetEvent("races:viewFunds")
-AddEventHandler("races:viewFunds", function()
+RegisterNetEvent("races:funds")
+AddEventHandler("races:funds", function()
     local source = source
     sendMessage(source, "Available funds: " .. GetFunds(source) .. "\n")
 end)
@@ -854,7 +867,8 @@ AddEventHandler("races:join", function(index)
                     races[index].numRacing = races[index].numRacing + 1
                     races[index].players[source] = {playerName = GetPlayerName(source), numWaypointsPassed = -1, data = -1, finished = false}
                     if "rand" == races[index].restrict then
-                        if true == randAllowed then
+                        local randVehicles = loadRandomVehicleFile(source, races[index].filename)
+                        if #randVehicles > 0 then
                             TriggerClientEvent("races:join", source, index, races[index].waypointCoords, randVehicles)
                         else
                             notifyPlayer(source, "Cannot join.  Random vehicle list not loaded.\n")
@@ -862,7 +876,7 @@ AddEventHandler("races:join", function(index)
                     else
                         TriggerClientEvent("races:join", source, index, races[index].waypointCoords, nil)
                         Withdraw(source, races[index].buyin)
-                        sendMessage(source, races[index].buyin .. " was withdrawn from your funds.\n")
+                        notifyPlayer(source, races[index].buyin .. " was withdrawn from your funds.\n")
                     end
                 else
                     notifyPlayer(source, "Cannot join.  Race in progress.\n")
