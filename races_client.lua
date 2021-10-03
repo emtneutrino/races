@@ -77,6 +77,7 @@ local maxRadius <const> = 10.0 -- maximum waypoint radius
 
 local topSide <const> = 0.45 -- top position of HUD
 local leftSide <const> = 0.02 -- left position of HUD
+local rightSide <const> = leftSide + 0.08 -- right position of HUD
 
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
@@ -1441,49 +1442,49 @@ Citizen.CreateThread(function()
                     bestLapVehicle = currentVehicle
                 end
 
-                drawMsg(leftSide, topSide + 0.03, "Position", 0.5)
+                drawMsg(leftSide, topSide, "Position", 0.5)
                 if -1 == position then
-                    drawMsg(leftSide + 0.08, topSide + 0.03, "-- of --", 0.5)
+                    drawMsg(rightSide, topSide, "-- of --", 0.5)
                 else
-                    drawMsg(leftSide + 0.08, topSide + 0.03, ("%d of %d"):format(position, numRacers), 0.5)
+                    drawMsg(rightSide, topSide, ("%d of %d"):format(position, numRacers), 0.5)
                 end
 
-                drawMsg(leftSide, topSide + 0.06, "Lap", 0.5)
-                drawMsg(leftSide + 0.08, topSide + 0.06, ("%d of %d"):format(currentLap, numLaps), 0.5)
+                drawMsg(leftSide, topSide + 0.03, "Lap", 0.5)
+                drawMsg(rightSide, topSide + 0.03, ("%d of %d"):format(currentLap, numLaps), 0.5)
 
-                drawMsg(leftSide, topSide + 0.09, "Waypoint", 0.5)
+                drawMsg(leftSide, topSide + 0.06, "Waypoint", 0.5)
                 if true == startIsFinish then
-                    drawMsg(leftSide + 0.08, topSide + 0.09, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
+                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
                 else
-                    drawMsg(leftSide + 0.08, topSide + 0.09, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5)
+                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5)
                 end
 
                 local minutes, seconds = minutesSeconds(elapsedTime)
-                drawMsg(leftSide, topSide + 0.12, "Total time", 0.5)
-                drawMsg(leftSide + 0.08, topSide + 0.12, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
+                drawMsg(leftSide, topSide + 0.09, "Total time", 0.5)
+                drawMsg(rightSide, topSide + 0.09, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
 
                 local lapTime = currentTime - lapTimeStart
                 minutes, seconds = minutesSeconds(lapTime)
-                drawMsg(leftSide, topSide + 0.20, "Lap time", 0.7)
-                drawMsg(leftSide + 0.08, topSide + 0.20, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                drawMsg(leftSide, topSide + 0.17, "Lap time", 0.7)
+                drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
 
-                drawMsg(leftSide, topSide + 0.24, "Best lap", 0.7)
+                drawMsg(leftSide, topSide + 0.21, "Best lap", 0.7)
                 if -1 == bestLapTime then
-                    drawMsg(leftSide + 0.08, topSide + 0.24, "- - : - -", 0.7)
+                    drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7)
                 else
                     minutes, seconds = minutesSeconds(bestLapTime)
-                    drawMsg(leftSide + 0.08, topSide + 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                    drawMsg(rightSide, topSide + 0.21, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                 end
 
-                drawMsg(leftSide, topSide + 0.28, "Vehicle", 0.7)
-                drawMsg(leftSide + 0.08, topSide + 0.28, currentVehicle, 0.7)
+                drawMsg(leftSide, topSide + 0.25, "Vehicle", 0.7)
+                drawMsg(rightSide, topSide + 0.25, currentVehicle, 0.7)
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
                     if milliseconds > 0 then
                         minutes, seconds = minutesSeconds(milliseconds)
-                        drawMsg(leftSide, topSide + 0.32, "DNF time", 0.7)
-                        drawMsg(leftSide + 0.08, topSide + 0.32, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                        drawMsg(leftSide, topSide + 0.29, "DNF time", 0.7)
+                        drawMsg(rightSide, topSide + 0.29, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
