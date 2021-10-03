@@ -75,8 +75,8 @@ local defaultRadius <const> = 5.0 -- default waypoint radius
 local minRadius <const> = 0.5 -- minimum waypoint radius
 local maxRadius <const> = 10.0 -- maximum waypoint radius
 
-local leftSide <const> = 0.43 -- left position of HUD
-local rightSide <const> = 0.51 -- right position of HUD
+local topSide <const> = 0.45 -- top position of HUD
+local leftSide <const> = 0.02 -- left position of HUD
 
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
@@ -896,11 +896,26 @@ RegisterNUICallback("close", function()
 end)
 
 --[[
-local function test(cptype)
+local function testSound(audioName, audioRef)
+    PlaySoundFrontend(-1, audioName, audioRef, true)
+end
+
+local function testCheckpoint(cptype)
     local pedCoord = GetEntityCoords(PlayerPedId())
     local coord = {x = pedCoord.x, y = pedCoord.y, z = pedCoord.z, r = 5.0}
     local checkpoint = makeCheckpoint(tonumber(cptype), coord, coord, yellow, 127, 5)
 end
+
+RegisterNetEvent("races:sounds")
+AddEventHandler("races:sounds", function(sounds)
+    print("start")
+    for _, sound in pairs(sounds) do
+        print(sound.name .. ":" .. sound.ref)
+        testSound(sound.name, sound.ref)
+        Citizen.Wait(3000)
+    end
+    print("done")
+end)
 --]]
 
 RegisterCommand("races", function(_, args)
@@ -985,8 +1000,10 @@ RegisterCommand("races", function(_, args)
         showPanel(true)
 --[[
     elseif "test" == args[1] then
-        test(args[2])
-        TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+        --testCheckpoint(args[2])
+        --testSound(args[2], args[3])
+        TriggerServerEvent("races:sounds")
+        --TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
 --]]
     else
         notifyPlayer("Unknown command.\n")
@@ -1424,49 +1441,49 @@ Citizen.CreateThread(function()
                     bestLapVehicle = currentVehicle
                 end
 
-                drawMsg(leftSide, 0.03, "Position", 0.5)
+                drawMsg(leftSide, topSide + 0.03, "Position", 0.5)
                 if -1 == position then
-                    drawMsg(rightSide, 0.03, "-- of --", 0.5)
+                    drawMsg(leftSide + 0.08, topSide + 0.03, "-- of --", 0.5)
                 else
-                    drawMsg(rightSide, 0.03, ("%d of %d"):format(position, numRacers), 0.5)
+                    drawMsg(leftSide + 0.08, topSide + 0.03, ("%d of %d"):format(position, numRacers), 0.5)
                 end
 
-                drawMsg(leftSide, 0.06, "Lap", 0.5)
-                drawMsg(rightSide, 0.06, ("%d of %d"):format(currentLap, numLaps), 0.5)
+                drawMsg(leftSide, topSide + 0.06, "Lap", 0.5)
+                drawMsg(leftSide + 0.08, topSide + 0.06, ("%d of %d"):format(currentLap, numLaps), 0.5)
 
-                drawMsg(leftSide, 0.09, "Waypoint", 0.5)
+                drawMsg(leftSide, topSide + 0.09, "Waypoint", 0.5)
                 if true == startIsFinish then
-                    drawMsg(rightSide, 0.09, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
+                    drawMsg(leftSide + 0.08, topSide + 0.09, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
                 else
-                    drawMsg(rightSide, 0.09, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5)
+                    drawMsg(leftSide + 0.08, topSide + 0.09, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5)
                 end
 
                 local minutes, seconds = minutesSeconds(elapsedTime)
-                drawMsg(leftSide, 0.12, "Total time", 0.5)
-                drawMsg(rightSide, 0.12, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
+                drawMsg(leftSide, topSide + 0.12, "Total time", 0.5)
+                drawMsg(leftSide + 0.08, topSide + 0.12, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
 
                 local lapTime = currentTime - lapTimeStart
                 minutes, seconds = minutesSeconds(lapTime)
-                drawMsg(leftSide, 0.20, "Lap time", 0.7)
-                drawMsg(rightSide, 0.20, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                drawMsg(leftSide, topSide + 0.20, "Lap time", 0.7)
+                drawMsg(leftSide + 0.08, topSide + 0.20, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
 
-                drawMsg(leftSide, 0.24, "Best lap", 0.7)
+                drawMsg(leftSide, topSide + 0.24, "Best lap", 0.7)
                 if -1 == bestLapTime then
-                    drawMsg(rightSide, 0.24, "- - : - -", 0.7)
+                    drawMsg(leftSide + 0.08, topSide + 0.24, "- - : - -", 0.7)
                 else
                     minutes, seconds = minutesSeconds(bestLapTime)
-                    drawMsg(rightSide, 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                    drawMsg(leftSide + 0.08, topSide + 0.24, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                 end
 
-                drawMsg(leftSide, 0.28, "Vehicle", 0.7)
-                drawMsg(rightSide, 0.28, currentVehicle, 0.7)
+                drawMsg(leftSide, topSide + 0.28, "Vehicle", 0.7)
+                drawMsg(leftSide + 0.08, topSide + 0.28, currentVehicle, 0.7)
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
                     if milliseconds > 0 then
                         minutes, seconds = minutesSeconds(milliseconds)
-                        drawMsg(leftSide, 0.32, "DNF time", 0.7)
-                        drawMsg(rightSide, 0.32, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                        drawMsg(leftSide, topSide + 0.32, "DNF time", 0.7)
+                        drawMsg(leftSide + 0.08, topSide + 0.32, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
@@ -1513,6 +1530,7 @@ Citizen.CreateThread(function()
                                     currentLap = currentLap + 1
                                     if #randVehicles > 0 then
                                         switchVehicle(player, nil, nil, randVehicles[math.random(#randVehicles)])
+                                        PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
                                     TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, bestLapVehicle, nil)

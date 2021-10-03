@@ -58,6 +58,27 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
+--[[
+RegisterNetEvent("races:sounds")
+AddEventHandler("races:sounds", function()
+    local filePath = "./resources/races/sounds.csv"
+    local file, errMsg, errCode = io.open(filePath, "r")
+    if nil == file then
+        print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
+        return nil
+    end
+    local sounds = {}
+    for line in file:lines() do
+        local i = string.find(line, ",")
+        local name = string.sub(line, 1, i - 1)
+        local ref = string.sub(line, i + 1, -1)
+        sounds[#sounds + 1] = {name = name, ref = ref}
+    end
+    file:close()
+    TriggerClientEvent("races:sounds", source, sounds)
+end)
+--]]
+
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
         color = {255, 0, 0},
