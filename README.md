@@ -22,13 +22,14 @@ CLIENT COMMANDS
 `/races deletePublic [name]` - delete public race waypoints saved as [name]\
 `/races bltPublic [name]` - list 10 best lap times of public race saved as [name]\
 `/races listPublic` - list public saved races\
-`/races register (buy-in) (laps) (DNF timeout) (restrict) (filename)` - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'\
+`/races register (buy-in) (laps) (DNF timeout) (restrict) (filename) (class)` - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'; (class) defaults to any\
 `/races unregister` - unregister your race\
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
 `/races leave` - leave a race that you joined\
 `/races rivals` - list competitors in a race that you joined\
 `/races results` - view latest race results\
 `/races spawn (name)` - spawn a vehicle; (name) defaults to 'adder'\
+`/races speedo (unit)` - toggle display of speedometer if (unit) is not specified; Otherwise change unit of measurement to (unit)\
 `/races speedo` - toggle display of speedometer\
 `/races funds` - view available funds\
 `/races panel` - display command button panel
@@ -104,7 +105,38 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 
 You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This is the registration waypoint.  The registration waypoint on the waypoint map will be labeled with the player who registered the race, the buy-in amount, and the vehicle name if the race is restricted to one type of vehicle.  This allows racers to determine whether or not they can join the race based on the amount of funds they have without having to drive all the way to the starting waypoint.  Type `/races register 100 2 180 elegy2` to register your race with a buy-in amount of 100, 2 laps, a DNF timeout of 180 seconds and restrict the race to 'elegy2' vehicles.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you do not indicate the restricted vehicle name, any vehicle can be used.  If you use `rand` as the restricted vehicle name, all vehicles change to random vehicles every lap.  Buy-in amounts will be set to 0 and there will be no payouts.  If you specify a filename after `rand`, the server will attempt to load the file as the source of the random vehicle list.  For example, you may type `/races register 500 4 120 rand mylist.txt` to register a race where vehicles will change to a randomly selected vehicle from the `mylist.txt` file every lap.  If you do not specify a filename after `rand`, the list of possible vehicles that vehicles can change to is read from the file `random.txt`.  Vehicles can be added from the `vehicles.txt` file to the file you specify or to the `random.txt` file.  If you want to increase the chances of a specific vehicle to appear, you can enter multiple entries of the vehicle in the file.  Blank lines are ignored.  If there are invalid vehicles in the file, they will be ignored.  If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
+After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This is the registration waypoint.  The registration waypoint on the waypoint map will be labeled with some information about the race.  The player who registered the race and the buy-in amount will be shown.  If a vehicle name is specified, the race is restricted to that vehicle.  If 'random vehicles' is shown, the race will be a random race of any vehicle class.  If the vehicle class is shown after 'random', it is a random race of that vehicle class.  This allows racers to determine whether or not they can join the race without having to drive all the way to the starting waypoint.  Type `/races register 100 2 180 elegy2` to register your race with a buy-in amount of 100, 2 laps, a DNF timeout of 180 seconds and restrict the race to 'elegy2' vehicles.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you do not indicate the restricted vehicle name, any vehicle can be used.
+
+If you use `rand` as the restricted vehicle name, all vehicles change to random vehicles every lap.  Buy-in amounts will be set to 0 and there will be no payouts.  If you specify a filename after `rand`, the server will attempt to load the file as the source of the random vehicle list.  For example, you may type `/races register 500 4 120 rand mylist.txt` to register a race where vehicles will change to a randomly selected vehicle from the `mylist.txt` file every lap.  If you do not specify a filename after `rand`, the default file that contains the list of random vehicles to select from is `random.txt`.  Vehicles can be added from the `vehicles.txt` file to the file you specify or to the `random.txt` file.  If you want to increase the chances of a specific vehicle to appear, you can enter multiple entries of the vehicle in the file.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.  If you specify a class number after the filename, only vehicles of the specific class will be chosen from the file.  The different classes of vehicle you can specify are listed here:
+
+0: Compacts
+1: Sedans
+2: SUVs
+3: Coupes
+4: Muscle
+5: Sports Classics
+6: Sports
+7: Super
+8: Motorcycles
+9: Off-road
+10: Industrial
+11: Utility
+12: Vans
+13: Cycles
+14: Boats
+15: Helicopters
+16: Planes
+17: Service
+18: Emergency
+19: Military
+20: Commercial
+21: Trains
+
+For example, you may type `/races register 500 4 120 rand mylist.txt 7` to register a race where vehicles will change to randomly selected vehicles from `mylist.txt` that match the 'Super' vehicle class every lap.
+
+If you want to use the default value for some arguments of the `/races register` command, you can type '.' to use the default value for that argument.  For example, if you type `/races register . 4 . rand . 9` the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (random.txt) and vehicles of the 'Off-road' class.  This is the equivalent of `/races register 500 4 120 rand random.txt 9`.
+
+If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
 You can unregister your race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
 
@@ -124,7 +156,7 @@ After the first racer finishes, there will be a DNF timeout for other racers.  T
 
 As racers finish, their finishing time, best lap time and vehicle name will be broadcast to players who joined the race.  If a racer DNF's, this will also be broadcast.
 
-After all racers finish or DNF, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle they started in will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
+After all racers finish or DNF, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle used for their best lap time will be displayed.  Best lap times will be recorded if the race was a saved race and waypoints were not modified.
 
 Racers are given prize money after all racers finish or DNF.  At the start of every game session, players start with at least 5000 in their funds.  If you are using the existing `port.lua` that comes with these scripts, race earnings are not saved between different game sessions.  If you win prize money in one game session, it will not carry over to the next game session.  `port.lua` may be ported to a framework that does save funds between different game sessions.  The ESX framework may save race earnings from one game session to the next game session.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the prize distribution, all racers who finished receive any left over placement percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named 'dist' in `races_server.lua`.  The declaration and initialization of 'dist' is `local dist <const> = {60, 20, 10, 5, 3, 2}`.  You can change the total number of values in the table.  For the distribution to be valid, the following conditions must be met:  All values in the table 'dist' must add up to 100.  All values in the table must be 1 or greater.  First place distribution must be greater than or equal to second place distribution.  Second place distribution must be greater than or equal to 3rd place distribution and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded after all racers finish or DNF.
 
@@ -132,7 +164,7 @@ If you want to look at the race results again, type `/races results`.  If you ca
 
 To spawn a vehicle, type `/races spawn elegy2` to spawn an 'elegy2' vehicle.  If you do not indicate a vehicle name, the default is 'adder'.  A list of vehicles you can spawn are listed in `vehicles.txt`.  This list has not been verified to work for all vehicles listed and there may be some missing.
 
-To toggle the display of the speedometer at any time, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.
+To toggle the display of the speedometer at any time, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.  The default unit of measurement is 'imperial'.  If you wish to change the unit of measurement type `/races speedo (unit)` where (unit) is either 'imp' for imperial or 'met' for metric.
 
 To view your available funds for race buy-ins, type `/races funds`.
 

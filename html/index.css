@@ -132,6 +132,10 @@ body {
     width: 30%;
 }
 
+#vclass {
+    height: 44px;
+}
+
 #unregister {
     width: 25%;
 }
@@ -166,6 +170,10 @@ body {
 
 #speedo {
     width: 25%;
+}
+
+#unit {
+    height: 44px;
 }
 
 #funds {

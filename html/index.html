@@ -65,7 +65,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             Laps: <input id = "laps" placeholder="Laps">
             Timeout: <input id = "timeout" placeholder="Timeout">
             Restrict: <input id = "restrict" placeholder="Vehicle"><br>
-            Random Vehicle File: <input id = "filename" placeholder="File Name"><br>
+            Random Vehicle File: <input id = "filename" placeholder="File Name">
+            <label for = "vclass">Vehicle Class: </label>
+            <select id = "vclass">
+                <option value = -1>None</option>
+                <option value = 0>0:Compacts</option>
+                <option value = 1>1:Sedans</option>
+                <option value = 2>2:SUVs</option>
+                <option value = 3>3:Coupes</option>
+                <option value = 4>4:Muscle</option>
+                <option value = 5>5:Sports Classics</option>
+                <option value = 6>6:Sports</option>
+                <option value = 7>7:Super</option>
+                <option value = 8>8:Motorcycles</option>
+                <option value = 9>9:Off-road</option>
+                <option value = 10>10:Industrial</option>
+                <option value = 11>11:Utility</option>
+                <option value = 12>12:Vans</option>
+                <option value = 13>13:Cycles</option>
+                <option value = 14>14:Boats</option>
+                <option value = 15>15:Helicopters</option>
+                <option value = 16>16:Planes</option>
+                <option value = 17>17:Service</option>
+                <option value = 18>18:Emergency</option>
+                <option value = 19>19:Military</option>
+                <option value = 20>20:Commercial</option>
+                <option value = 21>21:Trains</option>
+            </select><br>
             <br>
             <button id = "unregister">Unregister Race</button><br>
             <br>
@@ -80,6 +106,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             Vehicle: <input id = "vehicle" placeholder="Vehicle name"><br>
             <br>
             <button id = "speedo">Toggle Speedometer</button><br>
+            <button id = "change">Change Unit of Measurement</button>
+            <label for = "unit">Unit: </label>
+            <select id = "unit">
+                <option value = "imp">Imperial</option>
+                <option value = "met">Metric</option>
+            </select><br>
             <br>
             <button id = "funds">View funds</button><br>
             <br>

@@ -67,42 +67,37 @@ $(function() {
     });
 
     $("#load").click(function() {
-        let name = $("#name").val();
         $.post("https://races/load", JSON.stringify({
             public: false,
-            raceName: name
+            raceName: $("#name").val()
         }));
     });
 
     $("#save").click(function() {
-        let name = $("#name").val();
         $.post("https://races/save", JSON.stringify({
             public: false,
-            raceName: name
+            raceName: $("#name").val()
         }));
     });
 
     $("#overwrite").click(function() {
-        let name = $("#name").val();
         $.post("https://races/overwrite", JSON.stringify({
             public: false,
-            raceName: name
+            raceName: $("#name").val()
         }));
     });
 
     $("#delete").click(function() {
-        let name = $("#name").val();
         $.post("https://races/delete", JSON.stringify({
             public: false,
-            raceName: name
+            raceName: $("#name").val()
         }));
     });
 
     $("#blt").click(function() {
-        let name = $("#name").val();
         $.post("https://races/blt", JSON.stringify({
             public: false,
-            raceName: name
+            raceName: $("#name").val()
         }));
     });
 
@@ -113,42 +108,37 @@ $(function() {
     });
 
     $("#loadPublic").click(function() {
-        let name = $("#namePublic").val();
         $.post("https://races/load", JSON.stringify({
             public: true,
-            raceName: name
+            raceName: $("#namePublic").val()
         }));
     });
 
     $("#savePublic").click(function() {
-        let name = $("#namePublic").val();
         $.post("https://races/save", JSON.stringify({
             public: true,
-            raceName: name
+            raceName: $("#namePublic").val()
         }));
     });
 
     $("#overwritePublic").click(function() {
-        let name = $("#namePublic").val();
         $.post("https://races/overwrite", JSON.stringify({
             public: true,
-            raceName: name
+            raceName: $("#namePublic").val()
         }));
     });
 
     $("#deletePublic").click(function() {
-        let name = $("#namePublic").val();
         $.post("https://races/delete", JSON.stringify({
             public: true,
-            raceName: name
+            raceName: $("#namePublic").val()
         }));
     });
 
     $("#bltPublic").click(function() {
-        let name = $("#namePublic").val();
         $.post("https://races/blt", JSON.stringify({
             public: true,
-            raceName: name
+            raceName: $("#namePublic").val()
         }));
     });
 
@@ -159,17 +149,13 @@ $(function() {
     });
 
     $("#register").click(function() {
-        let buyin = $("#buyin").val();
-        let laps = $("#laps").val();
-        let timeout = $("#timeout").val();
-        let restrict = $("#restrict").val();
-        let filename = $("#filename").val();
         $.post("https://races/register", JSON.stringify({
-            buyin: buyin,
-            laps: laps,
-            timeout: timeout,
-            restrict: restrict,
-            filename: filename
+            buyin: $("#buyin").val(),
+            laps: $("#laps").val(),
+            timeout: $("#timeout").val(),
+            restrict: $("#restrict").val(),
+            filename: $("#filename").val(),
+            vclass: $("#vclass").val()
         }));
     });
 
@@ -178,9 +164,8 @@ $(function() {
     });
 
     $("#start").click(function() {
-        let delay = $("#delay").val();
         $.post("https://races/start", JSON.stringify({
-            delay: delay
+            delay: $("#delay").val()
         }));
     });
 
@@ -197,14 +182,21 @@ $(function() {
     });
 
     $("#spawn").click(function() {
-        let vehicle = $("#vehicle").val();
         $.post("https://races/spawn", JSON.stringify({
-            vehicle: vehicle
+            vehicle: $("#vehicle").val()
         }));
     });
     
     $("#speedo").click(function() {
-        $.post("https://races/speedo");
+        $.post("https://races/speedo", JSON.stringify({
+            unit: ""
+        }));
+    });
+
+    $("#change").click(function() {
+        $.post("https://races/speedo", JSON.stringify({
+            unit: $("#unit").val()
+        }));
     });
 
     $("#funds").click(function() {

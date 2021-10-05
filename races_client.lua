@@ -69,8 +69,8 @@ local defaultLaps <const> = 1 -- default number of laps in a race
 local defaultTimeout <const> = 120 -- default DNF timeout
 local defaultDelay <const> = 30 -- default race start delay
 local defaultVehicle <const> = "adder" -- default spawned vehicle
-local defaultFilename <const> = "random.txt"
-local defaultRadius <const> = 5.0 -- default waypoint radius
+local defaultFilename = nil -- default random vehicle filename
+local defaultRadius = 0.0 -- default waypoint radius
 
 local minRadius <const> = 0.5 -- minimum waypoint radius
 local maxRadius <const> = 10.0 -- maximum waypoint radius
@@ -127,9 +127,10 @@ local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, 
 
 local started = false -- flag indicating if race started
 
-local starts = {} -- starts[] = {owner, buyin, laps, timeout, restrict, publicRace, savedRaceName, blip, checkpoint} - registration points
+local starts = {} -- starts[] = {publicRace, savedRaceName, owner, buyin, laps, timeout, restrict, filename, vclass, blip, checkpoint} - registration points
 
 local speedo = false -- flag indicating if speedometer is displayed
+local unitom = "imperial" -- current unit of measurement
 
 local panelShown = false -- flag indicating if command button panel is shown
 
@@ -289,11 +290,13 @@ local function removeRegistrationPoint(index)
     starts[index] = nil
 end
 
-local function drawMsg(x, y, msg, scale)
+local function drawMsg(x, y, msg, scale, justify)
     SetTextFont(4)
     SetTextScale(0, scale)
     SetTextColour(255, 255, 0, 255)
     SetTextOutline()
+    SetTextJustification(justify)
+    SetTextWrap(0.0, 1.0)
     BeginTextCommandDisplayText ("STRING")
     AddTextComponentSubstringPlayerName (msg)
     EndTextCommandDisplayText (x, y)
@@ -355,6 +358,54 @@ local function switchVehicle(player, priColor, secColor, vehicleHash)
         SetVehicleEngineOn(vehicle, true, true, false)
         SetVehicleForwardSpeed(vehicle, speed)
         currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
+    end
+end
+
+local function getClass(vclass)
+    if 0 == vclass then
+        return "'Compacts'"
+    elseif 1 == vclass then
+        return "'Sedans'"
+    elseif 2 == vclass then
+        return "'SUVs'"
+    elseif 3 == vclass then
+        return "'Coupes'"
+    elseif 4 == vclass then
+        return "'Muscle'"
+    elseif 5 == vclass then
+        return "'Sports Classics'"
+    elseif 6 == vclass then
+        return "'Sports'"
+    elseif 7 == vclass then
+        return "'Super'"
+    elseif 8 == vclass then
+        return "'Motorcycles'"
+    elseif 9 == vclass then
+        return "'Off-road'"
+    elseif 10 == vclass then
+        return "'Industrial'"
+    elseif 11 == vclass then
+        return "'Utility'"
+    elseif 12 == vclass then
+        return "'Vans'"
+    elseif 13 == vclass then
+        return "'Cycles'"
+    elseif 14 == vclass then
+        return "'Boats'"
+    elseif 15 == vclass then
+        return "'Helicopters'"
+    elseif 16 == vclass then
+        return "'Planes'"
+    elseif 17 == vclass then
+        return "'Service'"
+    elseif 18 == vclass then
+        return "'Emergency'"
+    elseif 19 == vclass then
+        return "'Military'"
+    elseif 20 == vclass then
+        return "'Commercial'"
+    else
+        return "'Trains'"
     end
 end
 
@@ -611,28 +662,38 @@ local function list(public)
     TriggerServerEvent("races:list", public)
 end
 
-local function register(buyin, laps, timeout, restrict, filename)
-    buyin = nil == buyin and defaultBuyin or tonumber(buyin)
+local function register(buyin, laps, timeout, restrict, filename, vclass)
+    buyin = (nil == buyin or "." == buyin) and defaultBuyin or tonumber(buyin)
     if buyin ~= nil and buyin >= 0 then
-        laps = nil == laps and defaultLaps or tonumber(laps)
+        laps = (nil == laps or "." == laps) and defaultLaps or tonumber(laps)
         if laps ~= nil and laps > 0 then
-            timeout = nil == timeout and defaultTimeout or tonumber(timeout)
+            timeout = (nil == timeout or "." == timeout) and defaultTimeout or tonumber(timeout)
             if timeout ~= nil and timeout >= 0 then
-                if nil == restrict or "rand" == restrict or (restrict ~= nil and 1 == IsModelInCdimage(restrict) and 1 == IsModelAVehicle(restrict)) then
-                    if STATE_IDLE == raceState then
-                        if #waypoints > 1 then
-                            if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                TriggerServerEvent("races:register", buyin, laps, timeout, restrict, filename, waypointsToCoords(), publicRace, savedRaceName)
+                if "." == restrict then
+                    restrict = nil
+                end
+                if nil == restrict or "rand" == restrict or (1 == IsModelInCdimage(restrict) and 1 == IsModelAVehicle(restrict)) then
+                    if "." == filename then
+                        filename = nil
+                    end
+                    if nil == vclass or (tonumber(vclass) >= 0 and tonumber(vclass) <= 21) then
+                        if STATE_IDLE == raceState then
+                            if #waypoints > 1 then
+                                if laps < 2 or (laps >= 2 and true == startIsFinish) then
+                                    TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, restrict, filename, tonumber(vclass))
+                                else
+                                    sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
+                                end
                             else
-                                sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
+                                sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
                             end
+                        elseif STATE_EDITING == raceState then
+                            sendMessage("Cannot register.  Stop editing first.\n")
                         else
-                            sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+                            sendMessage("Cannot register.  Leave race first.\n")
                         end
-                    elseif STATE_EDITING == raceState then
-                        sendMessage("Cannot register.  Stop editing first.\n")
                     else
-                        sendMessage("Cannot register.  Leave race first.\n")
+                        sendMessage("Invalid vehicle class.\n")
                     end
                 else
                     sendMessage("Invalid vehicle.\n")
@@ -744,12 +805,24 @@ local function spawn(vehicleHash)
     end
 end
 
-local function setSpeedo()
-    speedo = not speedo
-    if true == speedo then
-        sendMessage("Speedometer enabled.\n")
+local function setSpeedo(unit)
+    if unit ~= nil then
+        if "imp" == unit then
+            unitom = "imperial"
+            sendMessage("Unit of measurement changed to Imperial.\n")     
+        elseif "met" == unit then
+            unitom = "metric"
+            sendMessage("Unit of measurement changed to Metric.\n")     
+        else
+            sendMessage("Invalid unit of measurement.\n")     
+        end
     else
-        sendMessage("Speedometer disabled.\n")
+        speedo = not speedo
+        if true == speedo then
+            sendMessage("Speedometer enabled.\n")
+        else
+            sendMessage("Speedometer disabled.\n")
+        end
     end
 end
 
@@ -848,7 +921,11 @@ RegisterNUICallback("register", function(data)
     if "" == filename then
         filename = nil
     end
-    register(buyin, laps, timeout, restrict, filename)
+    local vclass = data.vclass
+    if -1 == vclass then
+        vclass = nil
+    end
+    register(buyin, laps, timeout, restrict, filename, vclass)
 end)
 
 RegisterNUICallback("unregister", function()
@@ -883,8 +960,12 @@ RegisterNUICallback("spawn", function(data)
     spawn(vehicle)
 end)
 
-RegisterNUICallback("speedo", function()
-    setSpeedo()
+RegisterNUICallback("speedo", function(data)
+    local unit = data.unit
+    if "" == unit then
+        unit = nil
+    end
+    setSpeedo(unit)
 end)
 
 RegisterNUICallback("funds", function()
@@ -938,14 +1019,14 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
         msg = msg .. "/races bltPublic [name] - list 10 best lap times of public race saved as [name]\n"
         msg = msg .. "/races listPublic - list public saved races\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (restrict) (filename) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (restrict) (filename) (class) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'; (class) defaults to any\n"
         msg = msg .. "/races unregister - unregister your race\n"
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
         msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races spawn (name) - spawn a vehicle; (name) defaults to 'adder'\n"
-        msg = msg .. "/races speedo - toggle display of speedometer\n"
+        msg = msg .. "/races speedo (unit) - toggle display of speedometer if (unit) is not specified; Otherwise change unit of measurement to (unit)\n"
         msg = msg .. "/races funds - view available funds\n"
         msg = msg .. "/races panel - display command button panel\n"
         notifyPlayer(msg)
@@ -980,7 +1061,7 @@ RegisterCommand("races", function(_, args)
     elseif "listPublic" == args[1] then
         list(true)
     elseif "register" == args[1] then
-        register(args[2], args[3], args[4], args[5], args[6])
+        register(args[2], args[3], args[4], args[5], args[6], args[7])
     elseif "unregister" == args[1] then
         unregister()
     elseif "start" == args[1] then
@@ -994,21 +1075,27 @@ RegisterCommand("races", function(_, args)
     elseif "spawn" == args[1] then
         spawn(args[2])
     elseif "speedo" == args[1] then
-        setSpeedo()
+        setSpeedo(args[2])
     elseif "funds" == args[1] then
-        viewFunds(args[2])
+        viewFunds()
     elseif "panel" == args[1] then
-        showPanel(true)
+        showPanel()
 --[[
     elseif "test" == args[1] then
         --testCheckpoint(args[2])
         --testSound(args[2], args[3])
-        TriggerServerEvent("races:sounds")
-        --TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+        --TriggerServerEvent("races:sounds")
+        TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
 --]]
     else
         notifyPlayer("Unknown command.\n")
     end
+end)
+
+RegisterNetEvent("races:init")
+AddEventHandler("races:init", function(filename, radius)
+    defaultFilename = filename
+    defaultRadius = radius
 end)
 
 RegisterNetEvent("races:message")
@@ -1097,8 +1184,8 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, restrict, filename, coord, public, raceName)
-    if index ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and coord ~= nil and public ~= nil then
+AddEventHandler("races:register", function(index, coord, public, raceName, owner, buyin, laps, timeout, restrict, filename, vclass)
+    if index ~= nil and coord ~= nil and public ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
         SetBlipSprite(blip, registerSprite)
@@ -1106,7 +1193,17 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, r
         BeginTextCommandSetBlipName("STRING")
         local msg = owner .. " (" .. buyin .. " buy-in"
         if restrict ~= nil then
-            msg = msg .. ", using '" .. restrict .. "'"
+            msg = msg .. " : using "
+            if "rand" == restrict then
+                msg = msg .. "random "
+                if vclass ~= nil then
+                    msg = msg .. getClass(vclass) .. " vehicle class"
+                else
+                    msg = msg .. "vehicles"
+                end
+            else
+                msg = msg .. "'" .. restrict .. "' vehicle"
+            end
         end
         msg = msg .. ")"
         AddTextComponentSubstringPlayerName(msg)
@@ -1115,7 +1212,7 @@ AddEventHandler("races:register", function(index, owner, buyin, laps, timeout, r
         coord.r = defaultRadius
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, coord, purple, 127, 0) -- registration checkpoint
 
-        starts[index] = {owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, filename = filename, publicRace = public, savedRaceName = raceName, blip = blip, checkpoint = checkpoint}
+        starts[index] = {publicRace = public, savedRaceName = raceName, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, filename = filename, vclass = vclass, blip = blip, checkpoint = checkpoint}
     else
         notifyPlayer("Ignoring register event.  Invalid parameters.\n")
     end
@@ -1228,7 +1325,17 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                 end
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, numLaps)
                 if starts[index].restrict ~= nil then
-                    msg = msg .. " : using '" .. starts[index].restrict .. "'"
+                    msg = msg .. " : using "
+                    if "rand" == starts[index].restrict then
+                        msg = msg .. "random "
+                        if starts[index].vclass ~= nil then
+                            msg = msg .. getClass(starts[index].vclass) .. " vehicle class"
+                        else
+                            msg = msg .. "vehicles"
+                        end
+                    else
+                        msg = msg .. "'" .. restrict .. "' vehicle"
+                    end
                 end
                 msg = msg .. ".\n"
                 restrictedHash = nil
@@ -1237,7 +1344,9 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                     if vehicleList ~= nil then
                         for _, vehicle in pairs(vehicleList) do
                             if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
-                                randVehicles[#randVehicles + 1] = vehicle
+                                if nil == starts[index].vclass or GetVehicleClassFromName(vehicle) == starts[index].vclass then
+                                    randVehicles[#randVehicles + 1] = vehicle
+                                end
                             end
                         end
                         if 0 == #randVehicles then
@@ -1361,7 +1470,7 @@ Citizen.CreateThread(function()
                 local color = closestIndex == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
                 SetCheckpointRgba(waypoints[closestIndex].checkpoint, color.r, color.g, color.b, 255)
                 highlightedCheckpoint = closestIndex
-                drawMsg(0.29, 0.50, "Press [ENTER] key, [A] button or [CROSS] button to select waypoint", 0.7)
+                drawMsg(0.50, 0.50, "Press [ENTER] key, [A] button or [CROSS] button to select waypoint", 0.7, 0)
             elseif highlightedCheckpoint ~= 0 then
                 local color = highlightedCheckpoint == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
                 SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
@@ -1419,7 +1528,9 @@ Citizen.CreateThread(function()
             local currentTime = GetGameTimer()
             local elapsedTime = currentTime - raceStart - raceDelay * 1000
             if elapsedTime < 0 then
-                drawMsg(0.41, 0.50, ("Race starting in %05.2f seconds"):format(-elapsedTime / 1000.0), 0.7)
+                drawMsg(0.50, 0.46, ("Race starting in "), 0.7, 0)
+                drawMsg(0.50, 0.50, ("%05.2f"):format(-elapsedTime / 1000.0), 0.7, 0)
+                drawMsg(0.50, 0.54, "seconds", 0.7, 0)
 
                 if IsPedInAnyVehicle(player, false) then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
@@ -1442,49 +1553,49 @@ Citizen.CreateThread(function()
                     bestLapVehicle = currentVehicle
                 end
 
-                drawMsg(leftSide, topSide, "Position", 0.5)
+                drawMsg(leftSide, topSide, "Position", 0.5, 1)
                 if -1 == position then
-                    drawMsg(rightSide, topSide, "-- of --", 0.5)
+                    drawMsg(rightSide, topSide, "-- of --", 0.5, 1)
                 else
-                    drawMsg(rightSide, topSide, ("%d of %d"):format(position, numRacers), 0.5)
+                    drawMsg(rightSide, topSide, ("%d of %d"):format(position, numRacers), 0.5, 1)
                 end
 
-                drawMsg(leftSide, topSide + 0.03, "Lap", 0.5)
-                drawMsg(rightSide, topSide + 0.03, ("%d of %d"):format(currentLap, numLaps), 0.5)
+                drawMsg(leftSide, topSide + 0.03, "Lap", 0.5, 1)
+                drawMsg(rightSide, topSide + 0.03, ("%d of %d"):format(currentLap, numLaps), 0.5, 1)
 
-                drawMsg(leftSide, topSide + 0.06, "Waypoint", 0.5)
+                drawMsg(leftSide, topSide + 0.06, "Waypoint", 0.5, 1)
                 if true == startIsFinish then
-                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5)
+                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint, #waypoints), 0.5, 1)
                 else
-                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5)
+                    drawMsg(rightSide, topSide + 0.06, ("%d of %d"):format(currentWaypoint - 1, #waypoints - 1), 0.5, 1)
                 end
 
                 local minutes, seconds = minutesSeconds(elapsedTime)
-                drawMsg(leftSide, topSide + 0.09, "Total time", 0.5)
-                drawMsg(rightSide, topSide + 0.09, ("%02d:%05.2f"):format(minutes, seconds), 0.5)
+                drawMsg(leftSide, topSide + 0.09, "Total time", 0.5, 1)
+                drawMsg(rightSide, topSide + 0.09, ("%02d:%05.2f"):format(minutes, seconds), 0.5, 1)
 
                 local lapTime = currentTime - lapTimeStart
                 minutes, seconds = minutesSeconds(lapTime)
-                drawMsg(leftSide, topSide + 0.17, "Lap time", 0.7)
-                drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                drawMsg(leftSide, topSide + 0.13, "Lap time", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.13, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
 
-                drawMsg(leftSide, topSide + 0.21, "Best lap", 0.7)
+                drawMsg(leftSide, topSide + 0.17, "Best lap", 0.7, 1)
                 if -1 == bestLapTime then
-                    drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7)
+                    drawMsg(rightSide, topSide + 0.17, "- - : - -", 0.7, 1)
                 else
                     minutes, seconds = minutesSeconds(bestLapTime)
-                    drawMsg(rightSide, topSide + 0.21, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                    drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
                 end
 
-                drawMsg(leftSide, topSide + 0.25, "Vehicle", 0.7)
-                drawMsg(rightSide, topSide + 0.25, currentVehicle, 0.7)
+                drawMsg(leftSide, topSide + 0.21, "Vehicle", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.21, currentVehicle, 0.7, 1)
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
                     if milliseconds > 0 then
                         minutes, seconds = minutesSeconds(milliseconds)
-                        drawMsg(leftSide, topSide + 0.29, "DNF time", 0.7)
-                        drawMsg(rightSide, topSide + 0.29, ("%02d:%05.2f"):format(minutes, seconds), 0.7)
+                        drawMsg(leftSide, topSide + 0.29, "DNF time", 0.7, 1)
+                        drawMsg(rightSide, topSide + 0.29, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
                         TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
@@ -1614,12 +1725,22 @@ Citizen.CreateThread(function()
                     msg = msg .. " saved race '" .. starts[closestIndex].savedRaceName .. "' "
                 end
                 msg = msg .. ("registered by %s :"):format(starts[closestIndex].owner)
-                drawMsg(0.30, 0.50, msg, 0.7)
+                drawMsg(0.50, 0.50, msg, 0.7, 0)
                 msg = ("%d buy-in : %d lap(s)"):format(starts[closestIndex].buyin, starts[closestIndex].laps)
                 if starts[closestIndex].restrict ~= nil then
-                    msg = msg .. " : using '" .. starts[closestIndex].restrict .. "'"
+                    msg = msg .. " : using "
+                    if "rand" == starts[closestIndex].restrict then
+                        msg = msg .. "random "
+                        if starts[closestIndex].vclass ~= nil then
+                            msg = msg .. getClass(starts[closestIndex].vclass) .. " vehicle class"
+                        else
+                            msg = msg .. "vehicles"
+                        end
+                    else
+                        msg = msg .. "'" .. restrict .. "' vehicle"
+                    end
                 end
-                drawMsg(0.36, 0.54, msg, 0.7)
+                drawMsg(0.50, 0.54, msg, 0.7, 0)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                     local joinRace = true
                     if starts[closestIndex].restrict ~= nil and starts[closestIndex].restrict ~= "rand" then
@@ -1642,10 +1763,13 @@ Citizen.CreateThread(function()
 
         if true == speedo then
             local speed = GetEntitySpeed(player)
-            drawMsg(0.37, 0.91, ("%05.2f"):format(speed * 3.6), 0.7)
-            drawMsg(0.41, 0.91, "kph", 0.7)
-            drawMsg(0.57, 0.91, ("%05.2f"):format(speed * 2.2369363), 0.7)
-            drawMsg(0.61, 0.91, "mph", 0.7)
+            if "metric" == unitom then
+                drawMsg(leftSide, topSide + 0.25, "Speed(kph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 3.6), 0.7, 1)
+            else
+                drawMsg(leftSide, topSide + 0.25, "Speed(mph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 2.2369363), 0.7, 1)
+            end
         end
     end
 end)
