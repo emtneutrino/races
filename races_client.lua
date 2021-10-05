@@ -922,7 +922,7 @@ RegisterNUICallback("register", function(data)
         filename = nil
     end
     local vclass = data.vclass
-    if -1 == vclass then
+    if "-1" == vclass then
         vclass = nil
     end
     register(buyin, laps, timeout, restrict, filename, vclass)
