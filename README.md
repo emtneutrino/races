@@ -132,7 +132,7 @@ If you use `rand` as the restricted vehicle name, all vehicles change to random 
 20: Commercial
 21: Trains
 
-As a convenience, each class of vehicle has been separated into different files.  Vehicles of class 0 have been placed in `0.txt`.  Vehicles of other classes have been placed in similarly named files.  Each of these files contain vehicles taken from vehicles.txt.  Vehicles that don't seem to be in my version of GTA 5 are in the `uknown.txt` file.
+As a convenience, each class of vehicle has been separated into different files in the `vehicles/` folder.  Vehicles of class 0 have been placed in `00.txt`.  Vehicles of class 1 have been placed in `01.txt`.  Vehicles of other classes have been placed in similarly named files.  Each of these files contain vehicles taken from `vehicles.txt`.  Vehicles that don't seem to be in my version of GTA 5 are in the `uknown.txt` file.
 
 For example, you may type `/races register 500 4 120 rand mylist.txt 7` to register a race where vehicles will change to randomly selected vehicles from `mylist.txt` that match the 'Super' vehicle class every lap.
 

@@ -61,27 +61,6 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
---[[
-RegisterNetEvent("sounds")
-AddEventHandler("sounds", function()
-    local filePath = "./resources/races/sounds/sounds.csv"
-    local file, errMsg, errCode = io.open(filePath, "r")
-    if file ~= nil then
-        local sounds = {}
-        for line in file:lines() do
-            local i = string.find(line, ",")
-            local name = string.sub(line, 1, i - 1)
-            local ref = string.sub(line, i + 1, -1)
-            sounds[#sounds + 1] = {name = name, ref = ref}
-        end
-        file:close()
-        TriggerClientEvent("sounds", source, sounds)
-    else
-        print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
-    end
-end)
---]]
-
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
         color = {255, 0, 0},
@@ -573,6 +552,73 @@ AddEventHandler("playerDropped", function()
         end
     end
 end)
+
+--[[
+RegisterNetEvent("sounds")
+AddEventHandler("sounds", function()
+    local source = source
+    local filePath = "./resources/races/sounds/sounds.csv"
+    local file, errMsg, errCode = io.open(filePath, "r")
+    if file ~= nil then
+        local sounds = {}
+        for line in file:lines() do
+            local i = string.find(line, ",")
+            local name = string.sub(line, 1, i - 1)
+            local ref = string.sub(line, i + 1, -1)
+            sounds[#sounds + 1] = {name = name, ref = ref}
+        end
+        file:close()
+        TriggerClientEvent("sounds", source, sounds)
+    else
+        print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    end
+end)
+
+RegisterNetEvent("vehicles")
+AddEventHandler("vehicles", function()
+    local source = source
+    local filePath = "./resources/races/vehicles/vehicles.txt"
+    local file, errMsg, errCode = io.open(filePath, "r")
+    if file ~= nil then
+        local vehicleList = {}
+        for line in file:lines() do
+            vehicleList[#vehicleList + 1] = line
+        end
+        file:close()
+        TriggerClientEvent("vehicles", source, vehicleList)
+    else
+        print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    end
+end)
+
+RegisterNetEvent("unk")
+AddEventHandler("unk", function(unknown)
+    local filePath = "./resources/races/vehicles/unknown.txt"
+    local file, errMsg, errCode = io.open(filePath, "w+")
+    if file ~= nil then
+        for _, vehicle in ipairs(unknown) do
+            file:write(vehicle .. "\n")
+        end
+        file:close()
+    else
+        print("Error opening file '" .. filePath .. "' for write : '" .. errMsg .. "' : " .. errCode)
+    end
+end)
+
+RegisterNetEvent("veh")
+AddEventHandler("veh", function(vclass, vehicles)
+    local filePath = ("./resources/races/vehicles/%02d.txt"):format(vclass)
+    local file, errMsg, errCode = io.open(filePath, "w+")
+    if file ~= nil then
+        for _, vehicle in ipairs(vehicles) do
+            file:write(vehicle .. "\n")
+        end
+        file:close()
+    else
+        print("Error opening file '" .. filePath .. "' for write : '" .. errMsg .. "' : " .. errCode)
+    end
+end)
+--]]
 
 RegisterNetEvent("races:init")
 AddEventHandler("races:init", function()

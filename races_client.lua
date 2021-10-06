@@ -331,8 +331,9 @@ local function minutesSeconds(milliseconds)
     return minutes, seconds
 end
 
-local function switchVehicle(player, priColor, secColor, vehicleHash)
+local function switchVehicle(priColor, secColor, vehicleHash)
     if vehicleHash ~= nil then
+        local player = PlayerPedId()
         local speed = GetEntitySpeed(player)
         local vehicle = nil
         if IsPedInAnyVehicle(player, false) then
@@ -739,7 +740,7 @@ local function leave()
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
         speedo = false
         if #randVehicles > 0 then
-            switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+            switchVehicle(colorPri, colorSec, originalVehicleHash)
         end
         sendMessage("Left race.\n")
         raceState = STATE_IDLE
@@ -998,6 +999,29 @@ AddEventHandler("sounds", function(sounds)
     end
     print("done")
 end)
+
+RegisterNetEvent("vehicles")
+AddEventHandler("vehicles", function(vehicleList)
+    local unknown = {}
+    for _, vehicle in ipairs(vehicleList) do
+        if IsModelInCdimage(vehicle) ~= 1 or IsModelAVehicle(vehicle) ~= 1 then
+            unknown[#unknown + 1] = vehicle
+        end
+    end
+    TriggerServerEvent("unk", unknown)
+
+    for vclass = 0, 21 do
+        local vehicles = {}
+        for _, vehicle in ipairs(vehicleList) do
+            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
+                if GetVehicleClassFromName(vehicle) == vclass then
+                    vehicles[#vehicles + 1] = vehicle
+                end
+            end
+        end
+        TriggerServerEvent("veh", vclass, vehicles)
+    end
+end)
 --]]
 
 RegisterCommand("races", function(_, args)
@@ -1085,6 +1109,7 @@ RegisterCommand("races", function(_, args)
         --testCheckpoint(args[2])
         --testSound(args[2], args[3])
         --TriggerServerEvent("sounds")
+        --TriggerServerEvent("vehicles")
         --TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
 --]]
     else
@@ -1334,7 +1359,7 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                             msg = msg .. "vehicles"
                         end
                     else
-                        msg = msg .. "'" .. restrict .. "' vehicle"
+                        msg = msg .. "'" .. starts[index].restrict .. "' vehicle"
                     end
                 end
                 msg = msg .. ".\n"
@@ -1450,8 +1475,8 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
         local player = PlayerPedId()
+        local pedCoord = GetEntityCoords(player)
         if STATE_EDITING == raceState then
-            local pedCoord = GetEntityCoords(player)
             local closestIndex = 0
             local minDist = maxRadius
             for index, waypoint in ipairs(waypoints) do
@@ -1604,14 +1629,14 @@ Citizen.CreateThread(function()
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                         speedo = false
                         if #randVehicles > 0 then
-                            switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+                            switchVehicle(colorPri, colorSec, originalVehicleHash)
                         end
                         raceState = STATE_IDLE
                     end
                 end
 
                 if STATE_RACING == raceState then
-                    if #(GetEntityCoords(player) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
+                    if #(pedCoord - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
                         local waypointPassed = true
                         if restrictedHash ~= nil then
                             if vehicle ~= nil then
@@ -1641,7 +1666,7 @@ Citizen.CreateThread(function()
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
                                     if #randVehicles > 0 then
-                                        switchVehicle(player, nil, nil, randVehicles[math.random(#randVehicles)])
+                                        switchVehicle(nil, nil, randVehicles[math.random(#randVehicles)])
                                         PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
@@ -1651,7 +1676,7 @@ Citizen.CreateThread(function()
                                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                                     speedo = false
                                     if #randVehicles > 0 then
-                                        switchVehicle(player, colorPri, colorSec, originalVehicleHash)
+                                        switchVehicle(colorPri, colorSec, originalVehicleHash)
                                     end
                                     raceState = STATE_IDLE
                                 end
@@ -1706,7 +1731,6 @@ Citizen.CreateThread(function()
                 end
             end
         elseif STATE_IDLE == raceState then
-            local pedCoord = GetEntityCoords(player)
             local closestIndex = -1
             local minDist = defaultRadius
             for index, start in pairs(starts) do
