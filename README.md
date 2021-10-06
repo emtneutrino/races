@@ -109,27 +109,27 @@ After you have set your waypoints, you can register your race.  This will advert
 
 If you use `rand` as the restricted vehicle name, all vehicles change to random vehicles every lap.  Buy-in amounts will be set to 0 and there will be no payouts.  If you specify a filename after `rand`, the server will attempt to load the file as the source of the random vehicle list.  For example, you may type `/races register 500 4 120 rand mylist.txt` to register a race where vehicles will change to a randomly selected vehicle from the `mylist.txt` file every lap.  If you do not specify a filename after `rand`, the default file that contains the list of random vehicles to select from is `random.txt`.  Vehicles can be added from the `vehicles.txt` file to the file you specify or to the `random.txt` file.  If you want to increase the chances of a specific vehicle to appear, you can enter multiple entries of the vehicle in the file.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.  If you specify a class number after the filename, only vehicles of the specific class will be chosen from the file.  The different classes of vehicle you can specify are listed here:
 
-0: Compacts
-1: Sedans
-2: SUVs
-3: Coupes
-4: Muscle
-5: Sports Classics
-6: Sports
-7: Super
-8: Motorcycles
-9: Off-road
-10: Industrial
-11: Utility
-12: Vans
-13: Cycles
-14: Boats
-15: Helicopters
-16: Planes
-17: Service
-18: Emergency
-19: Military
-20: Commercial
+0: Compacts\
+1: Sedans\
+2: SUVs\
+3: Coupes\
+4: Muscle\
+5: Sports Classics\
+6: Sports\
+7: Super\
+8: Motorcycles\
+9: Off-road\
+10: Industrial\
+11: Utility\
+12: Vans\
+13: Cycles\
+14: Boats\
+15: Helicopters\
+16: Planes\
+17: Service\
+18: Emergency\
+19: Military\
+20: Commercial\
 21: Trains
 
 As a convenience, each class of vehicle has been separated into different files in the `vehicles/` folder.  Vehicles of class 0 have been placed in `00.txt`.  Vehicles of class 1 have been placed in `01.txt`.  Vehicles of other classes have been placed in similarly named files.  Each of these files contain vehicles taken from `vehicles.txt`.  Vehicles that don't seem to be in my version of GTA 5 are in the `uknown.txt` file.
