@@ -1,0 +1,11 @@
+bulldozer
+cutter
+dump
+flatbed
+guardian
+handler
+mixer
+mixer2
+rubble
+tiptruck
+tiptruck2

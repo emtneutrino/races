@@ -132,6 +132,8 @@ If you use `rand` as the restricted vehicle name, all vehicles change to random 
 20: Commercial
 21: Trains
 
+As a convenience, each class of vehicle has been separated into different files.  Vehicles of class 0 have been placed in `0.txt`.  Vehicles of other classes have been placed in similarly named files.  Each of these files contain vehicles taken from vehicles.txt.  Vehicles that don't seem to be in my version of GTA 5 are in the `uknown.txt` file.
+
 For example, you may type `/races register 500 4 120 rand mylist.txt 7` to register a race where vehicles will change to randomly selected vehicles from `mylist.txt` that match the 'Super' vehicle class every lap.
 
 If you want to use the default value for some arguments of the `/races register` command, you can type '.' to use the default value for that argument.  For example, if you type `/races register . 4 . rand . 9` the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (random.txt) and vehicles of the 'Off-road' class.  This is the equivalent of `/races register 500 4 120 rand random.txt 9`.

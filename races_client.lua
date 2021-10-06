@@ -1737,7 +1737,7 @@ Citizen.CreateThread(function()
                             msg = msg .. "vehicles"
                         end
                     else
-                        msg = msg .. "'" .. restrict .. "' vehicle"
+                        msg = msg .. "'" .. starts[closestIndex].restrict .. "' vehicle"
                     end
                 end
                 drawMsg(0.50, 0.54, msg, 0.7, 0)
