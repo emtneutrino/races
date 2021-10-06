@@ -988,8 +988,8 @@ local function testCheckpoint(cptype)
     local checkpoint = makeCheckpoint(tonumber(cptype), coord, coord, yellow, 127, 5)
 end
 
-RegisterNetEvent("races:sounds")
-AddEventHandler("races:sounds", function(sounds)
+RegisterNetEvent("sounds")
+AddEventHandler("sounds", function(sounds)
     print("start")
     for _, sound in pairs(sounds) do
         print(sound.name .. ":" .. sound.ref)
@@ -1084,8 +1084,8 @@ RegisterCommand("races", function(_, args)
     elseif "test" == args[1] then
         --testCheckpoint(args[2])
         --testSound(args[2], args[3])
-        --TriggerServerEvent("races:sounds")
-        TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+        --TriggerServerEvent("sounds")
+        --TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
 --]]
     else
         notifyPlayer("Unknown command.\n")

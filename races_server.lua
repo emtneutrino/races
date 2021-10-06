@@ -62,23 +62,23 @@ if false == distValid then
 end
 
 --[[
-RegisterNetEvent("races:sounds")
-AddEventHandler("races:sounds", function()
-    local filePath = "./resources/races/sounds.csv"
+RegisterNetEvent("sounds")
+AddEventHandler("sounds", function()
+    local filePath = "./resources/races/sounds/sounds.csv"
     local file, errMsg, errCode = io.open(filePath, "r")
-    if nil == file then
+    if file ~= nil then
+        local sounds = {}
+        for line in file:lines() do
+            local i = string.find(line, ",")
+            local name = string.sub(line, 1, i - 1)
+            local ref = string.sub(line, i + 1, -1)
+            sounds[#sounds + 1] = {name = name, ref = ref}
+        end
+        file:close()
+        TriggerClientEvent("sounds", source, sounds)
+    else
         print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
-        return nil
     end
-    local sounds = {}
-    for line in file:lines() do
-        local i = string.find(line, ",")
-        local name = string.sub(line, 1, i - 1)
-        local ref = string.sub(line, i + 1, -1)
-        sounds[#sounds + 1] = {name = name, ref = ref}
-    end
-    file:close()
-    TriggerClientEvent("races:sounds", source, sounds)
 end)
 --]]
 
