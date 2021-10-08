@@ -116,6 +116,7 @@ local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
+local restrictedClass = nil -- restricted vehicle class
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in 'rand' races
 local colorPri = -1 -- primary color of original vehicle
 local colorSec = -1 -- secondary color of original vehicle
@@ -127,7 +128,7 @@ local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, 
 
 local started = false -- flag indicating if race started
 
-local starts = {} -- starts[] = {publicRace, savedRaceName, owner, buyin, laps, timeout, restrict, filename, vclass, blip, checkpoint} - registration points
+local starts = {} -- starts[] = {publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, blip, checkpoint} - registration points
 
 local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
@@ -364,49 +365,49 @@ end
 
 local function getClass(vclass)
     if 0 == vclass then
-        return "'Compacts'"
+        return "'Compacts'(" .. vclass .. ")"
     elseif 1 == vclass then
-        return "'Sedans'"
+        return "'Sedans'(" .. vclass .. ")"
     elseif 2 == vclass then
-        return "'SUVs'"
+        return "'SUVs'(" .. vclass .. ")"
     elseif 3 == vclass then
-        return "'Coupes'"
+        return "'Coupes'(" .. vclass .. ")"
     elseif 4 == vclass then
-        return "'Muscle'"
+        return "'Muscle'(" .. vclass .. ")"
     elseif 5 == vclass then
-        return "'Sports Classics'"
+        return "'Sports Classics'(" .. vclass .. ")"
     elseif 6 == vclass then
-        return "'Sports'"
+        return "'Sports'(" .. vclass .. ")"
     elseif 7 == vclass then
-        return "'Super'"
+        return "'Super'(" .. vclass .. ")"
     elseif 8 == vclass then
-        return "'Motorcycles'"
+        return "'Motorcycles'(" .. vclass .. ")"
     elseif 9 == vclass then
-        return "'Off-road'"
+        return "'Off-road'(" .. vclass .. ")"
     elseif 10 == vclass then
-        return "'Industrial'"
+        return "'Industrial'(" .. vclass .. ")"
     elseif 11 == vclass then
-        return "'Utility'"
+        return "'Utility'(" .. vclass .. ")"
     elseif 12 == vclass then
-        return "'Vans'"
+        return "'Vans'(" .. vclass .. ")"
     elseif 13 == vclass then
-        return "'Cycles'"
+        return "'Cycles'(" .. vclass .. ")"
     elseif 14 == vclass then
-        return "'Boats'"
+        return "'Boats'(" .. vclass .. ")"
     elseif 15 == vclass then
-        return "'Helicopters'"
+        return "'Helicopters'(" .. vclass .. ")"
     elseif 16 == vclass then
-        return "'Planes'"
+        return "'Planes'(" .. vclass .. ")"
     elseif 17 == vclass then
-        return "'Service'"
+        return "'Service'(" .. vclass .. ")"
     elseif 18 == vclass then
-        return "'Emergency'"
+        return "'Emergency'(" .. vclass .. ")"
     elseif 19 == vclass then
-        return "'Military'"
+        return "'Military'(" .. vclass .. ")"
     elseif 20 == vclass then
-        return "'Commercial'"
+        return "'Commercial'(" .. vclass .. ")"
     else
-        return "'Trains'"
+        return "'Trains'(" .. vclass .. ")"
     end
 end
 
@@ -663,41 +664,63 @@ local function list(public)
     TriggerServerEvent("races:list", public)
 end
 
-local function register(buyin, laps, timeout, restrict, filename, vclass)
+local function register(buyin, laps, timeout, rtype, arg6, arg7)
     buyin = (nil == buyin or "." == buyin) and defaultBuyin or tonumber(buyin)
     if buyin ~= nil and buyin >= 0 then
         laps = (nil == laps or "." == laps) and defaultLaps or tonumber(laps)
         if laps ~= nil and laps > 0 then
             timeout = (nil == timeout or "." == timeout) and defaultTimeout or tonumber(timeout)
             if timeout ~= nil and timeout >= 0 then
-                if "." == restrict then
-                    restrict = nil
+                local registerRace = true
+                local restrict = nil
+                local filename = nil
+                local vclass = nil
+                if "rest" == rtype then
+                    restrict = arg6
+                    if nil == restrict or IsModelInCdimage(restrict) ~= 1 or IsModelAVehicle(restrict) ~= 1 then
+                        registerRace = false
+                        sendMessage("Cannot register.  Invalid restricted vehicle.\n")
+                    end
+                elseif "class" == rtype then
+                    vclass = tonumber(arg6)
+                    if nil == vclass or vclass < 0 or vclass > 21 then
+                        registerRace = false
+                        sendMessage("Cannot register.  Invalid vehicle class.\n")
+                    end
+                elseif "rand" == rtype then
+                    buyin = 0
+                    if "." == arg6 then
+                        arg6 = nil
+                    end
+                    if "." == arg7 then
+                        arg7 = nil
+                    end
+                    filename = arg6
+                    vclass = tonumber(arg7)
+                    if vclass ~= nil and (vclass < 0 or vclass > 21) then
+                        registerRace = false
+                        sendMessage("Cannot register.  Invalid vehicle class.\n")
+                    end
+                elseif rtype ~= nil then
+                    registerRace = false
+                    sendMessage("Cannot register.  Unknown race type.\n")
                 end
-                if nil == restrict or "rand" == restrict or (1 == IsModelInCdimage(restrict) and 1 == IsModelAVehicle(restrict)) then
-                    if "." == filename then
-                        filename = nil
-                    end
-                    if nil == vclass or (tonumber(vclass) >= 0 and tonumber(vclass) <= 21) then
-                        if STATE_IDLE == raceState then
-                            if #waypoints > 1 then
-                                if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                    TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, restrict, filename, tonumber(vclass))
-                                else
-                                    sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
-                                end
+                if true == registerRace then
+                    if STATE_IDLE == raceState then
+                        if #waypoints > 1 then
+                            if laps < 2 or (laps >= 2 and true == startIsFinish) then
+                                TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass)
                             else
-                                sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+                                sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
                             end
-                        elseif STATE_EDITING == raceState then
-                            sendMessage("Cannot register.  Stop editing first.\n")
                         else
-                            sendMessage("Cannot register.  Leave race first.\n")
+                            sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
                         end
+                    elseif STATE_EDITING == raceState then
+                        sendMessage("Cannot register.  Stop editing first.\n")
                     else
-                        sendMessage("Invalid vehicle class.\n")
+                        sendMessage("Cannot register.  Leave race first.\n")
                     end
-                else
-                    sendMessage("Invalid vehicle.\n")
                 end
             else
                 sendMessage("Invalid DNF timeout.\n")
@@ -802,7 +825,16 @@ local function spawn(vehicleHash)
         SetModelAsNoLongerNeeded(vehicleHash)
         sendMessage("'" .. GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash)) .. "' spawned.\n")
     else
-        sendMessage("Invalid vehicle '" .. vehicleHash .. "'.\n")
+        sendMessage("Cannot spawn vehicle.  Invalid vehicle.\n")
+    end
+end
+
+local function lvehicles(vclass)
+    vclass = tonumber(vclass)
+    if nil == vclass or (vclass >= 0 and vclass <= 21) then
+        TriggerServerEvent("races:lvehicles", vclass)
+    else
+        sendMessage("Cannot list vehicles.  Invalid vehicle class.\n")
     end
 end
 
@@ -914,6 +946,10 @@ RegisterNUICallback("register", function(data)
     if "" == timeout then
         timeout = nil
     end
+    local rtype = data.rtype
+    if "norm" == rtype then
+        rtype = nil
+    end
     local restrict = data.restrict
     if "" == restrict then
         restrict = nil
@@ -926,7 +962,15 @@ RegisterNUICallback("register", function(data)
     if "-1" == vclass then
         vclass = nil
     end
-    register(buyin, laps, timeout, restrict, filename, vclass)
+    if nil == rtype then
+        register(buyin, laps, timeout, rtype, nil, nil)
+    elseif "rest" == rtype then
+        register(buyin, laps, timeout, rtype, restrict, nil)
+    elseif "class" == rtype then
+        register(buyin, laps, timeout, rtype, vclass, nil)
+    else
+        register(buyin, laps, timeout, rtype, filename, vclass)
+    end
 end)
 
 RegisterNUICallback("unregister", function()
@@ -959,6 +1003,14 @@ RegisterNUICallback("spawn", function(data)
         vehicle = nil
     end
     spawn(vehicle)
+end)
+
+RegisterNUICallback("lvehicles", function(data)
+    local vclass = data.vclass
+    if "-1" == vclass then
+        vclass = nil
+    end
+    lvehicles(vclass)
 end)
 
 RegisterNUICallback("speedo", function(data)
@@ -1027,6 +1079,7 @@ end)
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
+        msg = msg .. "Required arguments are in square brackets.  Optional arguments are in parentheses.\n"
         msg = msg .. "/races - display list of available /races commands\n"
         msg = msg .. "/races edit - toggle editing race waypoints\n"
         msg = msg .. "/races clear - clear race waypoints\n"
@@ -1042,15 +1095,20 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races overwritePublic [name] - overwrite existing public race waypoints saved as [name]\n"
         msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
         msg = msg .. "/races bltPublic [name] - list 10 best lap times of public race saved as [name]\n"
-        msg = msg .. "/races listPublic - list public saved races\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (restrict) (filename) (class) - register your race; (buy-in) defaults to 500; (laps) defaults to 1 lap; (DNF timeout) defaults to 120 seconds; (restrict) defaults to none; (filename) defaults to 'random.txt'; (class) defaults to any\n"
+        msg = msg .. "/races listPublic - list public saved races\n\n"
+        msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) - register your race with no vehicle restrictions\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) rest [vehicle] - register your race restricted to [vehicle]\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) class [class] - register your race restricted to vehicles of type [class]\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) - register your race changing vehicles randomly every lap; (filename) defaults to 'random.txt'; (class) defaults to any\n\n"
         msg = msg .. "/races unregister - unregister your race\n"
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
         msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races spawn (name) - spawn a vehicle; (name) defaults to 'adder'\n"
-        msg = msg .. "/races speedo (unit) - toggle display of speedometer if (unit) is not specified; Otherwise change unit of measurement to (unit)\n"
+        msg = msg .. "/races lvehicles (class) - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\n"
+        msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit); otherwise toggle display of speedometer if (unit) is not specified\n"
         msg = msg .. "/races funds - view available funds\n"
         msg = msg .. "/races panel - display command button panel\n"
         notifyPlayer(msg)
@@ -1098,6 +1156,8 @@ RegisterCommand("races", function(_, args)
         viewResults(true)
     elseif "spawn" == args[1] then
         spawn(args[2])
+    elseif "lvehicles" == args[1] then
+        lvehicles(args[2])
     elseif "speedo" == args[1] then
         setSpeedo(args[2])
     elseif "funds" == args[1] then
@@ -1209,7 +1269,7 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, coord, public, raceName, owner, buyin, laps, timeout, restrict, filename, vclass)
+AddEventHandler("races:register", function(index, coord, public, raceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass)
     if index ~= nil and coord ~= nil and public ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
@@ -1217,17 +1277,16 @@ AddEventHandler("races:register", function(index, coord, public, raceName, owner
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
         local msg = owner .. " (" .. buyin .. " buy-in"
-        if restrict ~= nil then
-            msg = msg .. " : using "
-            if "rand" == restrict then
-                msg = msg .. "random "
-                if vclass ~= nil then
-                    msg = msg .. getClass(vclass) .. " vehicle class"
-                else
-                    msg = msg .. "vehicles"
-                end
+        if "rest" == rtype then
+            msg = msg .. " : using '" .. restrict .. "' vehicle"
+        elseif "class" == rtype then
+            msg = msg .. " : using " .. getClass(vclass) .. " vehicle class"
+        elseif "rand" == rtype then
+            msg = msg .. " : using random "
+            if vclass ~= nil then
+                msg = msg .. getClass(vclass) .. " vehicle class"
             else
-                msg = msg .. "'" .. restrict .. "' vehicle"
+                msg = msg .. "vehicles"
             end
         end
         msg = msg .. ")"
@@ -1237,7 +1296,7 @@ AddEventHandler("races:register", function(index, coord, public, raceName, owner
         coord.r = defaultRadius
         local checkpoint = makeCheckpoint(plainCheckpoint, coord, coord, purple, 127, 0) -- registration checkpoint
 
-        starts[index] = {publicRace = public, savedRaceName = raceName, owner = owner, buyin = buyin, laps = laps, timeout = timeout, restrict = restrict, filename = filename, vclass = vclass, blip = blip, checkpoint = checkpoint}
+        starts[index] = {publicRace = public, savedRaceName = raceName, owner = owner, buyin = buyin, laps = laps, timeout = timeout, rtype = rtype, restrict = restrict, filename = filename, vclass = vclass, blip = blip, checkpoint = checkpoint}
     else
         notifyPlayer("Ignoring register event.  Invalid parameters.\n")
     end
@@ -1263,6 +1322,40 @@ AddEventHandler("races:unregister", function(index)
         end
     else
         notifyPlayer("Ignoring unregister event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:lvehicles")
+AddEventHandler("races:lvehicles", function(vehicleList, vclass)
+    if vehicleList ~= nil then
+        local msg = "Available vehicles"
+        if nil == vclass then
+            msg = msg .. ": "
+        else
+            msg = msg .. " of class " .. getClass(vclass) .. ": "
+        end
+        if vehicleList ~= nil then
+            local vehicleFound = false
+            for _, vehicle in pairs(vehicleList) do
+                if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
+                    if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
+                        msg = msg .. vehicle .. ", "
+                        vehicleFound = true
+                    end
+                end
+            end
+            if false == vehicleFound then
+                msg = "No vehicles in list."
+            end
+        else
+            msg = "No vehicles in list."
+        end
+        if msg ~= "No vehicles in list." then
+            msg = string.sub(msg, 1, -3)
+        end
+        sendMessage(msg)
+    else
+        notifyPlayer("Ignoring list vehicles event.  Invalid parameters.\n")
     end
 end)
 
@@ -1341,6 +1434,9 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                 numLaps = starts[index].laps
                 DNFTimeout = starts[index].timeout * 1000
                 loadWaypointBlips(waypointCoords)
+                restrictedHash = nil
+                restrictedClass = nil
+                randVehicles = {}
                 local msg = "Joined "
                 if nil == starts[index].savedRaceName then
                     msg = msg .. "unsaved race "
@@ -1348,24 +1444,20 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                     msg = msg .. (true == starts[index].publicRace and "publicly" or "privately")
                     msg = msg .. " saved race '" .. starts[index].savedRaceName .. "' "
                 end
-                msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, numLaps)
-                if starts[index].restrict ~= nil then
-                    msg = msg .. " : using "
-                    if "rand" == starts[index].restrict then
-                        msg = msg .. "random "
-                        if starts[index].vclass ~= nil then
-                            msg = msg .. getClass(starts[index].vclass) .. " vehicle class"
-                        else
-                            msg = msg .. "vehicles"
-                        end
+                msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, starts[index].laps)
+                if "rest" == starts[index].rtype then
+                    msg = msg .. " : using '" .. starts[index].restrict .. "' vehicle"
+                    restrictedHash = GetHashKey(starts[index].restrict)
+                elseif "class" == starts[index].rtype then
+                    msg = msg .. " : using " .. getClass(starts[index].vclass) .. " vehicle class"
+                    restrictedClass = starts[index].vclass
+                elseif "rand" == starts[index].rtype then
+                    msg = msg .. " : using random "
+                    if starts[index].vclass ~= nil then
+                        msg = msg .. getClass(starts[index].vclass) .. " vehicle class"
                     else
-                        msg = msg .. "'" .. starts[index].restrict .. "' vehicle"
+                        msg = msg .. "vehicles"
                     end
-                end
-                msg = msg .. ".\n"
-                restrictedHash = nil
-                randVehicles = {}
-                if "rand" == starts[index].restrict then
                     if vehicleList ~= nil then
                         for _, vehicle in pairs(vehicleList) do
                             if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
@@ -1375,14 +1467,13 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                             end
                         end
                         if 0 == #randVehicles then
-                            msg = msg .. "No random vehicles loaded.\n"
+                            msg = msg .. " : No random vehicles loaded"
                         end
                     else
-                        msg = msg .. "No random vehicles loaded.\n"
+                        msg = msg .. " : No random vehicles loaded"
                     end
-                elseif starts[index].restrict ~= nil then
-                    restrictedHash = GetHashKey(starts[index].restrict)
                 end
+                msg = msg .. ".\n"
                 notifyPlayer(msg)
             elseif STATE_EDITING == raceState then
                 notifyPlayer("Ignoring join event.  Currently editing.\n")
@@ -1646,6 +1737,14 @@ Citizen.CreateThread(function()
                             else
                                 waypointPassed = false
                             end
+                        elseif restrictedClass ~= nil then
+                            if vehicle ~= nil then
+                                if GetVehicleClass(vehicle) ~= restrictedClass then
+                                    waypointPassed = false
+                                end
+                            else
+                                waypointPassed = false
+                            end
                         end
 
                         if true == waypointPassed then
@@ -1751,35 +1850,44 @@ Citizen.CreateThread(function()
                 msg = msg .. ("registered by %s :"):format(starts[closestIndex].owner)
                 drawMsg(0.50, 0.50, msg, 0.7, 0)
                 msg = ("%d buy-in : %d lap(s)"):format(starts[closestIndex].buyin, starts[closestIndex].laps)
-                if starts[closestIndex].restrict ~= nil then
-                    msg = msg .. " : using "
-                    if "rand" == starts[closestIndex].restrict then
-                        msg = msg .. "random "
-                        if starts[closestIndex].vclass ~= nil then
-                            msg = msg .. getClass(starts[closestIndex].vclass) .. " vehicle class"
-                        else
-                            msg = msg .. "vehicles"
-                        end
+                if "rest" == starts[closestIndex].rtype then
+                    msg = msg .. " : using '" .. starts[closestIndex].restrict .. "' vehicle"
+                elseif "class" == starts[closestIndex].rtype then
+                    msg = msg .. " : using " .. getClass(starts[closestIndex].vclass) .. " vehicle class"
+                elseif "rand" == starts[closestIndex].rtype then
+                    msg = msg .. " : using random "
+                    if starts[closestIndex].vclass ~= nil then
+                        msg = msg .. getClass(starts[closestIndex].vclass) .. " vehicle class"
                     else
-                        msg = msg .. "'" .. starts[closestIndex].restrict .. "' vehicle"
+                        msg = msg .. "vehicles"
                     end
                 end
                 drawMsg(0.50, 0.54, msg, 0.7, 0)
                 if IsControlJustReleased(0, 51) then -- E or DPAD RIGHT
                     local joinRace = true
-                    if starts[closestIndex].restrict ~= nil and starts[closestIndex].restrict ~= "rand" then
+                    if "rest" == starts[closestIndex].rtype then
                         if IsPedInAnyVehicle(player, false) then
                             if GetEntityModel(GetVehiclePedIsIn(player, false)) ~= GetHashKey(starts[closestIndex].restrict) then
                                 joinRace = false
+                                notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
                             end
                         else
                             joinRace = false
+                            notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
+                        end
+                    elseif "class" == starts[closestIndex].rtype then
+                        if IsPedInAnyVehicle(player, false) then
+                            if GetVehicleClass(GetVehiclePedIsIn(player, false)) ~= starts[closestIndex].vclass then
+                                joinRace = false
+                                notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                            end
+                        else
+                            joinRace = false
+                            notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
                         end
                     end
                     if true == joinRace then
                         TriggerServerEvent('races:join', closestIndex)
-                    else
-                        notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
                     end
                 end
             end

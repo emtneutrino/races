@@ -153,9 +153,10 @@ $(function() {
             buyin: $("#buyin").val(),
             laps: $("#laps").val(),
             timeout: $("#timeout").val(),
+            rtype: $("#rtype").val(),
             restrict: $("#restrict").val(),
             filename: $("#filename").val(),
-            vclass: $("#vclass").val()
+            vclass: $("#vclass0").val()
         }));
     });
 
@@ -186,7 +187,13 @@ $(function() {
             vehicle: $("#vehicle").val()
         }));
     });
-    
+
+    $("#lvehicles").click(function() {
+        $.post("https://races/lvehicles", JSON.stringify({
+            vclass: $("#vclass1").val()
+        }));
+    });
+
     $("#speedo").click(function() {
         $.post("https://races/speedo", JSON.stringify({
             unit: ""

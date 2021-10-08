@@ -61,13 +61,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <button id = "listPublic">List</button><br>
             <br>
             <button id = "register">Register Race</button>
-            Buy-in: <input id = "buyin" placeholder="Buy-in">
-            Laps: <input id = "laps" placeholder="Laps">
-            Timeout: <input id = "timeout" placeholder="Timeout">
-            Restrict: <input id = "restrict" placeholder="Vehicle"><br>
-            Random Vehicle File: <input id = "filename" placeholder="File Name">
-            <label for = "vclass">Vehicle Class: </label>
-            <select id = "vclass">
+            Buy-in: <input id = "buyin" placeholder = "Buy-in">
+            Laps: <input id = "laps" placeholder = "Laps">
+            Timeout: <input id = "timeout" placeholder = "Timeout">
+            <label for = "rtype">Race Type: </label>
+            <select id = "rtype">
+                <option value = "norm">Normal</option>
+                <option value = "rest">Restricted</option>
+                <option value = "class">Class</option>
+                <option value = "rand">Random</option>
+            </select><br>
+            Restrict: <input id = "restrict" placeholder = "Vehicle">
+            Vehicle File: <input id = "filename" placeholder = "File Name">
+            <label for = "vclass0">Vehicle Class: </label>
+            <select id = "vclass0">
                 <option value = -1>Any</option>
                 <option value = 0>0:Compacts</option>
                 <option value = 1>1:Sedans</option>
@@ -105,7 +112,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <button id = "spawn">Spawn Vehicle</button>
             Vehicle: <input id = "vehicle" placeholder="Vehicle name"><br>
             <br>
-            <button id = "speedo">Toggle Speedometer</button><br>
+            <button id = "lvehicles">List Vehicles</button>
+            <label for = "vclass1">Vehicle Class: </label>
+            <select id = "vclass1">
+                <option value = -1>Any</option>
+                <option value = 0>0:Compacts</option>
+                <option value = 1>1:Sedans</option>
+                <option value = 2>2:SUVs</option>
+                <option value = 3>3:Coupes</option>
+                <option value = 4>4:Muscle</option>
+                <option value = 5>5:Sports Classics</option>
+                <option value = 6>6:Sports</option>
+                <option value = 7>7:Super</option>
+                <option value = 8>8:Motorcycles</option>
+                <option value = 9>9:Off-road</option>
+                <option value = 10>10:Industrial</option>
+                <option value = 11>11:Utility</option>
+                <option value = 12>12:Vans</option>
+                <option value = 13>13:Cycles</option>
+                <option value = 14>14:Boats</option>
+                <option value = 15>15:Helicopters</option>
+                <option value = 16>16:Planes</option>
+                <option value = 17>17:Service</option>
+                <option value = 18>18:Emergency</option>
+                <option value = 19>19:Military</option>
+                <option value = 20>20:Commercial</option>
+                <option value = 21>21:Trains</option>
+            </select><br>
+            <br>
+            <button id = "speedo">Toggle Speedometer</button>
             <button id = "change">Change Unit of Measurement</button>
             <label for = "unit">Unit: </label>
             <select id = "unit">
@@ -118,7 +153,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <button id = "closeMain">Close</button>
         </div>
         <div id = "reply">
-            <p id = "message"></p>
+            <div id = "scroll" class = "scrollable">
+                <p id = "message"></p>
+            </div><br>
+            <br>
             <button id = "closeReply">Close</button>
         </div>
         <script src = "index.js" type = "text/javascript"></script>

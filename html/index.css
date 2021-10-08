@@ -124,15 +124,19 @@ body {
     width: 10%;
 }
 
+#rtype {
+    height: 44px;
+}
+
 #restrict {
-    width: 10%;
+    width: 20%;
 }
 
 #filename {
-    width: 30%;
+    width: 20%;
 }
 
-#vclass {
+#vclass0 {
     height: 44px;
 }
 
@@ -165,7 +169,15 @@ body {
 }
 
 #vehicle {
-    width: 30%;
+    width: 25%;
+}
+
+#lvehicles {
+    width: 25%;
+}
+
+#vclass1 {
+    height: 44px;
 }
 
 #speedo {
@@ -190,6 +202,11 @@ body {
     background-color: rgb(63, 63, 63);
     border: 2px solid rgb(255, 255, 255);
     border-radius: 7px;
+}
+
+#scroll {
+    max-height: 500px;
+    overflow-y: auto;
 }
 
 #message {
