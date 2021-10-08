@@ -36,10 +36,9 @@ local STATE_RACING <const> = 1
 local raceDataFile <const> = "./resources/races/raceData.json"
 
 local defaultFilename <const> = "random.txt" -- default random vehicle filename
-local allVehicleFilename <const> = "vehicles.txt" -- all vehicle filename
 local defaultRadius <const> = 5.0 -- default waypoint radius
 
-local races = {} -- races[] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local allVehicleFilename <const> = "vehicles.txt" -- list of all vehicles filename
 
 local dist <const> = {60, 20, 10, 5, 3, 2}
 local distValid = true
@@ -61,6 +60,8 @@ end
 if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
+
+local races = {} -- races[] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
