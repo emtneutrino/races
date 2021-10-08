@@ -1334,23 +1334,18 @@ AddEventHandler("races:lvehicles", function(vehicleList, vclass)
         else
             msg = msg .. " of class " .. getClass(vclass) .. ": "
         end
-        if vehicleList ~= nil then
-            local vehicleFound = false
-            for _, vehicle in pairs(vehicleList) do
-                if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
-                    if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
-                        msg = msg .. vehicle .. ", "
-                        vehicleFound = true
-                    end
+        local vehicleFound = false
+        for _, vehicle in pairs(vehicleList) do
+            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
+                if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
+                    msg = msg .. vehicle .. ", "
+                    vehicleFound = true
                 end
             end
-            if false == vehicleFound then
-                msg = "No vehicles in list."
-            end
-        else
-            msg = "No vehicles in list."
         end
-        if msg ~= "No vehicles in list." then
+        if false == vehicleFound then
+            msg = "No vehicles in list."
+        else
             msg = string.sub(msg, 1, -3)
         end
         sendMessage(msg)
