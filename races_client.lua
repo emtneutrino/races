@@ -102,6 +102,8 @@ local waypointCoord = nil -- coordinates of current waypoint
 
 local raceStart = -1 -- start time of race before delay
 local raceDelay = -1 -- delay before official start of race
+local countdown = -1 -- countdown before start
+local drawLights = false -- draw start lights
 
 local position = -1 -- position in race out of numRacers players
 local numRacers = -1 -- number of players in race - no DNF players included
@@ -185,7 +187,9 @@ end
 local function makeCheckpoint(checkpointType, coord, nextCoord, color, alpha, num)
     local zCoord = coord.z
     if checkpointType ~= 42 and checkpointType ~= 45 then
-        zCoord = zCoord + coord.r
+        zCoord = zCoord + coord.r / 2.0
+    else
+        zCoord = zCoord - coord.r / 2.0
     end
     local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, zCoord, nextCoord.x, nextCoord.y, nextCoord.z, coord.r * 2.0, color.r, color.g, color.b, alpha, num)
     SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, coord.r * 2.0)
@@ -301,6 +305,10 @@ local function drawMsg(x, y, msg, scale, justify)
     BeginTextCommandDisplayText ("STRING")
     AddTextComponentSubstringPlayerName (msg)
     EndTextCommandDisplayText (x, y)
+end
+
+local function drawRect(x, y, w, h, r, g, b, a)
+    DrawRect(x + w / 2.0, y + h / 2.0, w, h, r, g, b, a)
 end
 
 local function waypointsToCoords()
@@ -739,7 +747,7 @@ end
 
 local function startRace(delay)
     delay = nil == delay and defaultDelay or tonumber(delay)
-    if delay ~= nil and delay >= 0 then
+    if delay ~= nil and delay >= 5 then
         TriggerServerEvent("races:start", delay)
     else
         sendMessage("Cannot start.  Invalid delay.\n")
@@ -1031,7 +1039,7 @@ RegisterNUICallback("close", function()
 end)
 
 --[[
-local function testSound(audioName, audioRef)
+local function testSound(audioRef, audioName)
     PlaySoundFrontend(-1, audioName, audioRef, true)
 end
 
@@ -1045,9 +1053,27 @@ RegisterNetEvent("sounds")
 AddEventHandler("sounds", function(sounds)
     print("start")
     for _, sound in pairs(sounds) do
-        print(sound.name .. ":" .. sound.ref)
-        testSound(sound.name, sound.ref)
-        Citizen.Wait(3000)
+        print(sound.ref .. ":" .. sound.name)
+        if
+            fail == string.find(sound.name, "Loop") and
+            fail == string.find(sound.name, "Background") and
+            sound.name ~= "Pin_Movement" and
+            sound.name ~= "WIND" and
+            sound.name ~= "Trail_Custom" and
+            sound.name ~= "Altitude_Warning" and
+            sound.name ~= "OPENING" and
+            sound.name ~= "CONTINUOUS_SLIDER" and
+            sound.name ~= "SwitchWhiteWarning" and
+            sound.name ~= "SwitchRedWarning" and
+            sound.name ~= "ZOOM" and sound.name ~= "Microphone" and
+            sound.ref ~= "MP_CCTV_SOUNDSET" and
+            sound.ref ~= "SHORT_PLAYER_SWITCH_SOUND_SET"
+        then
+            testSound(sound.ref, sound.name)
+        else
+            print("------------" .. sound.name)
+        end
+        Citizen.Wait(1000)
     end
     print("done")
 end)
@@ -1166,11 +1192,19 @@ RegisterCommand("races", function(_, args)
         showPanel()
 --[[
     elseif "test" == args[1] then
-        --testCheckpoint(args[2])
-        --testSound(args[2], args[3])
-        --TriggerServerEvent("sounds")
-        --TriggerServerEvent("vehicles")
-        --TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+        if "0" == args[2] then
+            testCheckpoint(args[3])
+        elseif "1" == args[2] then
+            testSound(args[3], args[4])
+        elseif "2" == args[2] then
+            TriggerServerEvent("sounds0")
+        elseif "3" == args[2] then
+            TriggerServerEvent("sounds1")
+        elseif "4" == args[2] then
+            TriggerServerEvent("vehicles")
+        elseif "5" == args[2] then
+            TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+        end
 --]]
     else
         notifyPlayer("Unknown command.\n")
@@ -1362,6 +1396,8 @@ AddEventHandler("races:start", function(delay)
                 raceState = STATE_RACING
                 raceStart = GetGameTimer()
                 raceDelay = delay
+                countdown = 5
+                drawLights = false
                 lapTimeStart = raceStart + delay * 1000
                 bestLapTime = -1
                 currentLap = 1
@@ -1643,6 +1679,18 @@ Citizen.CreateThread(function()
                 drawMsg(0.50, 0.50, ("%05.2f"):format(-elapsedTime / 1000.0), 0.7, 0)
                 drawMsg(0.50, 0.54, "seconds", 0.7, 0)
 
+                if elapsedTime > -countdown * 1000 then
+                    drawLights = true
+                    countdown = countdown - 1
+                    PlaySoundFrontend(-1, "MP_5_SECOND_TIMER", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
+                end
+
+                if true == drawLights then
+                    for i = 0, 4 - countdown do
+                        drawRect(i * 0.2 + 0.05, 0.15, 0.1, 0.1, 255, 0, 0, 255)
+                    end
+                end
+
                 if IsPedInAnyVehicle(player, false) then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
                 end
@@ -1657,12 +1705,15 @@ Citizen.CreateThread(function()
                 end
                 if false == started then
                     started = true
+                    PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
                     if vehicle ~= nil then
                         originalVehicleHash = GetEntityModel(vehicle)
                         colorPri, colorSec = GetVehicleColours(vehicle)
                     end
                     bestLapVehicle = currentVehicle
                 end
+
+                drawRect(leftSide - 0.01, topSide - 0.01, 0.15, 0.35, 0, 0, 0, 127)
 
                 drawMsg(leftSide, topSide, "Position", 0.5, 1)
                 if -1 == position then

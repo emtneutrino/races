@@ -556,8 +556,29 @@ AddEventHandler("playerDropped", function()
 end)
 
 --[[
-RegisterNetEvent("sounds")
-AddEventHandler("sounds", function()
+local function sortRemDup(sounds)
+    table.sort(sounds, function(p0, p1)
+        return (p0.ref < p1.ref) or (p0.ref == p1.ref and p0.name < p1.name)
+    end)
+    local current = sounds[1]
+    for i = 2, #sounds do
+        while true do
+            if sounds[i] ~= nil then
+                if sounds[i].ref == current.ref and sounds[i].name == current.name then
+                    table.remove(sounds, i)
+                else
+                    current = sounds[i]
+                    break
+                end
+            else
+                break
+            end
+        end
+    end
+end
+
+RegisterNetEvent("sounds0")
+AddEventHandler("sounds0", function()
     local source = source
     local filePath = "./resources/races/sounds/sounds.csv"
     local file, errMsg, errCode = io.open(filePath, "r")
@@ -570,6 +591,31 @@ AddEventHandler("sounds", function()
             sounds[#sounds + 1] = {name = name, ref = ref}
         end
         file:close()
+        sortRemDup(sounds)
+        TriggerClientEvent("sounds", source, sounds)
+    else
+        print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    end
+end)
+
+RegisterNetEvent("sounds1")
+AddEventHandler("sounds1", function()
+print("sounds1")
+    local source = source
+    local filePath = "./resources/races/sounds/altv.stuyk.com.txt"
+    local file, errMsg, errCode = io.open(filePath, "r")
+    if file ~= nil then
+        local sounds = {}
+        for line in file:lines() do
+            local name, ref = string.match(line, "(\t.*)(\t.*)")
+            if name ~= nil and ref ~= nil then
+                name = string.sub(name, 2, -1)
+                ref = string.sub(ref, 2, -1)
+                sounds[#sounds + 1] = {name = name, ref = ref}
+            end
+        end
+        file:close()
+        sortRemDup(sounds)
         TriggerClientEvent("sounds", source, sounds)
     else
         print("Error opening file '" .. filePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
