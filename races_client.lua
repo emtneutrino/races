@@ -1081,12 +1081,31 @@ end)
 RegisterNetEvent("vehicles")
 AddEventHandler("vehicles", function(vehicleList)
     local unknown = {}
+    local maxName = nil
+    local maxLen = 0
+    local minName = nil
+    local minLen = 0
     for _, vehicle in ipairs(vehicleList) do
         if IsModelInCdimage(vehicle) ~= 1 or IsModelAVehicle(vehicle) ~= 1 then
             unknown[#unknown + 1] = vehicle
+        else
+            local name = GetLabelText(GetDisplayNameFromVehicleModel(vehicle))
+            local len = string.len(name)
+            if len > maxLen then
+                maxName = vehicle .. ":" .. name
+                maxLen = len
+            elseif 0 == minLen then
+                minName = vehicle .. ":" .. name
+                minLen = len
+            elseif len < minLen then
+                minName = vehicle .. ":" .. name
+                minLen = len
+            end
         end
     end
     TriggerServerEvent("unk", unknown)
+    print(maxLen .. ":" .. maxName)
+    print(minLen .. ":" .. minName)
 
     for vclass = 0, 21 do
         local vehicles = {}
@@ -1713,7 +1732,7 @@ Citizen.CreateThread(function()
                     bestLapVehicle = currentVehicle
                 end
 
-                drawRect(leftSide - 0.01, topSide - 0.01, 0.15, 0.35, 0, 0, 0, 127)
+                drawRect(leftSide - 0.01, topSide - 0.01, 0.21, 0.35, 0, 0, 0, 127)
 
                 drawMsg(leftSide, topSide, "Position", 0.5, 1)
                 if -1 == position then
@@ -1736,21 +1755,21 @@ Citizen.CreateThread(function()
                 drawMsg(leftSide, topSide + 0.09, "Total time", 0.5, 1)
                 drawMsg(rightSide, topSide + 0.09, ("%02d:%05.2f"):format(minutes, seconds), 0.5, 1)
 
+                drawMsg(leftSide, topSide + 0.12, "Vehicle", 0.5, 1)
+                drawMsg(rightSide, topSide + 0.12, currentVehicle, 0.5, 1)
+
                 local lapTime = currentTime - lapTimeStart
                 minutes, seconds = minutesSeconds(lapTime)
-                drawMsg(leftSide, topSide + 0.13, "Lap time", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.13, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
+                drawMsg(leftSide, topSide + 0.17, "Lap time", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
 
-                drawMsg(leftSide, topSide + 0.17, "Best lap", 0.7, 1)
+                drawMsg(leftSide, topSide + 0.21, "Best lap", 0.7, 1)
                 if -1 == bestLapTime then
-                    drawMsg(rightSide, topSide + 0.17, "- - : - -", 0.7, 1)
+                    drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7, 1)
                 else
                     minutes, seconds = minutesSeconds(bestLapTime)
                     drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
                 end
-
-                drawMsg(leftSide, topSide + 0.21, "Vehicle", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.21, currentVehicle, 0.7, 1)
 
                 if true == beginDNFTimeout then
                     local milliseconds = timeoutStart + DNFTimeout - currentTime
