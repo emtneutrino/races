@@ -586,9 +586,13 @@ AddEventHandler("sounds0", function()
         local sounds = {}
         for line in file:lines() do
             local i = string.find(line, ",")
-            local name = string.sub(line, 1, i - 1)
-            local ref = string.sub(line, i + 1, -1)
-            sounds[#sounds + 1] = {name = name, ref = ref}
+            if i ~= fail then
+                local name = string.sub(line, 1, i - 1)
+                local ref = string.sub(line, i + 1, -1)
+                sounds[#sounds + 1] = {name = name, ref = ref}
+            else
+                print(line)
+            end
         end
         file:close()
         sortRemDup(sounds)
