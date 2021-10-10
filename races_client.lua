@@ -1768,7 +1768,7 @@ Citizen.CreateThread(function()
                     drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7, 1)
                 else
                     minutes, seconds = minutesSeconds(bestLapTime)
-                    drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
+                    drawMsg(rightSide, topSide + 0.21, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
                 end
 
                 if true == beginDNFTimeout then
