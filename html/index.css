@@ -43,7 +43,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgb(63, 63, 63);
+    background-color: rgba(0, 0, 0, 0.5);
     border: 2px solid rgb(255, 255, 255);
     border-radius: 7px;
 }
@@ -199,7 +199,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgb(63, 63, 63);
+    background-color: rgba(0, 0, 0, 0.5);
     border: 2px solid rgb(255, 255, 255);
     border-radius: 7px;
 }
