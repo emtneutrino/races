@@ -178,6 +178,10 @@ $(function() {
         $.post("https://races/rivals");
     });
 
+    $("#respawn").click(function() {
+        $.post("https://races/respawn");
+    });
+
     $("#results").click(function() {
         $.post("https://races/results");
     });

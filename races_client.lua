@@ -788,6 +788,34 @@ local function rivals()
     end
 end
 
+local function respawn()
+    if STATE_RACING == raceState then
+        local prev = currentWaypoint - 1
+        if true == startIsFinish then
+            if currentWaypoint > 0 then
+                prev = currentWaypoint
+            else
+                return
+            end
+        else
+            if 1 == currentWaypoint then
+                return
+            end
+        end
+        local coord =  waypoints[prev].coord
+        local player = PlayerPedId()
+        local vehicle = GetPlayersLastVehicle()
+        if vehicle ~= 0 then
+            SetPedIntoVehicle(player, vehicle, -1)
+            SetEntityCoords(vehicle, coord.x, coord.y, coord.z, false, false, false, true)
+        else
+            SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
+        end
+    else
+        sendMessage("Cannot respawn.  Not in a race.\n")
+    end
+end
+
 local function viewResults(chatOnly)
     local msg = nil
     if #results > 0 then
@@ -1001,6 +1029,10 @@ RegisterNUICallback("rivals", function()
     rivals()
 end)
 
+RegisterNUICallback("respawn", function()
+    respawn()
+end)
+
 RegisterNUICallback("results", function()
     viewResults(false)
 end)
@@ -1150,6 +1182,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
+        msg = msg .. "/races respawn - respawn at last waypoint\n"
         msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races spawn (name) - spawn a vehicle; (name) defaults to 'adder'\n"
         msg = msg .. "/races lvehicles (class) - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\n"
@@ -1197,6 +1230,8 @@ RegisterCommand("races", function(_, args)
         leave()
     elseif "rivals" == args[1] then
         rivals()
+    elseif "respawn" == args[1] then
+        respawn()
     elseif "results" == args[1] then
         viewResults(true)
     elseif "spawn" == args[1] then
