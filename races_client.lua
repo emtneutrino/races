@@ -130,16 +130,18 @@ local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, 
 
 local started = false -- flag indicating if race started
 
-local starts = {} -- starts[] = {publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, blip, checkpoint} - registration points
+local starts = {} -- starts[playerID] = {publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, blip, checkpoint} - registration points
 
 local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
 
 local panelShown = false -- flag indicating if command button panel is shown
 
-TriggerServerEvent("races:init")
+local permit = true -- flag indicating if player is permitted to create tracks and register races
 
 math.randomseed(GetCloudTimeAsInt())
+
+TriggerServerEvent("races:init")
 
 local function notifyPlayer(msg)
     TriggerEvent("chat:addMessage", {
@@ -414,8 +416,10 @@ local function getClass(vclass)
         return "'Military'(" .. vclass .. ")"
     elseif 20 == vclass then
         return "'Commercial'(" .. vclass .. ")"
-    else
+    elseif 21 == vclass then
         return "'Trains'(" .. vclass .. ")"
+    else
+        return "'Unknown'(" .. vclass .. ")"
     end
 end
 
@@ -550,24 +554,32 @@ local function editWaypoints(coord)
     end
 end
 
+local function request()
+    TriggerServerEvent("races:request")
+end
+
 local function edit()
-    if STATE_IDLE == raceState then
-        raceState = STATE_EDITING
-        SetWaypointOff()
-        setStartToFinishCheckpoints()
-        sendMessage("Editing started.\n")
-    elseif STATE_EDITING == raceState then
-        raceState = STATE_IDLE
-        highlightedCheckpoint = 0
-        if selectedWaypoint > 0 then
-            SetBlipColour(waypoints[selectedWaypoint].blip, waypoints[selectedWaypoint].color)
-            selectedWaypoint = 0
+    if true == permit then
+        if STATE_IDLE == raceState then
+            raceState = STATE_EDITING
+            SetWaypointOff()
+            setStartToFinishCheckpoints()
+            sendMessage("Editing started.\n")
+        elseif STATE_EDITING == raceState then
+            raceState = STATE_IDLE
+            highlightedCheckpoint = 0
+            if selectedWaypoint > 0 then
+                SetBlipColour(waypoints[selectedWaypoint].blip, waypoints[selectedWaypoint].color)
+                selectedWaypoint = 0
+            end
+            lastSelectedWaypoint = 0
+            deleteWaypointCheckpoints()
+            sendMessage("Editing stopped.\n")
+        else
+            sendMessage("Cannot edit waypoints.  Leave race first.\n")
         end
-        lastSelectedWaypoint = 0
-        deleteWaypointCheckpoints()
-        sendMessage("Editing stopped.\n")
     else
-        sendMessage("Cannot edit waypoints.  Leave race first.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
@@ -594,163 +606,203 @@ local function clear()
 end
 
 local function reverse()
-    if #waypoints > 1 then
-        if STATE_IDLE == raceState then
-            savedRaceName = nil
-            loadWaypointBlips(waypointsToCoordsRev())
-            sendMessage("Waypoints reversed.\n")
-        elseif STATE_EDITING == raceState then
-            savedRaceName = nil
-            highlightedCheckpoint = 0
-            selectedWaypoint = 0
-            lastSelectedWaypoint = 0
-            deleteWaypointCheckpoints()
-            loadWaypointBlips(waypointsToCoordsRev())
-            setStartToFinishCheckpoints()
-            sendMessage("Waypoints reversed.\n")
+    if true == permit then
+        if #waypoints > 1 then
+            if STATE_IDLE == raceState then
+                savedRaceName = nil
+                loadWaypointBlips(waypointsToCoordsRev())
+                sendMessage("Waypoints reversed.\n")
+            elseif STATE_EDITING == raceState then
+                savedRaceName = nil
+                highlightedCheckpoint = 0
+                selectedWaypoint = 0
+                lastSelectedWaypoint = 0
+                deleteWaypointCheckpoints()
+                loadWaypointBlips(waypointsToCoordsRev())
+                setStartToFinishCheckpoints()
+                sendMessage("Waypoints reversed.\n")
+            else
+                sendMessage("Cannot reverse waypoints.  Leave race first.\n")
+            end
         else
-            sendMessage("Cannot reverse waypoints.  Leave race first.\n")
+            sendMessage("Cannot reverse waypoints.  Race needs to have at least 2 waypoints.\n")
         end
     else
-        sendMessage("Cannot reverse waypoints.  Race needs to have at least 2 waypoints.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function loadRace(public, raceName)
-    if raceName ~= nil then
-        if STATE_IDLE == raceState or STATE_EDITING == raceState then
-            TriggerServerEvent("races:load", public, raceName)
+    if true == permit then
+        if raceName ~= nil then
+            if STATE_IDLE == raceState or STATE_EDITING == raceState then
+                TriggerServerEvent("races:load", public, raceName)
+            else
+                sendMessage("Cannot load.  Leave race first.\n")
+            end
         else
-            sendMessage("Cannot load.  Leave race first.\n")
+            sendMessage("Cannot load.  Name required.\n")
         end
     else
-        sendMessage("Cannot load.  Name required.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function saveRace(public, raceName)
-    if raceName ~= nil then
-        if #waypoints > 1 then
-            TriggerServerEvent("races:save", public, raceName, waypointsToCoords())
+    if true == permit then
+        if raceName ~= nil then
+            if #waypoints > 1 then
+                TriggerServerEvent("races:save", public, raceName, waypointsToCoords())
+            else
+                sendMessage("Cannot save.  Race needs to have at least 2 waypoints.\n")
+            end
         else
-            sendMessage("Cannot save.  Race needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot save.  Name required.\n")
         end
     else
-        sendMessage("Cannot save.  Name required.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function overwriteRace(public, raceName)
-    if raceName ~= nil then
-        if #waypoints > 1 then
-            TriggerServerEvent("races:overwrite", public, raceName, waypointsToCoords())
+    if true == permit then
+        if raceName ~= nil then
+            if #waypoints > 1 then
+                TriggerServerEvent("races:overwrite", public, raceName, waypointsToCoords())
+            else
+                sendMessage("Cannot overwrite.  Race needs to have at least 2 waypoints.\n")
+            end
         else
-            sendMessage("Cannot overwrite.  Race needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot overwrite.  Name required.\n")
         end
     else
-        sendMessage("Cannot overwrite.  Name required.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function deleteRace(public, raceName)
-    if raceName ~= nil then
-        TriggerServerEvent("races:delete", public, raceName)
-     else
-         sendMessage("Cannot delete.  Name required.\n")
-     end
+    if true == permit then
+        if raceName ~= nil then
+            TriggerServerEvent("races:delete", public, raceName)
+        else
+            sendMessage("Cannot delete.  Name required.\n")
+        end
+    else
+        sendMessage("Permission required.\n")
+    end
 end
 
 local function bestLapTimes(public, raceName)
-    if raceName ~= nil then
-        TriggerServerEvent("races:blt", public, raceName)
+    if true == permit then
+        if raceName ~= nil then
+            TriggerServerEvent("races:blt", public, raceName)
+        else
+            sendMessage("Cannot list best lap times.  Name required.\n")
+        end
     else
-        sendMessage("Cannot list best lap times.  Name required.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function list(public)
-    TriggerServerEvent("races:list", public)
+    if true == permit then
+        TriggerServerEvent("races:list", public)
+    else
+        sendMessage("Permission required.\n")
+    end
 end
 
 local function register(buyin, laps, timeout, rtype, arg6, arg7)
-    buyin = (nil == buyin or "." == buyin) and defaultBuyin or tonumber(buyin)
-    if buyin ~= nil and buyin >= 0 then
-        laps = (nil == laps or "." == laps) and defaultLaps or tonumber(laps)
-        if laps ~= nil and laps > 0 then
-            timeout = (nil == timeout or "." == timeout) and defaultTimeout or tonumber(timeout)
-            if timeout ~= nil and timeout >= 0 then
-                local registerRace = true
-                local restrict = nil
-                local filename = nil
-                local vclass = nil
-                if "rest" == rtype then
-                    restrict = arg6
-                    if nil == restrict or IsModelInCdimage(restrict) ~= 1 or IsModelAVehicle(restrict) ~= 1 then
-                        registerRace = false
-                        sendMessage("Cannot register.  Invalid restricted vehicle.\n")
-                    end
-                elseif "class" == rtype then
-                    vclass = tonumber(arg6)
-                    if nil == vclass or vclass < 0 or vclass > 21 then
-                        registerRace = false
-                        sendMessage("Cannot register.  Invalid vehicle class.\n")
-                    end
-                elseif "rand" == rtype then
-                    buyin = 0
-                    if "." == arg6 then
-                        arg6 = nil
-                    end
-                    if "." == arg7 then
-                        arg7 = nil
-                    end
-                    filename = arg6
-                    vclass = tonumber(arg7)
-                    if vclass ~= nil and (vclass < 0 or vclass > 21) then
-                        registerRace = false
-                        sendMessage("Cannot register.  Invalid vehicle class.\n")
-                    end
-                elseif rtype ~= nil then
-                    registerRace = false
-                    sendMessage("Cannot register.  Unknown race type.\n")
-                end
-                if true == registerRace then
-                    if STATE_IDLE == raceState then
-                        if #waypoints > 1 then
-                            if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass)
-                            else
-                                sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
-                            end
-                        else
-                            sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+    if true == permit then
+        buyin = (nil == buyin or "." == buyin) and defaultBuyin or tonumber(buyin)
+        if buyin ~= nil and buyin >= 0 then
+            laps = (nil == laps or "." == laps) and defaultLaps or tonumber(laps)
+            if laps ~= nil and laps > 0 then
+                timeout = (nil == timeout or "." == timeout) and defaultTimeout or tonumber(timeout)
+                if timeout ~= nil and timeout >= 0 then
+                    local registerRace = true
+                    local restrict = nil
+                    local filename = nil
+                    local vclass = nil
+                    if "rest" == rtype then
+                        restrict = arg6
+                        if nil == restrict or IsModelInCdimage(restrict) ~= 1 or IsModelAVehicle(restrict) ~= 1 then
+                            registerRace = false
+                            sendMessage("Cannot register.  Invalid restricted vehicle.\n")
                         end
-                    elseif STATE_EDITING == raceState then
-                        sendMessage("Cannot register.  Stop editing first.\n")
-                    else
-                        sendMessage("Cannot register.  Leave race first.\n")
+                    elseif "class" == rtype then
+                        vclass = tonumber(arg6)
+                        if nil == vclass or vclass < 0 or vclass > 21 then
+                            registerRace = false
+                            sendMessage("Cannot register.  Invalid vehicle class.\n")
+                        end
+                    elseif "rand" == rtype then
+                        buyin = 0
+                        if "." == arg6 then
+                            arg6 = nil
+                        end
+                        if "." == arg7 then
+                            arg7 = nil
+                        end
+                        filename = arg6
+                        vclass = tonumber(arg7)
+                        if vclass ~= nil and (vclass < 0 or vclass > 21) then
+                            registerRace = false
+                            sendMessage("Cannot register.  Invalid vehicle class.\n")
+                        end
+                    elseif rtype ~= nil then
+                        registerRace = false
+                        sendMessage("Cannot register.  Unknown race type.\n")
                     end
+                    if true == registerRace then
+                        if STATE_IDLE == raceState then
+                            if #waypoints > 1 then
+                                if laps < 2 or (laps >= 2 and true == startIsFinish) then
+                                    TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass)
+                                else
+                                    sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
+                                end
+                            else
+                                sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+                            end
+                        elseif STATE_EDITING == raceState then
+                            sendMessage("Cannot register.  Stop editing first.\n")
+                        else
+                            sendMessage("Cannot register.  Leave race first.\n")
+                        end
+                    end
+                else
+                    sendMessage("Invalid DNF timeout.\n")
                 end
             else
-                sendMessage("Invalid DNF timeout.\n")
+                sendMessage("Invalid number of laps.\n")
             end
         else
-            sendMessage("Invalid number of laps.\n")
+            sendMessage("Invalid buy-in amount.\n")
         end
     else
-        sendMessage("Invalid buy-in amount.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
 local function unregister()
-    TriggerServerEvent("races:unregister")
+    if true == permit then
+        TriggerServerEvent("races:unregister")
+    else
+        sendMessage("Permission required.\n")
+    end
 end
 
 local function startRace(delay)
-    delay = nil == delay and defaultDelay or tonumber(delay)
-    if delay ~= nil and delay >= 5 then
-        TriggerServerEvent("races:start", delay)
+    if true == permit then
+        delay = nil == delay and defaultDelay or tonumber(delay)
+        if delay ~= nil and delay >= 5 then
+            TriggerServerEvent("races:start", delay)
+        else
+            sendMessage("Cannot start.  Invalid delay.\n")
+        end
     else
-        sendMessage("Cannot start.  Invalid delay.\n")
+        sendMessage("Permission required.\n")
     end
 end
 
@@ -902,16 +954,27 @@ end
 local function showPanel()
     panelShown = true
     SetNuiFocus(true, true)
-    SendNUIMessage({
-        panel = "main",
-        defaultBuyin = defaultBuyin,
-        defaultLaps = defaultLaps,
-        defaultTimeout = defaultTimeout,
-        defaultDelay = defaultDelay,
-        defaultVehicle = defaultVehicle,
-        defaultFilename = defaultFilename
-    })
+    if true == permit then
+        SendNUIMessage({
+            panel = "main",
+            defaultBuyin = defaultBuyin,
+            defaultLaps = defaultLaps,
+            defaultTimeout = defaultTimeout,
+            defaultDelay = defaultDelay,
+            defaultVehicle = defaultVehicle,
+            defaultFilename = defaultFilename
+        })
+    else
+        SendNUIMessage({
+            panel = "restricted",
+            defaultVehicle = defaultVehicle,
+        })
+    end
 end
+
+RegisterNUICallback("request", function()
+    request()
+end)
 
 RegisterNUICallback("edit", function()
     edit()
@@ -1158,6 +1221,7 @@ RegisterCommand("races", function(_, args)
         local msg = "Commands:\n"
         msg = msg .. "Required arguments are in square brackets.  Optional arguments are in parentheses.\n"
         msg = msg .. "/races - display list of available /races commands\n"
+        msg = msg .. "/races request - request permission to create tracks and register races\n"
         msg = msg .. "/races edit - toggle editing race waypoints\n"
         msg = msg .. "/races clear - clear race waypoints\n"
         msg = msg .. "/races reverse - reverse order of race waypoints\n"
@@ -1190,6 +1254,8 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races funds - view available funds\n"
         msg = msg .. "/races panel - display command button panel\n"
         notifyPlayer(msg)
+    elseif "request" == args[1] then
+        request()
     elseif "edit" == args[1] then
         edit()
     elseif "clear" == args[1] then
@@ -1269,6 +1335,11 @@ RegisterNetEvent("races:init")
 AddEventHandler("races:init", function(filename, radius)
     defaultFilename = filename
     defaultRadius = radius
+end)
+
+RegisterNetEvent("races:permission")
+AddEventHandler("races:permission", function(permission)
+    permit = permission
 end)
 
 RegisterNetEvent("races:message")

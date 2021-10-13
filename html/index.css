@@ -52,12 +52,16 @@ body {
     width: 25%;
 }
 
-#clear {
+#clear0 {
     width: 25%;
 }
 
 #reverse {
     width: 25%;
+}
+
+#name {
+    width: 90%;
 }
 
 #load {
@@ -82,6 +86,10 @@ body {
 
 #list {
     width: 15%;
+}
+
+#namePublic {
+    width: 90%;
 }
 
 #loadPublic {
@@ -152,31 +160,31 @@ body {
     width: 10%;
 }
 
-#leave {
+#leave0 {
     width: 20%;
 }
 
-#rivals {
+#rivals0 {
     width: 20%;
 }
 
-#respawn {
+#respawn0 {
     width: 20%;
 }
 
-#results {
+#results0 {
     width: 20%;
 }
 
-#spawn {
+#spawn0 {
     width: 25%;
 }
 
-#vehicle {
+#vehicle0 {
     width: 25%;
 }
 
-#lvehicles {
+#lvehicles0 {
     width: 25%;
 }
 
@@ -184,15 +192,89 @@ body {
     height: 44px;
 }
 
-#speedo {
+#speedo0 {
     width: 25%;
 }
 
-#unit {
+#change0 {
+    width: 25%;
+}
+
+#unit0 {
     height: 44px;
 }
 
-#funds {
+#funds0 {
+    width: 25%;
+}
+
+#restricted {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#request {
+    width: 25%;
+}
+
+#clear1 {
+    width: 25%;
+}
+
+#leave1 {
+    width: 20%;
+}
+
+#rivals1 {
+    width: 20%;
+}
+
+#respawn1 {
+    width: 20%;
+}
+
+#results1 {
+    width: 20%;
+}
+
+#spawn1 {
+    width: 25%;
+}
+
+#vehicle1 {
+    width: 25%;
+}
+
+#lvehicles1 {
+    width: 25%;
+}
+
+#vclass2 {
+    height: 44px;
+}
+
+#speedo1 {
+    width: 25%;
+}
+
+#change1 {
+    width: 25%;
+}
+
+#unit1 {
+    height: 44px;
+}
+
+#funds1 {
     width: 25%;
 }
 
@@ -223,11 +305,11 @@ body {
 button {
     background-color: rgb(127, 127, 127);
     padding: 10px;
+    min-width: max-content;
 }
 
 input {
     margin-bottom: 5px;
-    width: 90%;
     font-size: 15px;
     padding: 12px;
 }

@@ -40,8 +40,8 @@ local defaultRadius <const> = 5.0 -- default waypoint radius
 
 local allVehicleFilename <const> = "vehicles.txt" -- list of all vehicles filename
 
-local dist <const> = {60, 20, 10, 5, 3, 2}
-local distValid = true
+local dist <const> = {60, 20, 10, 5, 3, 2} -- prize distribution
+local distValid = true -- flag indicating if prize distribution is valid
 
 if #dist > 0 and dist[1] > 0 then
     local sum = dist[1]
@@ -61,7 +61,23 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local races = {} -- races[] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, numRacing, players[] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local requirePermission = true -- flag indicating whether permission is required to create tracks and register races
+
+local ADMIN <const> = 1 -- admin role
+
+local requests = {} -- requests[playerID] = name - list of requests to create tracks and register races
+
+local rolesDataFile = "./resources/races/roles.json"
+local roles = {} -- roles[license] = {role, name} - list of players approved to create tracks and register races
+if true == requirePermission then
+    local file, errMsg, errCode = io.open(rolesDataFile, "r")
+    if file ~= nil then
+        roles = json.decode(file:read("a"))
+        file:close()
+    end
+end
+
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -204,6 +220,112 @@ local function import(raceName, withBLT)
         end
     else
         print("import: Name required.")
+    end
+end
+
+local function listReqs()
+    for i, player in pairs(requests) do
+        print(i .. ":" .. player)
+    end
+end
+
+local function approve(playerID)
+    if true == requirePermission then
+        if GetPlayerPed(playerID) ~= 0 then
+            local license = GetPlayerIdentifier(playerID, 0)
+            if license ~= nil then
+                license = string.sub(license, 9)
+                if nil == roles[license] then
+                    roles[license] = {role = ADMIN, name = GetPlayerName(playerID)}
+                    requests[tonumber(playerID)] = nil
+                    print("approve: Request approved.")
+                    notifyPlayer(playerID, "Request approved.\n")
+                    TriggerClientEvent("races:permission", playerID, true)
+                    local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                    if file ~= nil then
+                        file:write(json.encode(roles))
+                        file:close()
+                    else
+                        print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                    end
+                else
+                    print("approve: Request already approved.")
+                end
+            else
+                print("approve: Could not get license.")
+            end
+        else
+            print("approve: Invalid player ID.")
+        end
+    else
+        print("approve: Permission not required.")
+    end
+end
+
+local function deny(playerID)
+    if true == requirePermission then
+        if GetPlayerPed(playerID) ~= 0 then
+            requests[tonumber(playerID)] = nil
+            print("deny: Request denied.")
+            notifyPlayer(playerID, "Request denied.\n")
+        else
+            print("deny: Invalid player ID.")
+        end
+    else
+        print("deny: Permission not required.")
+    end
+end
+
+local function listRoles()
+    for i, role in pairs(roles) do
+        print(role.role .. ":" .. role.name)
+    end
+end
+
+local function removeRole(name)
+    if true == requirePermission then
+        local lic = nil
+        for l, role in pairs(roles) do
+            if role.name == name then
+                roles[l] = nil
+                lic = l
+                print("removeRole: '" .. name .. "' role removed.")
+                local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                if file ~= nil then
+                    file:write(json.encode(roles))
+                    file:close()
+                else
+                    print("removeRole: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                end
+                break
+            end
+        end
+        if lic ~= nil then
+            for _, index in pairs(GetPlayers()) do
+                local license = GetPlayerIdentifier(index, 0)
+                if license ~= nil then
+                    if string.sub(license, 9) == lic then
+                        index = tonumber(index)
+                        if races[index] ~= nil then
+                            for i in pairs(races[index].players) do
+                                Deposit(i, races[index].buyin)
+                                notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
+                            end
+                            races[index] = nil
+                            TriggerClientEvent("races:unregister", -1, index)
+                        end
+                        TriggerClientEvent("races:permission", index, false)
+                        break
+                    end
+                else
+                    print("removeRole: Could not get license for player index '" .. index .. "'.")
+                end
+            end
+        else
+            print("removeRole: '" .. name .. "' not found.")
+        end
+    else
+        print("removeRole: Permission not required.")
     end
 end
 
@@ -463,8 +585,10 @@ local function getClass(vclass)
         return "'Military'(" .. vclass .. ")"
     elseif 20 == vclass then
         return "'Commercial'(" .. vclass .. ")"
-    else
+    elseif 21 == vclass then
         return "'Trains'(" .. vclass .. ")"
+    else
+        return "'Unknown'(" .. vclass .. ")"
     end
 end
 
@@ -500,6 +624,21 @@ local function round(f)
     return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
 
+local function getPermission(source)
+    if true == requirePermission then
+        local license = GetPlayerIdentifier(source, 0)
+        if license ~= nil then
+            license = string.sub(license, 9)
+            if nil == roles[license] then
+                return false
+            end
+        else
+            return false
+        end
+    end
+    return true
+end
+
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
@@ -508,6 +647,11 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "races import [name] - import race file named '[name].json' into public races without best lap times\n"
         msg = msg .. "races exportwblt [name] - export public race saved as [name] with best lap times to file named '[name].json'\n"
         msg = msg .. "races importwblt [name] - import race file named '[name].json' into public races with best lap times\n"
+        msg = msg .. "races listReqs - list requests to create tracks and register races\n"
+        msg = msg .. "races approve [playerID] - approve request of [playerID] to create tracks and register races\n"
+        msg = msg .. "races deny [playerID] - deny request of [playerID] to create tracks and register races\n"
+        msg = msg .. "races listRoles - list approved players' roles\n"
+        msg = msg .. "races removeRole [name] - remove player [name]'s role\n"
         msg = msg .. "races updateRaceData - update 'raceData.json' to new format\n"
         msg = msg .. "races updateRace [name] - update exported race '[name].json' to new format\n"
         print(msg)
@@ -519,6 +663,16 @@ RegisterCommand("races", function(_, args)
         export(args[2], true)
     elseif "importwblt" == args[1] then
         import(args[2], true)
+    elseif "listReqs" == args[1] then
+        listReqs()
+    elseif "approve" == args[1] then
+        approve(args[2])
+    elseif "deny" == args[1] then
+        deny(args[2])
+    elseif "listRoles" == args[1] then
+        listRoles()
+    elseif "removeRole" == args[1] then
+        removeRole(args[2])
     elseif "updateRaceData" == args[1] then
         updateRaceData()
     elseif "updateRace" == args[1] then
@@ -676,6 +830,8 @@ RegisterNetEvent("races:init")
 AddEventHandler("races:init", function()
     local source = source
 
+    TriggerClientEvent("races:permission", source, getPermission(source))
+
     TriggerClientEvent("races:init", source, defaultFilename, defaultRadius)
 
     -- if funds < 5000, set funds to 5000
@@ -691,9 +847,38 @@ AddEventHandler("races:init", function()
     end
 end)
 
+RegisterNetEvent("races:request")
+AddEventHandler("races:request", function()
+    local source = source
+    if true == requirePermission then
+        local license = GetPlayerIdentifier(source, 0)
+        if license ~= nil then
+            license = string.sub(license, 9)
+            if nil == roles[license] then
+                if nil == requests[source] then
+                    requests[source] = GetPlayerName(source)
+                    sendMessage(source, "Request submitted.")
+                else
+                    sendMessage(source, "Request already submitted.\n")
+                end
+            else
+                sendMessage(source, "Request already approved.\n")
+            end
+        else
+            sendMessage(source, "Could not get license.\n")
+        end
+    else
+        sendMessage(source, "Permission not required.\n")
+    end
+end)
+
 RegisterNetEvent("races:load")
 AddEventHandler("races:load", function(public, raceName)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil and raceName ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -713,6 +898,10 @@ end)
 RegisterNetEvent("races:save")
 AddEventHandler("races:save", function(public, raceName, waypointCoords)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -741,6 +930,10 @@ end)
 RegisterNetEvent("races:overwrite")
 AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -769,6 +962,10 @@ end)
 RegisterNetEvent("races:delete")
 AddEventHandler("races:delete", function(public, raceName)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil and raceName ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -796,6 +993,10 @@ end)
 RegisterNetEvent("races:blt")
 AddEventHandler("races:blt", function(public, raceName)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil and raceName ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -815,6 +1016,10 @@ end)
 RegisterNetEvent("races:list")
 AddEventHandler("races:list", function(public)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if public ~= nil then
         local playerRaces = loadPlayerData(public, source)
         if playerRaces ~= nil then
@@ -845,6 +1050,10 @@ end)
 RegisterNetEvent("races:register")
 AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if waypointCoords ~= nil and publicRace ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil then
         if buyin >= 0 then
             if laps > 0 then
@@ -951,6 +1160,10 @@ end)
 RegisterNetEvent("races:unregister")
 AddEventHandler("races:unregister", function()
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if races[source] ~= nil then
         for i in pairs(races[source].players) do
             Deposit(i, races[source].buyin)
@@ -967,6 +1180,10 @@ end)
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
     local source = source
+    if getPermission(source) == false then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
     if delay ~= nil then
         if races[source] ~= nil then
             if STATE_REGISTERING == races[source].state then
@@ -1238,7 +1455,7 @@ Citizen.CreateThread(function()
                 local sortedPlayers = {} -- will contain players still racing and players that finished without DNF
                 local complete = true
 
-                -- race.players[] = {playerName, numWaypointsPassed, data, finished}
+                -- race.players[playerID] = {playerName, numWaypointsPassed, data, finished}
                 for i, player in pairs(race.players) do
                     if -1 == player.numWaypointsPassed then -- player client hasn't updated numWaypointsPassed and data
                         complete = false

@@ -8,6 +8,7 @@ CLIENT COMMANDS
 ---------------
 Required arguments are in square brackets.  Optional arguments are in parentheses.\
 `/races` - display list of available `/races` commands\
+`/races request` - request permission to create tracks and register races\
 `/races edit` - toggle editing race waypoints\
 `/races clear` - clear race waypoints\
 `/races reverse` - reverse order of race waypoints\
@@ -50,21 +51,30 @@ SERVER COMMANDS
 `races export [name]` - export public race saved as [name] without best lap times to file named `[name].json`\
 `races import [name]` - import race file named `[name].json` into public races without best lap times\
 `races exportwblt [name]` - export public race saved as [name] with best lap times to file named `[name].json`\
-`races importwblt [name]` - import race file named `[name].json` into public races with best lap times
+`races importwblt [name]` - import race file named `[name].json` into public races with best lap times\
+`races listReqs` - list requests to create tracks and register races\
+`races approve [playerID]` - approve request of [playerID] to create tracks and register races\
+`races deny [playerID]` - deny request of [playerID] to create tracks and register races\
+`races listRoles` - list approved players' roles\
+`races removeRole [name]` - remove player [name]'s role
 
 **IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
 `races updateRaceData` - update `raceData.json` to new format\
 `races updateRace [name]` - update exported race `[name].json` to new format
 
+**IF YOU WISH TO LIMIT WHO CAN CREATE TRACKS AND REGISTER RACES, YOU WILL NEED TO CHANGE THE LINE `requirePermission = false` IN `races_server.lua` TO `requirePermission = true`.**
+
 SAMPLE RACES
 ------------
-There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
+If permission to create tracks and register races is not required or if it is required and you have been granted permission, the sample races will be available to you.  There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing `/races loadPublic 00`.  To race in the loaded race, you need to register by typing `/races register`.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type `/races start`.
 
 There are backups of the sample races in the `sampleraces/` folder with the extension '.json'.  Race '00' is backed up as `sampleraces/00.json`.  If any of the sample races were deleted from the public list of races, you can restore them.  Copy the deleted race from the `sampleraces/` folder to the `resources/races/` folder.  In the server console, type `races import 00` to import race '00' back into the public races list.
   
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
+If permission to create tracks and register races is required, you will need to request permission.  Otherwise, all commands are permitted.  Type `/races request` on the client to request permission.  In the server console you will need to list who has made requests by typing `races listReqs`.  The format of each element of the list is `[playerID]:[name]` where [playerID] is the player ID who requested permission and [name] is the player's name.  To approve a request, type `races approve [playerID]`.  You should now have permission to create tracks and register races.
+
 Type `/races edit` until you see the message 'Editing started'.  Add at least 2 waypoints on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type `/races edit` again until you see the message 'Editing stopped'.  Save the race if you want by typing `/races save myrace`.  Register your race by typing `/races register`.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint which all players will see.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move towards the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once other people have joined, you can start the race by typing `/races start`.
 
 QUICK GUIDE FOR RACING
@@ -74,6 +84,31 @@ There are five possible types of race you can join:  1. Any vehicle can be used,
 CLIENT COMMAND DETAILS
 ----------------------
 Type `/races` to see the list of available `/races` commands.  If you cannot see all the commands, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+
+By default, permission is not required to use any of the commands.  If permission is required, the following commands will be limited to players who have permission:
+
+`/races edit`\
+`/races reverse`\
+`/races load [name]`\
+`/races save [name]`\
+`/races overwrite [name]`\
+`/races delete [name]`\
+`/races blt [name]`\
+`/races list`\
+`/races loadPublic [name]`\
+`/races savePublic [name]`\
+`/races overwritePublic [name]`\
+`/races deletePublic [name]`\
+`/races bltPublic [name]`\
+`/races listPublic`\
+`/races register (buy-in) (laps) (DNF timeout)`\
+`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`\
+`/races register (buy-in) (laps) (DNF timeout) class [class]`\
+`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class)`\
+`/races unregister`\
+`/races start (delay)`
+
+If the server limits who can create tracks and register races, players will need to request permission.  Type `/races request` to request permission.  The server administrator will then approve or deny the request and the player will be notified.
 
 Type `/races edit` until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type `/races edit` until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
@@ -192,7 +227,7 @@ Multiple races can be registered and started simultaneously by different players
 
 SERVER COMMAND DETAILS
 ----------------------
-Server commands are typed into the server console.  These commands allow server owners to backup individual public races as well as trade races with other server owners.
+Server commands are typed into the server console.
 
 Type `races` to see the list of available `races` commands.
 
@@ -203,6 +238,20 @@ Type `races import myrace` to import the race file named `resources/races/myrace
 Type `races exportwblt publicrace` to export the public race saved as 'publicrace' with best lap times to the file `resources/races/publicrace.json`.  You cannot export the race if `resources/races/publicrace.json` already exists.  You will need to remove or rename the existing file and then export again.
 
 Type `races importwblt myrace` to import the race file named `resources/races/myrace.json` into the public races list with best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
+
+If permission is required to create tracks and register races, the following commands administer these permissions:
+
+Type `races listReqs` to list requests by players to create tracks and register races.  The format of each element of the list is `[playerID]:[name]` where [playerID] is the player ID who requested permission and [name] is the player's name.
+
+Type `races approve [playerID]` to approve the request of the player with [playerID] to create tracks and register races.
+
+Type `races deny [playerID]` to deny the request of the player with [playerID] to create tracks and register races.
+
+Type `races listRoles` to list the players who have been approved to create tracks and register races.  The format of each element of the list is `[role]:[name]` where [role] is a number specifying the role and [name] is the name of the player.
+
+Type `races removeRole [name]` to remove the player [name] from the list of approved players who can create tracks and register races.
+
+Roles are saved in the file `resources/races/roles.json`.
 
 **IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
@@ -242,8 +291,11 @@ Editing waypoints in waypoint map\
 Editing waypoints in world\
 <img src="screenshots/Screenshot%20(8).png" width="800">
 
-Command button panel\
+Unrestricted command button panel\
 <img src="screenshots/Screenshot%20(9).png" width="800">
+
+Restricted command button panel\
+<img src="screenshots/Screenshot%20(10).png" width="800">
 
 LICENSE
 -------

@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <body>
         <div id = "main">
             <button id = "edit">Toggle Editing Waypoints</button>
-            <button id = "clear">Clear Waypoints</button>
+            <button id = "clear0">Clear Waypoints</button>
             <button id = "reverse">Reverse Waypoints</button><br>
             <br>
             Private Races<br>
@@ -105,15 +105,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <button id = "start">Start Race</button>
             Delay: <input id = "delay" placeholder="Delay"><br>
             <br>
-            <button id = "leave">Leave Race</button>
-            <button id = "rivals">List Rivals</button>
-            <button id = "respawn">Respawn</button>
-            <button id = "results">View Results</button><br>
+            <button id = "leave0">Leave Race</button>
+            <button id = "rivals0">List Rivals</button>
+            <button id = "respawn0">Respawn</button>
+            <button id = "results0">View Results</button><br>
             <br>
-            <button id = "spawn">Spawn Vehicle</button>
-            Vehicle: <input id = "vehicle" placeholder="Vehicle name"><br>
+            <button id = "spawn0">Spawn Vehicle</button>
+            Vehicle: <input id = "vehicle0" placeholder="Vehicle name"><br>
             <br>
-            <button id = "lvehicles">List Vehicles</button>
+            <button id = "lvehicles0">List Vehicles</button>
             <label for = "vclass1">Vehicle Class: </label>
             <select id = "vclass1">
                 <option value = -1>Any</option>
@@ -141,25 +141,81 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <option value = 21>21:Trains</option>
             </select><br>
             <br>
-            <button id = "speedo">Toggle Speedometer</button>
-            <button id = "change">Change Unit of Measurement</button>
-            <label for = "unit">Unit: </label>
-            <select id = "unit">
+            <button id = "speedo0">Toggle Speedometer</button>
+            <button id = "change0">Change Unit of Measurement</button>
+            <label for = "unit0">Unit: </label>
+            <select id = "unit0">
                 <option value = "imp">Imperial</option>
                 <option value = "met">Metric</option>
             </select><br>
             <br>
-            <button id = "funds">View funds</button><br>
+            <button id = "funds0">View funds</button><br>
             <br>
             <button id = "closeMain">Close</button>
         </div>
+
+        <div id = "restricted">
+            <button id = "request">Request Permission</button><br>
+            <br>
+            <button id = "clear1">Clear Waypoints</button><br>
+            <br>
+            <button id = "leave1">Leave Race</button>
+            <button id = "rivals1">List Rivals</button>
+            <button id = "respawn1">Respawn</button>
+            <button id = "results1">View Results</button><br>
+            <br>
+            <button id = "spawn1">Spawn Vehicle</button>
+            Vehicle: <input id = "vehicle1" placeholder="Vehicle name"><br>
+            <br>
+            <button id = "lvehicles1">List Vehicles</button>
+            <label for = "vclass2">Vehicle Class: </label>
+            <select id = "vclass2">
+                <option value = -1>Any</option>
+                <option value = 0>0:Compacts</option>
+                <option value = 1>1:Sedans</option>
+                <option value = 2>2:SUVs</option>
+                <option value = 3>3:Coupes</option>
+                <option value = 4>4:Muscle</option>
+                <option value = 5>5:Sports Classics</option>
+                <option value = 6>6:Sports</option>
+                <option value = 7>7:Super</option>
+                <option value = 8>8:Motorcycles</option>
+                <option value = 9>9:Off-road</option>
+                <option value = 10>10:Industrial</option>
+                <option value = 11>11:Utility</option>
+                <option value = 12>12:Vans</option>
+                <option value = 13>13:Cycles</option>
+                <option value = 14>14:Boats</option>
+                <option value = 15>15:Helicopters</option>
+                <option value = 16>16:Planes</option>
+                <option value = 17>17:Service</option>
+                <option value = 18>18:Emergency</option>
+                <option value = 19>19:Military</option>
+                <option value = 20>20:Commercial</option>
+                <option value = 21>21:Trains</option>
+            </select><br>
+            <br>
+            <button id = "speedo1">Toggle Speedometer</button>
+            <button id = "change1">Change Unit of Measurement</button>
+            <label for = "unit1">Unit: </label>
+            <select id = "unit1">
+                <option value = "imp">Imperial</option>
+                <option value = "met">Metric</option>
+            </select><br>
+            <br>
+            <button id = "funds1">View funds</button><br>
+            <br>
+            <button id = "closeRestricted">Close</button>
+        </div>
+
         <div id = "reply">
-            <div id = "scroll" class = "scrollable">
+                <div id = "scroll" class = "scrollable">
                 <p id = "message"></p>
             </div><br>
             <br>
             <button id = "closeReply">Close</button>
         </div>
+
         <script src = "index.js" type = "text/javascript"></script>
     </body>
 </html>
