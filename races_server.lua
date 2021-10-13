@@ -61,7 +61,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local requirePermission = true -- flag indicating whether permission is required to create tracks and register races
+local requirePermission = false -- flag indicating whether permission is required to create tracks and register races
 
 local ADMIN <const> = 1 -- admin role
 
