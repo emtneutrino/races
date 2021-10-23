@@ -1688,6 +1688,7 @@ AddEventHandler("races:join", function(index, waypointCoords, vehicleList)
                     restrictedClass = starts[index].vclass
                 elseif "rand" == starts[index].rtype then
                     msg = msg .. " : using random "
+                    restrictedClass = starts[index].vclass
                     if starts[index].vclass ~= nil then
                         msg = msg .. getClass(starts[index].vclass) .. " vehicle class"
                     else
@@ -2149,6 +2150,20 @@ Citizen.CreateThread(function()
                         else
                             joinRace = false
                             notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                        end
+                    elseif "rand" == starts[closestIndex].rtype then
+                        if starts[closestIndex].vclass ~= nil then
+                            if nil == starts[closestIndex].svehicle then
+                                if IsPedInAnyVehicle(player, false) == 1 then
+                                    if GetVehicleClass(GetVehiclePedIsIn(player, false)) ~= starts[closestIndex].vclass then
+                                        joinRace = false
+                                        notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                    end
+                                else
+                                    joinRace = false
+                                    notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                end
+                            end
                         end
                     end
                     if true == joinRace then
