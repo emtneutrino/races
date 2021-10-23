@@ -167,7 +167,8 @@ $(function() {
             rtype: $("#rtype").val(),
             restrict: $("#restrict").val(),
             filename: $("#filename").val(),
-            vclass: $("#vclass0").val()
+            vclass: $("#vclass0").val(),
+            svehicle: $("#svehicle").val()
         }));
     });
 

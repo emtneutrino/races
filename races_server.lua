@@ -77,7 +77,7 @@ if true == requirePermission then
     end
 end
 
-local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -342,7 +342,6 @@ local function updateRaceData()
                 for raceName, race in pairs(playerRaces) do
                     local waypointCoords = race.waypointCoords
                     local newWaypointCoords = {}
-                    local bestLaps = race.bestLaps
                     for _, waypointCoord in ipairs(waypointCoords) do
                         if nil == waypointCoord.r then
                             update = true
@@ -350,7 +349,7 @@ local function updateRaceData()
                         end
                     end
                     if true == update then
-                        newPlayerRaces[raceName] = {waypointCoords = newWaypointCoords, bestLaps = bestLaps}
+                        newPlayerRaces[raceName] = {waypointCoords = newWaypointCoords, bestLaps = race.bestLaps}
                     end
                 end
                 if true == update then
@@ -544,49 +543,49 @@ end
 
 local function getClass(vclass)
     if 0 == vclass then
-        return "'Compacts'(" .. vclass .. ")"
+        return "'Compacts'(0)"
     elseif 1 == vclass then
-        return "'Sedans'(" .. vclass .. ")"
+        return "'Sedans'(1)"
     elseif 2 == vclass then
-        return "'SUVs'(" .. vclass .. ")"
+        return "'SUVs'(2)"
     elseif 3 == vclass then
-        return "'Coupes'(" .. vclass .. ")"
+        return "'Coupes'(3)"
     elseif 4 == vclass then
-        return "'Muscle'(" .. vclass .. ")"
+        return "'Muscle'(4)"
     elseif 5 == vclass then
-        return "'Sports Classics'(" .. vclass .. ")"
+        return "'Sports Classics'(5)"
     elseif 6 == vclass then
-        return "'Sports'(" .. vclass .. ")"
+        return "'Sports'(6)"
     elseif 7 == vclass then
-        return "'Super'(" .. vclass .. ")"
+        return "'Super'(7)"
     elseif 8 == vclass then
-        return "'Motorcycles'(" .. vclass .. ")"
+        return "'Motorcycles'(8)"
     elseif 9 == vclass then
-        return "'Off-road'(" .. vclass .. ")"
+        return "'Off-road'(9)"
     elseif 10 == vclass then
-        return "'Industrial'(" .. vclass .. ")"
+        return "'Industrial'(10)"
     elseif 11 == vclass then
-        return "'Utility'(" .. vclass .. ")"
+        return "'Utility'(11)"
     elseif 12 == vclass then
-        return "'Vans'(" .. vclass .. ")"
+        return "'Vans'(12)"
     elseif 13 == vclass then
-        return "'Cycles'(" .. vclass .. ")"
+        return "'Cycles'(13)"
     elseif 14 == vclass then
-        return "'Boats'(" .. vclass .. ")"
+        return "'Boats'(14)"
     elseif 15 == vclass then
-        return "'Helicopters'(" .. vclass .. ")"
+        return "'Helicopters'(15)"
     elseif 16 == vclass then
-        return "'Planes'(" .. vclass .. ")"
+        return "'Planes'(16)"
     elseif 17 == vclass then
-        return "'Service'(" .. vclass .. ")"
+        return "'Service'(17)"
     elseif 18 == vclass then
-        return "'Emergency'(" .. vclass .. ")"
+        return "'Emergency'(18)"
     elseif 19 == vclass then
-        return "'Military'(" .. vclass .. ")"
+        return "'Military'(19)"
     elseif 20 == vclass then
-        return "'Commercial'(" .. vclass .. ")"
+        return "'Commercial'(20)"
     elseif 21 == vclass then
-        return "'Trains'(" .. vclass .. ")"
+        return "'Trains'(21)"
     else
         return "'Unknown'(" .. vclass .. ")"
     end
@@ -842,7 +841,8 @@ AddEventHandler("races:init", function()
     -- register any races created before player joined
     for i, race in pairs(races) do
         if STATE_REGISTERING == race.state then
-            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.publicRace, race.savedRaceName, race.owner, race.buyin, race.laps, race.timeout, race.rtype, race.restrict, race.filename, race.vclass)
+            local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
+            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.publicRace, race.savedRaceName, race.owner, race.buyin, race.laps, race.timeout, rdata)
         end
     end
 end)
@@ -1048,7 +1048,7 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass)
+AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle)
     local source = source
     if getPermission(source) == false then
         sendMessage(source, "Permission required.\n")
@@ -1096,6 +1096,9 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                     else
                                         umsg = umsg .. "vehicles"
                                     end
+                                    if svehicle ~= nil then
+                                        umsg = umsg .. " : '" .. svehicle .. "'"
+                                    end
                                 end
                             end
                         elseif rtype ~= nil then
@@ -1130,11 +1133,13 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                 restrict = restrict,
                                 filename = filename,
                                 vclass = vclass,
+                                svehicle = svehicle,
                                 numRacing = 0,
                                 players = {},
                                 results = {}
                             }
-                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass)
+                            local rdata = {rtype = rtype, restrict = restrict, filename = filename, vclass = vclass, svehicle = svehicle}
+                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, rdata)
                         end
                     else
                         if STATE_RACING == races[source].state then
@@ -1187,7 +1192,7 @@ AddEventHandler("races:start", function(delay)
     if delay ~= nil then
         if races[source] ~= nil then
             if STATE_REGISTERING == races[source].state then
-                if delay >= 0 then
+                if delay >= 5 then
                     if races[source].numRacing > 0 then
                         races[source].state = STATE_RACING
                         for i in pairs(races[source].players) do

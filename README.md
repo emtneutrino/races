@@ -29,7 +29,7 @@ For the following `/races register` commands, (buy-in) defaults to 500, (laps) d
 `/races register (buy-in) (laps) (DNF timeout)` - register your race with no vehicle restrictions\
 `/races register (buy-in) (laps) (DNF timeout) rest [vehicle]` - register your race restricted to [vehicle]\
 `/races register (buy-in) (laps) (DNF timeout) class [class]` - register your race restricted to vehicles of type [class]\
-`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class)` - register your race changing vehicles randomly every lap; (filename) defaults to `random.txt`; (class) defaults to any
+`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)` - register your race changing vehicles randomly every lap; (filename) defaults to `random.txt`; (class) defaults to any; (vehicle) defaults to any
 
 `/races unregister` - unregister your race\
 `/races start (delay)` - start your registered race; (delay) defaults to 30 seconds\
@@ -79,7 +79,21 @@ Type `/races edit` until you see the message 'Editing started'.  Add at least 2 
 
 QUICK GUIDE FOR RACING
 ----------------------
-There are five possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap to one in a specific class.  Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race, the buy-in amount and the type of race.  If the race is restricted to a specific vehicle, the label will include 'using [vehicle]' where [vehicle] is the name of the restricted vehicle.  If the race is restricted to a specific vehicle class, the label will include 'using [class] vehicle class' where [class] is the vehicle class.  The class number is in parentheses.  If the race changes vehicles randomly every lap, the label will include 'using random vehicles'.  If the race changes vehicles randomly every lap to one of a specific class, the label will include 'using random [class] vehicle class' where [class] is the vehicle class.  To join a race, you must have enough funds to pay for the buy-in amount.  You can check how much funds you have by typing `/races funds`.  If the race is restricted to a specific vehicle, you must be in that vehicle when prompted to join the race.  You can spawn the restricted vehicle by typing `/races spawn [vehicle]` where [vehicle] is the restricted vehicle.  For example, if the label shows "using 'adder'", you can spawn the vehicle by typing `/races spawn adder`.  If the race is restricted to a specific vehicle class, you must be in a vehicle of that class when prompted to join the race.  The vehicle class number is in parentheses.  You can list vehicles of a specific class by typing `/races lvehicles [class]` where [class] is the vehicle class number.  Move towards the registration waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The player who registered the race will be the one who starts the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  Prize money will be distributed to all finishers.  If you want to see the results again, type `/races results`.
+There are seven possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.
+
+Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race, the buy-in amount and the type of race.
+
+If the race is restricted to a specific vehicle, the label will include 'using [vehicle]' where [vehicle] is the name of the restricted vehicle.  You must be in that vehicle when prompted to join the race.  You can spawn the restricted vehicle by typing `/races spawn [vehicle]` where [vehicle] is the restricted vehicle.  For example, if the label shows "using 'adder'", you can spawn the vehicle by typing `/races spawn adder`.
+
+If the race is restricted to a specific vehicle class, the label will include 'using [class] vehicle class' where [class] is the vehicle class.  The class number will be in parentheses.  You must be in a vehicle of that class when prompted to join the race.  You can list vehicles of a specific class by typing `/races lvehicles [class]` where [class] is the vehicle class number.
+
+If the race changes vehicles randomly every lap, the label will include 'using random vehicles'.  If a vehicle is specified after the 'using random vehicles' message, racers will be placed in the specified vehicle when the race starts.
+
+If the race changes vehicles randomly every lap to one of a specific class, the label will include 'using random [class] vehicle class' where [class] is the vehicle class.  The class number will be in parentheses.  If a vehicle is specified after the 'using random [class] vehicle class' message, racers will be placed in the specified vehicle when the race starts.
+
+To join a race, you must have enough funds to pay for the buy-in amount.  You can check how much funds you have by typing `/races funds`.
+
+Move towards the registration waypoint until you are prompted to join.  Type 'E' or press right DPAD to join.  The player who registered the race will be the one who starts the race.  Once they start the race, your vehicle will be frozen until the start delay has expired and the race has officially begun.  Follow the checkpoints until the finish.  The results of the race will be broadcast to all racers who joined.  Prize money will be distributed to all finishers.  If you want to see the results again, type `/races results`.
 
 CLIENT COMMAND DETAILS
 ----------------------
@@ -104,7 +118,7 @@ By default, permission is not required to use any of the commands.  If permissio
 `/races register (buy-in) (laps) (DNF timeout)`\
 `/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`\
 `/races register (buy-in) (laps) (DNF timeout) class [class]`\
-`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class)`\
+`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`\
 `/races unregister`\
 `/races start (delay)`
 
@@ -148,11 +162,27 @@ Type `/races blt myrace` to see the 10 best lap times recorded for 'myrace'.  Be
 
 You can clear all waypoints, except registration waypoints, by typing `/races clear`.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
-After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This will be the registration waypoint.  The registration waypoint on the waypoint map will be labeled with some information about the race.  The player who registered the race and the buy-in amount will be shown.  If 'using [vehicle]' is shown, the race is restricted to that vehicle.  If 'using [class] vehicle class' is shown, the race is restricted to vehicles of type [class].  If 'using random vehicles' is shown, the race will change vehicles randomly every lap.  If 'using random [class] vehicle class' is shown, the race will change vehicles randomly every lap to one from that class.  This allows racers to determine whether or not they can join the race without having to drive all the way to the starting waypoint.
+After you have set your waypoints, you can register your race.  This will advertise your race to all players.  Your race must have two or more waypoints.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  These will be visible to all players.  This will be the registration waypoint.
 
-Type `/races register 100 2 180` to register your race with a buy-in amount of 100, 2 laps and a DNF timeout of 180 seconds.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.
+The registration waypoint on the waypoint map will be labeled with some information about the race.  The player who registered the race and the buy-in amount will be shown.  If 'using [vehicle]' is shown, the race is restricted to that vehicle.  If 'using [class] vehicle class' is shown, the race is restricted to vehicles of type [class].  If 'using random vehicles' is shown, the race will change vehicles randomly every lap.  If 'using random vehicles : [vehicle]' is shown, the race will change vehicles randomly every lap and racers will start in the specified [vehicle].  If 'using random [class] vehicle class' is shown, the race will change vehicles randomly every lap to one from that [class].  If 'using random [class] vehicle class : [vehicle]' is shown, the race will change vehicles randomly every lap to one from that [class] and start in the specified [vehicle].  This allows racers to determine whether or not they can join the race without having to drive all the way to the starting waypoint.
 
-If you want to restrict the vehicle used in a race, type `/races register 100 2 180 rest elegy2` to restrict vehicles to 'elegy2'.  If you want to restrict the vehicle class used in a race, type `/races register 100 2 180 class 0` to restrict vehicles to class 0 (Compacts).  If you want a race where vehicles change randomly every lap, type `/races register 100 2 180 rand`.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file `random.txt`.  You can add or remove vehicles from this file.  If you want a race where vehicles change randomly every lap to one selected from vehicles in `myvehicles.txt`, type `/races register 100 2 180 rand myvehicles.txt`.  Vehicles can be added from the `vehicles.txt` file to the file you specify or to the `random.txt` file.  If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in the file.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.  If you want a race where vehicles change randomly every lap to one selected from vehicles of a specific class in `myvehicles.txt`, type `/races register 100 2 180 rand myvehicles.txt 0` to restrict vehicles to type 0 (Compacts).
+Type `/races register 100 2 180` to register your race with a buy-in amount of 100, 2 laps, a DNF timeout of 180 seconds and no restrictions on the vehicle used.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.
+
+If you want to restrict the vehicle used in a race, type `/races register 100 2 180 rest elegy2` to restrict vehicles to `elegy2`.
+
+If you want to restrict the vehicle class used in a race, type `/races register 100 2 180 class 0` to restrict vehicles to class 0 (Compacts).
+
+If you want a race where vehicles change randomly every lap, type `/races register 100 2 180 rand`.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file `random.txt`.  You can add vehicles from `vehicles.txt` to `random.txt` or remove vehicles from `random.txt`.
+
+If you want a race where vehicles change randomly every lap to one selected from vehicles in `myvehicles.txt` that you created, type `/races register 100 2 180 rand myvehicles.txt`.  You can add vehicles from `vehicles.txt` to `myvehicles.txt`.
+
+If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in `random.txt` or the file that you specified.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.
+
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in `myvehicles.txt`, type `/races register 100 2 180 rand myvehicles.txt 0`.
+
+If you want a race where vehicles change randomly every lap to one selected from vehicles in `myvehicles.txt` and racers start in an `adder` vehicle, type `/races register 100 2 180 rand myvehicles.txt . adder`.  The period between `myvehicles.txt` and `adder` indicates that vehicles can come from any class in `myvehicles.txt`.
+
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in `myvehicles.txt` and racers start in a `blista` vehicle, type `/races register 100 2 180 rand myvehicles.txt 0 blista`.  When you specify a class like 0 (Compacts), the start vehicle must be of class 0 (Compacts).
 
 The different classes of vehicle you can specify are listed here:
 
@@ -187,11 +217,21 @@ If you set the number of laps to 2 or more, the start and finish waypoints must 
 
 You can unregister your race by typing `/races unregister`.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
 
-To join a race, players will need to be close enough to a registration point to be prompted to join.  The registration point will tell the player if it is an unsaved race or if it is a publicly or privately saved race along with its saved name, who registered the race, how much the buy-in amount is, how many laps there are and the type of race.  There are five possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap to one in a specific class.  For race types 4 and 5, buy-in amounts will be set to 0 and there will be no payouts.  Players who want to join the race will need to have enough funds to pay for the buy-in amount.  All players begin with at least 5000 in their funds.  If the race is restricted to specific vehicle, its name is shown at the registration point.  Players will need to be in the restricted vehicle at the registration point in order to join the race.  Players can spawn the restricted vehicle by typing `/races spawn [name]` where [name] is the restricted vehicle name.  If the race is restricted to a specific vehicle class, the class name and number is shown at the registration point.  You must be in a vehicle of the restricted class to join the race.  You can view all vehicles in a class by typing `/races lvehicles [class]` where [class] is the vehicle class number.  All other types of race do not restrict the vehicle you use when prompted to join.  To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join the race you registered, you will not see the results of that race.
+To join a race, players will need to be close enough to a registration point to be prompted to join.  The registration point will tell the player if it is an unsaved race or if it is a publicly or privately saved race along with its saved name, who registered the race, how much the buy-in amount is, how many laps there are and the type of race.
+
+There are seven possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.  For race types 4, 5, 6 and 7, buy-in amounts will be set to 0 and there will be no payouts.
+
+Players who want to join the race will need to have enough funds to pay for the buy-in amount.  All players begin with at least 5000 in their funds.
+
+If the race is restricted to specific vehicle, its name is shown at the registration point.  Players will need to be in the restricted vehicle at the registration point in order to join the race.  Players can spawn the restricted vehicle by typing `/races spawn [vehicle]` where [vehicle] is the restricted vehicle name.
+
+If the race is restricted to a specific vehicle class, the class name and number is shown at the registration point.  You must be in a vehicle of the restricted class to join the race.  You can view all vehicles in a class by typing `/races lvehicles [class]` where [class] is the vehicle class number.
+
+To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join the race you registered, you will not see the results of that race.
 
 To list all competitors in the race that you joined, type `/races rivals`.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-To respawn at the last waypoint the player has passed in a race type `/races respawn`.  You can only respawn if you are currently in a race.
+To respawn at the last waypoint the player has passed in a race type `/races respawn`.  You can also press 'F' on a keyboard, or 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller for one second to respawn.  You can only respawn if you are currently in a race.
 
 Once everyone who wants to join your registered race have joined, you can start the race.  Type `/races start 10` to start the race with a delay of 10 seconds before the actual start.  If you do not indicate a delay, the default is 30 seconds.  The minimum delay allowed is 5 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.
 
@@ -213,7 +253,7 @@ If you want to look at the race results again, type `/races results`.  If you ca
 
 To spawn a vehicle, type `/races spawn elegy2` to spawn an 'elegy2' vehicle.  If you do not indicate a vehicle name, the default is 'adder'.  A list of vehicles you can spawn are listed in `vehicles.txt`.  This list has not been verified to work for all vehicles listed and there may be some missing.
 
-To list vehicles that can be used for any race, type `/races lvehicles`.  To list vehicles of a specific class, type `/races lvehicles 0` to list type 0 (Compacts) vehicles.  The vehicles displayed come from the `vehicles.txt` file which should contain every vehicle.
+To list vehicles that can be used for any race, type `/races lvehicles`.  To list vehicles of a specific class, type `/races lvehicles 0` to list class 0 (Compacts) vehicles.  The vehicles displayed come from the `vehicles.txt` file which should contain every vehicle.
 
 To toggle the display of the speedometer at any time, type `/races speedo`.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.  The default unit of measurement is imperial.  If you wish to change the unit of measurement type `/races speedo (unit)` where (unit) is either `imp` for imperial or `met` for metric.
 

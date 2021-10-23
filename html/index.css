@@ -61,7 +61,7 @@ body {
 }
 
 #name {
-    width: 90%;
+    width: 80%;
 }
 
 #load {
@@ -89,7 +89,7 @@ body {
 }
 
 #namePublic {
-    width: 90%;
+    width: 80%;
 }
 
 #loadPublic {
@@ -146,6 +146,10 @@ body {
 
 #vclass0 {
     height: 44px;
+}
+
+#svehicle {
+    width: 25%;
 }
 
 #unregister {
