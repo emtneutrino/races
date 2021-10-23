@@ -29,7 +29,7 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races register (buy-in) (laps) (DNF timeout)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`** - register your race restricted to [vehicle]\
 **`/races register (buy-in) (laps) (DNF timeout) class [class]`** - register your race restricted to vehicles of type [class]\
-**`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`; (class) defaults to any; (vehicle) defaults to any
+**`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any
 
 **`/races unregister`** - unregister your race\
 **`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
