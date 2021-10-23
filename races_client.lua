@@ -1181,13 +1181,17 @@ local function testCheckpoint(cptype)
 end
 
 local function setEngineHealth(num)
-    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-    SetVehicleEngineHealth(vehicle, tonumber(num))
+    local player = PlayerPedId()
+    if IsPedInAnyVehicle(player, false) == 1 then
+        SetVehicleEngineHealth(GetVehiclePedIsIn(player, false), tonumber(num))
+    end
 end
 
 local function getEngineHealth()
-    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-    print(GetVehicleEngineHealth(vehicle))
+    local player = PlayerPedId()
+    if IsPedInAnyVehicle(player, false) == 1 then
+        print(GetVehicleEngineHealth(GetVehiclePedIsIn(player, false)))
+    end
 end
 
 RegisterNetEvent("sounds")
@@ -1604,10 +1608,13 @@ AddEventHandler("races:start", function(delay)
                 started = false
                 speedo = true
 
-                local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-                if vehicle ~= nil then
-                    originalVehicleHash = GetEntityModel(vehicle)
-                    colorPri, colorSec = GetVehicleColours(vehicle)
+                local player = PlayerPedId()
+                if IsPedInAnyVehicle(player, false) == 1 then
+                    local vehicle = GetVehiclePedIsIn(player, false)
+                    if vehicle ~= nil then
+                        originalVehicleHash = GetEntityModel(vehicle)
+                        colorPri, colorSec = GetVehicleColours(vehicle)
+                    end
                 end
 
                 if startVehicle ~= nil then
