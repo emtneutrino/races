@@ -77,7 +77,7 @@ if true == requirePermission then
     end
 end
 
-local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, vehicle, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -616,6 +616,69 @@ local function updateBestLapTimes(index)
         end
     else
         notifyPlayer(index, "Load error updating best lap times.\n")
+    end
+end
+
+local function minutesSeconds(milliseconds)
+    local seconds = milliseconds / 1000.0
+    local minutes = math.floor(seconds / 60.0)
+    seconds = seconds - minutes * 60.0
+    return minutes, seconds
+end
+
+local function saveResults(race)
+    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+    local msg = "Race: "
+    if nil == race.savedRaceName then
+        msg = msg .. "Unsaved race "
+    else
+        msg = msg .. (true == race.publicRace and "Publicly" or "Privately")
+        msg = msg .. " saved race '" .. race.savedRaceName .. "' "
+    end
+    msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(race.owner, race.buyin, race.laps)
+    if "rest" == race.rtype then
+        msg = msg .. " : using '" .. race.restrict .. "' vehicle"
+    elseif "class" == race.rtype then
+        msg = msg .. " : using " .. getClass(race.vclass) .. " vehicle class"
+    elseif "rand" == race.rtype then
+        msg = msg .. " : using random "
+        if race.vclass ~= nil then
+            msg = msg .. getClass(race.vclass) .. " vehicle class"
+        else
+            msg = msg .. "vehicles"
+        end
+        if race.svehicle ~= nil then
+            msg = msg .. " : '" .. race.svehicle .. "'"
+        end
+    end
+    msg = msg .. "\n"
+    if #race.results > 0 then
+        -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
+        msg = msg .. "Results:\n"
+        for pos, result in ipairs(race.results) do
+            if -1 == result.finishTime then
+                msg = msg .. "DNF - " .. result.playerName
+                if result.bestLapTime >= 0 then
+                    local minutes, seconds = minutesSeconds(result.bestLapTime)
+                    msg = msg .. (" - best lap %02d:%05.2f using %s"):format(minutes, seconds, result.vehicleName)
+                end
+                msg = msg .. "\n"
+            else
+                local fMinutes, fSeconds = minutesSeconds(result.finishTime)
+                local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
+                msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f using %s\n"):format(pos, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds, result.vehicleName)
+            end
+        end
+    else
+        msg = msg .. "No results.\n"
+    end
+    local filePath = "./resources/races/" .. race.owner .. "_results.txt"
+    local file, errMsg, errCode = io.open(filePath, "w+")
+    if file ~= nil then
+        file:write(msg)
+        file:close()
+    else
+        print("Error opening file '" .. filePath .. "' for write : '" .. errMsg .. "' : " .. errCode)
     end
 end
 
@@ -1349,6 +1412,8 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                                 (p0.finishTime >= 0 and (-1 == p1.finishTime or p0.finishTime < p1.finishTime)) or
                                 (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
                         end)
+
+                        saveResults(races[index])
 
                         local winningsRL = {}
                         for _, result in pairs(races[index].results) do
