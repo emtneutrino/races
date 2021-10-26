@@ -231,7 +231,7 @@ To join the race, type 'E' or press right DPAD.  Joining the race will clear any
 
 To list all competitors in the race that you joined, type **`/races rivals`**.  You will not be able to see competitors if you have not joined a race.  If you cannot see all the competitors, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-To respawn at the last waypoint the player has passed in a race type **`/races respawn`**.  You can also press 'F' on a keyboard, or 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller for one second to respawn.  You can only respawn if you are currently in a race.
+To respawn at the last waypoint the player has passed in a race type **`/races respawn`**.  You can also press 'X' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller for one second to respawn.  You can only respawn if you are currently in a race.
 
 Once everyone who wants to join your registered race have joined, you can start the race.  Type **`/races start 10`** to start the race with a delay of 10 seconds before the actual start.  If you do not indicate a delay, the default is 30 seconds.  The minimum delay allowed is 5 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.
 
