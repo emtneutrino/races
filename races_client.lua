@@ -350,7 +350,18 @@ local function minutesSeconds(milliseconds)
     return minutes, seconds
 end
 
-local function switchVehicle(priColor, secColor, vehicleHash)
+local function putPlayerInVehicle(vehicleHash, coord)
+    local player = PlayerPedId()
+    local vehicle = CreateVehicle(vehicleHash, coord.x, coord.y, coord.z, GetEntityHeading(player), true, false)
+    SetPedIntoVehicle(player, vehicle, -1)
+    SetEntityAsNoLongerNeeded(vehicle)
+    SetModelAsNoLongerNeeded(vehicleHash)
+    SetVehRadioStation(vehicle, "OFF")
+    return vehicle
+end
+
+local function switchVehicle(vehicleHash)
+    local vehicle = nil
     if vehicleHash ~= nil then
         local player = PlayerPedId()
         local speed = GetEntitySpeed(player)
@@ -358,26 +369,18 @@ local function switchVehicle(priColor, secColor, vehicleHash)
         while HasModelLoaded(vehicleHash) == false do
             Citizen.Wait(0)
         end
-        local vehicle = nil
         if IsPedInAnyVehicle(player, false) == 1 then
             vehicle = GetVehiclePedIsIn(player, false)
             SetEntityAsMissionEntity(vehicle, true, true)
             DeleteVehicle(vehicle)
         end
-        local pedCoord = GetEntityCoords(player)
-        vehicle = CreateVehicle(vehicleHash, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
-        SetPedIntoVehicle(player, vehicle, -1)
-        SetEntityAsNoLongerNeeded(vehicle)
-        SetModelAsNoLongerNeeded(vehicleHash)
-        if priColor ~= nil and secColor ~= nil then
-            SetVehicleColours(vehicle, priColor, secColor)
-        end
-        SetVehicleRadioEnabled(vehicle, false)
+        vehicle = putPlayerInVehicle(vehicleHash, GetEntityCoords(player))
         SetVehicleEngineOn(vehicle, true, true, false)
         SetVehicleForwardSpeed(vehicle, speed)
         lastVehicleHash = vehicleHash
         currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
     end
+    return vehicle
 end
 
 local function getClass(vclass)
@@ -845,7 +848,10 @@ local function leave()
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
         speedo = false
         if #randVehicles > 0 then
-            switchVehicle(colorPri, colorSec, originalVehicleHash)
+            local vehicle = switchVehicle(originalVehicleHash)
+            if vehicle ~= nil then
+                SetVehicleColours(vehicle, colorPri, colorSec)
+            end
         end
         sendMessage("Left race.\n")
         raceState = STATE_IDLE
@@ -876,24 +882,20 @@ local function respawn()
                 return
             end
         end
-        local coord =  waypoints[prev].coord
         local vehicle = GetPlayersLastVehicle()
         if vehicle ~= 0 then
             SetEntityAsMissionEntity(vehicle, true, true)
             DeleteVehicle(vehicle)
         end
-        local player = PlayerPedId()
+        local coord =  waypoints[prev].coord
         if lastVehicleHash ~= nil then
             RequestModel(lastVehicleHash)
             while HasModelLoaded(lastVehicleHash) == false do
                 Citizen.Wait(0)
             end
-            vehicle = CreateVehicle(lastVehicleHash, coord.x, coord.y, coord.z, GetEntityHeading(player), true, false)
-            SetPedIntoVehicle(player, vehicle, -1)
-            SetEntityAsNoLongerNeeded(vehicle)
-            SetModelAsNoLongerNeeded(lastVehicleHash)
+            putPlayerInVehicle(lastVehicleHash, coord)
         else
-            SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
+            SetEntityCoords(PlayerPedId(), coord.x, coord.y, coord.z, false, false, false, true)
         end
     else
         sendMessage("Cannot respawn.  Not in a race.\n")
@@ -936,13 +938,7 @@ local function spawn(vehicleHash)
         while HasModelLoaded(vehicleHash) == false do
             Citizen.Wait(0)
         end
-
-        local player = PlayerPedId()
-        local pedCoord = GetEntityCoords(player)
-        local vehicle = CreateVehicle(vehicleHash, pedCoord.x, pedCoord.y, pedCoord.z, GetEntityHeading(player), true, false)
-        SetPedIntoVehicle(player, vehicle, -1)
-        SetEntityAsNoLongerNeeded(vehicle)
-        SetModelAsNoLongerNeeded(vehicleHash)
+        putPlayerInVehicle(vehicleHash, GetEntityCoords(PlayerPedId()))
         sendMessage("'" .. GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash)) .. "' spawned.\n")
     else
         sendMessage("Cannot spawn vehicle.  Invalid vehicle.\n")
@@ -1618,7 +1614,7 @@ AddEventHandler("races:start", function(delay)
                 end
 
                 if startVehicle ~= nil then
-                    switchVehicle(nil, nil, startVehicle)
+                    switchVehicle(startVehicle)
                 end
 
                 numVisible = maxNumVisible < #waypoints and maxNumVisible or (#waypoints - 1)
@@ -1923,7 +1919,7 @@ Citizen.CreateThread(function()
                     bestLapVehicle = currentVehicle
                 end
 
-                if IsControlPressed(0, 75) == 1 then -- F key or Y button or triangle button
+                if IsControlPressed(0, 73) == 1 then -- X key or A button or cross button
                     if true == respawnCtrlPressed then
                         if currentTime - respawnTime > 1000 then
                             respawnCtrlPressed = false
@@ -1990,7 +1986,10 @@ Citizen.CreateThread(function()
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                         speedo = false
                         if #randVehicles > 0 then
-                            switchVehicle(colorPri, colorSec, originalVehicleHash)
+                            local veh = switchVehicle(originalVehicleHash)
+                            if veh ~= nil then
+                                SetVehicleColours(veh, colorPri, colorSec)
+                            end
                         end
                         raceState = STATE_IDLE
                     end
@@ -2035,7 +2034,7 @@ Citizen.CreateThread(function()
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
                                     if #randVehicles > 0 then
-                                        switchVehicle(nil, nil, randVehicles[math.random(#randVehicles)])
+                                        switchVehicle(randVehicles[math.random(#randVehicles)])
                                         PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
@@ -2045,7 +2044,10 @@ Citizen.CreateThread(function()
                                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                                     speedo = false
                                     if #randVehicles > 0 then
-                                        switchVehicle(colorPri, colorSec, originalVehicleHash)
+                                        local veh = switchVehicle(originalVehicleHash)
+                                        if veh ~= nil then
+                                            SetVehicleColours(veh, colorPri, colorSec)
+                                        end
                                     end
                                     raceState = STATE_IDLE
                                 end
