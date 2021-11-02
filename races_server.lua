@@ -1111,60 +1111,60 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle)
+AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rdata)
     local source = source
     if getPermission(source) == false then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if waypointCoords ~= nil and publicRace ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil then
+    if waypointCoords ~= nil and publicRace ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and rdata ~= nil then
         if buyin >= 0 then
             if laps > 0 then
                 if timeout >= 0 then
                     if nil == races[source] then
                         local registerRace = true
                         local umsg = ""
-                        if "rest" == rtype then
-                            if nil == restrict then
+                        if "rest" == rdata.rtype then
+                            if nil == rdata.restrict then
                                 registerRace = false
                                 sendMessage("Cannot register.  Invalid restricted vehicle.\n")
                             else
-                                umsg = " : using '" .. restrict .. "' vehicle"
+                                umsg = " : using '" .. rdata.restrict .. "' vehicle"
                             end
-                        elseif "class" == rtype then
-                            if nil == vclass or vclass < 0 or vclass > 21 then
+                        elseif "class" == rdata.rtype then
+                            if nil == rdata.vclass or rdata.vclass < 0 or rdata.vclass > 21 then
                                 registerRace = false
                                 sendMessage("Cannot register.  Invalid vehicle class.\n")
                             else
-                                umsg = " : using " .. getClass(vclass) .. " vehicle class"
+                                umsg = " : using " .. getClass(rdata.vclass) .. " vehicle class"
                             end
-                        elseif "rand" == rtype then
+                        elseif "rand" == rdata.rtype then
                             buyin = 0
-                            if nil == filename then
-                                filename = defaultFilename
+                            if nil == rdata.filename then
+                                rdata.filename = defaultFilename
                             end
-                            local file, errMsg, errCode = io.open("./resources/races/" .. filename, "r")
+                            local file, errMsg, errCode = io.open("./resources/races/" .. rdata.filename, "r")
                             if nil == file then
-                                sendMessage(source, "Cannot register.  Error opening file '" .. filename .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
+                                sendMessage(source, "Cannot register.  Error opening file '" .. rdata.filename .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
                                 registerRace = false
                             else
                                 file:close()
-                                if vclass ~= nil and (vclass < 0 or vclass > 21) then
+                                if rdata.vclass ~= nil and (rdata.vclass < 0 or rdata.vclass > 21) then
                                     registerRace = false
                                     sendMessage("Cannot register.  Invalid vehicle class.\n")
                                 else
                                     umsg = " : using random "
-                                    if vclass ~= nil then
-                                        umsg = umsg .. getClass(vclass) .. " vehicle class"
+                                    if rdata.vclass ~= nil then
+                                        umsg = umsg .. getClass(rdata.vclass) .. " vehicle class"
                                     else
                                         umsg = umsg .. "vehicles"
                                     end
-                                    if svehicle ~= nil then
-                                        umsg = umsg .. " : '" .. svehicle .. "'"
+                                    if rdata.svehicle ~= nil then
+                                        umsg = umsg .. " : '" .. rdata.svehicle .. "'"
                                     end
                                 end
                             end
-                        elseif rtype ~= nil then
+                        elseif rdata.rtype ~= nil then
                             registerRace = false
                             sendMessage("Cannot register.  Unknown race type.\n")
                         end
@@ -1192,16 +1192,15 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                 buyin = buyin,
                                 laps = laps,
                                 timeout = timeout,
-                                rtype = rtype,
-                                restrict = restrict,
-                                filename = filename,
-                                vclass = vclass,
-                                svehicle = svehicle,
+                                rtype = rdata.rtype,
+                                restrict = rdata.restrict,
+                                filename = rdata.filename,
+                                vclass = rdata.vclass,
+                                svehicle = rdata.svehicle,
                                 numRacing = 0,
                                 players = {},
                                 results = {}
                             }
-                            local rdata = {rtype = rtype, restrict = restrict, filename = filename, vclass = vclass, svehicle = svehicle}
                             TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, rdata)
                         end
                     else

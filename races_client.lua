@@ -786,7 +786,8 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
                     if STATE_IDLE == raceState then
                         if #waypoints > 1 then
                             if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle)
+                                local rdata = {rtype = rtype, restrict = restrict, filename = filename, vclass = vclass, svehicle = svehicle}
+                                TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rdata)
                             else
                                 sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
                             end
@@ -1478,7 +1479,7 @@ end)
 
 RegisterNetEvent("races:register")
 AddEventHandler("races:register", function(index, coord, public, raceName, owner, buyin, laps, timeout, rdata)
-    if index ~= nil and coord ~= nil and public ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil then
+    if index ~= nil and coord ~= nil and public ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and rdata ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
         SetBlipSprite(blip, registerSprite)
@@ -1899,7 +1900,7 @@ Citizen.CreateThread(function()
                         drawRect(i * 0.2 + 0.05, 0.15, 0.1, 0.1, 255, 0, 0, 255)
                     end
                 end
-                
+
                 if IsPedInAnyVehicle(player, false) == 1 then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
                 end
