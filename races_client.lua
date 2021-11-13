@@ -312,9 +312,9 @@ local function drawMsg(x, y, msg, scale, justify)
     SetTextOutline()
     SetTextJustification(justify)
     SetTextWrap(0.0, 1.0)
-    BeginTextCommandDisplayText ("STRING")
-    AddTextComponentSubstringPlayerName (msg)
-    EndTextCommandDisplayText (x, y)
+    BeginTextCommandDisplayText("STRING")
+    AddTextComponentSubstringPlayerName(msg)
+    EndTextCommandDisplayText(x, y)
 end
 
 local function drawRect(x, y, w, h, r, g, b, a)
@@ -1086,13 +1086,13 @@ RegisterNUICallback("register", function(data)
     if "" == filename then
         filename = nil
     end
-    local svehicle = data.svehicle
-    if "" == svehicle then
-        svehicle = nil
-    end
     local vclass = data.vclass
     if "-1" == vclass then
         vclass = nil
+    end
+    local svehicle = data.svehicle
+    if "" == svehicle then
+        svehicle = nil
     end
     if nil == rtype then
         register(buyin, laps, timeout, rtype, nil, nil)
@@ -1885,7 +1885,7 @@ Citizen.CreateThread(function()
             local currentTime = GetGameTimer()
             local elapsedTime = currentTime - raceStart - raceDelay * 1000
             if elapsedTime < 0 then
-                drawMsg(0.50, 0.46, ("Race starting in "), 0.7, 0)
+                drawMsg(0.50, 0.46, "Race starting in", 0.7, 0)
                 drawMsg(0.50, 0.50, ("%05.2f"):format(-elapsedTime / 1000.0), 0.7, 0)
                 drawMsg(0.50, 0.54, "seconds", 0.7, 0)
 

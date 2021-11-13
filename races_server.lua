@@ -70,7 +70,7 @@ local requests = {} -- requests[playerID] = name - list of requests to create tr
 local rolesDataFile = "./resources/races/roles.json"
 local roles = {} -- roles[license] = {role, name} - list of players approved to create tracks and register races
 if true == requirePermission then
-    local file, errMsg, errCode = io.open(rolesDataFile, "r")
+    local file = io.open(rolesDataFile, "r")
     if file ~= nil then
         roles = json.decode(file:read("a"))
         file:close()
