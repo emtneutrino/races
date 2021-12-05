@@ -134,6 +134,8 @@ Selecting a waypoint on the waypoint map is done by clicking on an existing blip
 
 Adding a waypoint is done by clicking on an empty spot on the waypoint map or by 'clicking' on an empty spot in the world.  Waypoints will always be added as the last waypoint.  You cannot make an added waypoint come before an existing waypoint.  The first waypoint you add will be a yellow checkered flag blip/checkpoint.  Subsequent added waypoints will be a white checkered flag blip/checkpoint.  Adding a waypoint will add a blip on the map and a corresponding checkpoint in the world.  Placement of a waypoint in the world is unrestricted, while placement of a waypoint on the waypoint map is restricted to paths or roads.
 
+**NOTE: The position number of a racer while in a race will be the most accurate if waypoints are added at every bend or corner in the track.**
+
 You can delete a waypoint by selecting it on the waypoint map or in the world, then pressing 'Spacebar' on a keyboard, 'X' button on an Xbox controller or 'Square' button on a DualShock controller.  Deleting a waypoint will delete the corresponding blip on the waypoint map and the corresponding checkpoint in the world.
 
 You can move an existing waypoint by selecting it on the waypoint map or in the world, then clicking an empty spot on the waypoint map or in the world where you want to move it.  Moving a waypoint will move the corresponding blip on the waypoint map and the corresponding checkpoint in the world.

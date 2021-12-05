@@ -1259,6 +1259,11 @@ AddEventHandler("races:start", function(delay)
                 if delay >= 5 then
                     if races[source].numRacing > 0 then
                         races[source].state = STATE_RACING
+                        for i in pairs(races[source].players) do
+                            TriggerClientEvent("races:start", i, delay)
+                        end
+                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
+                        sendMessage(source, "Race started.\n")
                         if true == DEBUG then
                             local numPlayers = 0
                             for _ in pairs(races[source].players) do
@@ -1268,11 +1273,6 @@ AddEventHandler("races:start", function(delay)
                                 notifyPlayer(i, "numRacing = " .. races[source].numRacing .. ", numPlayers = " .. numPlayers)
                             end
                         end
-                        for i in pairs(races[source].players) do
-                            TriggerClientEvent("races:start", i, delay)
-                        end
-                        TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
-                        sendMessage(source, "Race started.\n")
                     else
                         sendMessage(source, "Cannot start.  No players have joined race.\n")
                     end
