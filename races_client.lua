@@ -1589,7 +1589,6 @@ AddEventHandler("races:start", function(delay)
                 raceDelay = delay
                 countdown = 5
                 drawLights = false
-                lapTimeStart = raceStart + delay * 1000
                 bestLapTime = -1
                 currentLap = 1
                 numWaypointsPassed = 0
@@ -1917,6 +1916,7 @@ Citizen.CreateThread(function()
                     started = true
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
                     bestLapVehicle = currentVehicle
+                    lapTimeStart = currentTime
                 end
 
                 if IsControlPressed(0, 73) == 1 then -- X key or A button or cross button

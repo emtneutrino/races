@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
+local DEBUG <const> = false
+
 local STATE_REGISTERING <const> = 0
 local STATE_RACING <const> = 1
 
@@ -1257,6 +1259,15 @@ AddEventHandler("races:start", function(delay)
                 if delay >= 5 then
                     if races[source].numRacing > 0 then
                         races[source].state = STATE_RACING
+                        if true == DEBUG then
+                            local numPlayers = 0
+                            for _ in pairs(races[source].players) do
+                                numPlayers = numPlayers + 1
+                            end
+                            for i in pairs(races[source].players) do
+                                notifyPlayer(i, "numRacing = " .. races[source].numRacing .. ", numPlayers = " .. numPlayers)
+                            end
+                        end
                         for i in pairs(races[source].players) do
                             TriggerClientEvent("races:start", i, delay)
                         end
@@ -1387,7 +1398,7 @@ end)
 
 RegisterNetEvent("races:finish")
 AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, bestLapTime, vehicleName, playerSource)
-    local source = playerSource ~=nil and playerSource or source
+    local source = playerSource ~= nil and playerSource or source
     if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
         if races[index] ~= nil then
             if STATE_RACING == races[index].state then
@@ -1396,13 +1407,14 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                     races[index].players[source].data = finishTime
                     races[index].players[source].finished = true
 
-                    local playerName = races[index].players[source].playerName
-
                     for i in pairs(races[index].players) do
-                        TriggerClientEvent("races:finish", i, playerName, finishTime, bestLapTime, vehicleName)
+                        TriggerClientEvent("races:finish", i, races[index].players[source].playerName, finishTime, bestLapTime, vehicleName)
+                        if true == DEBUG then
+                            notifyPlayer(i, races[index].players[source].playerName .. " finished, numRacing = " .. races[index].numRacing - 1)
+                        end
                     end
 
-                    races[index].results[#(races[index].results) + 1] = {source = source, playerName = playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
+                    races[index].results[#(races[index].results) + 1] = {source = source, playerName = races[index].players[source].playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
 
                     races[index].numRacing = races[index].numRacing - 1
                     if 0 == races[index].numRacing then
