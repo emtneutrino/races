@@ -74,6 +74,10 @@ function Deposit(source, amount)
     end
 end
 
+function Remove(source)
+    -- do nothing
+end
+
 Citizen.CreateThread(function()
     while nil == ESX do
         TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)

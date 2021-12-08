@@ -771,6 +771,9 @@ AddEventHandler("playerDropped", function()
             break
         end
     end
+
+    -- remove dropped player's bank account
+    Remove(source)
 end)
 
 --[[

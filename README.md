@@ -303,7 +303,7 @@ Type **`races updateRace myrace`** to update the exported race **`resources/race
 
 PORTING
 -------
-If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the funds functions **`GetFunds`**, **`SetFunds`**, **`Withdraw`** and **`Deposit`** in **`port.lua`** to work for your framework.
+If you wish to port these scripts to a specific framework, such as ESX, you will need to modify the contents of the funds functions **`GetFunds`**, **`SetFunds`**, **`Withdraw`**, **`Deposit`** and **`Remove`** in **`port.lua`** to work for your framework.
 
 An attempt to port the funds functions to ESX is available in the **`esx/`** folder.  Copy **`esx/port.lua`** to your server's **`resources/races/`** folder replacing the existing **`port.lua`** file.
 

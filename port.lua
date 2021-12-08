@@ -62,3 +62,7 @@ function Deposit(source, amount)
         playerFunds[source] = playerFunds[source] + amount
     end
 end
+
+function Remove(source)
+    playerFunds[source] = nil
+end
