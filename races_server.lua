@@ -30,8 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local DEBUG <const> = false
-
 local STATE_REGISTERING <const> = 0
 local STATE_RACING <const> = 1
 
@@ -1267,15 +1265,6 @@ AddEventHandler("races:start", function(delay)
                         end
                         TriggerClientEvent("races:hide", -1, source) -- hide race so no one else can join
                         sendMessage(source, "Race started.\n")
-                        if true == DEBUG then
-                            local numPlayers = 0
-                            for _ in pairs(races[source].players) do
-                                numPlayers = numPlayers + 1
-                            end
-                            for i in pairs(races[source].players) do
-                                notifyPlayer(i, "numRacing = " .. races[source].numRacing .. ", numPlayers = " .. numPlayers)
-                            end
-                        end
                     else
                         sendMessage(source, "Cannot start.  No players have joined race.\n")
                     end
@@ -1412,9 +1401,6 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
 
                     for i in pairs(races[index].players) do
                         TriggerClientEvent("races:finish", i, races[index].players[source].playerName, finishTime, bestLapTime, vehicleName)
-                        if true == DEBUG then
-                            notifyPlayer(i, races[index].players[source].playerName .. " finished, numRacing = " .. races[index].numRacing - 1)
-                        end
                     end
 
                     races[index].results[#(races[index].results) + 1] = {source = source, playerName = races[index].players[source].playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
