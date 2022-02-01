@@ -119,14 +119,16 @@ local timeoutStart = -1 -- start time of DNF timeout
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
 local restrictedClass = nil -- restricted vehicle class
 
+local customClassVehicleList = {} -- list of vehicles in class 22 (Custom)
+
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in random vehicle races
 local colorPri = -1 -- primary color of original vehicle
 local colorSec = -1 -- secondary color of original vehicle
 
 local startVehicle = nil -- vehicle name hash of starting vehicle used in random races
-local lastVehicleHash = nil -- hash of current vehicle being driven
-local currentVehicle = nil -- name of current vehicle being driven
-local bestLapVehicle = nil -- name of vehicle in which player recorded best lap time
+local currentVehicleHash = nil -- hash of current vehicle being driven
+local currentVehicleName = nil -- name of current vehicle being driven
+local bestLapVehicleName = nil -- name of vehicle in which player recorded best lap time
 
 local randVehicles = {} -- list of random vehicles used in random vehicle races
 
@@ -376,13 +378,13 @@ local function switchVehicle(vehicleHash)
         vehicle = putPlayerInVehicle(vehicleHash, GetEntityCoords(player))
         SetVehicleEngineOn(vehicle, true, true, false)
         SetVehicleForwardSpeed(vehicle, speed)
-        lastVehicleHash = vehicleHash
-        currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
+        currentVehicleHash = vehicleHash
+        currentVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
     end
     return vehicle
 end
 
-local function getClass(vclass)
+local function getClassName(vclass)
     if 0 == vclass then
         return "'Compacts'(0)"
     elseif 1 == vclass then
@@ -432,6 +434,15 @@ local function getClass(vclass)
     else
         return "'Unknown'(" .. vclass .. ")"
     end
+end
+
+local function vehicleInList(vehicle, vehicleList)
+    for _, vehName in pairs(vehicleList) do
+        if GetEntityModel(vehicle) == GetHashKey(vehName) then
+            return true
+        end
+    end
+    return false
 end
 
 local function editWaypoints(coord)
@@ -848,7 +859,7 @@ local function leave()
             FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
         end
         DeleteCheckpoint(raceCheckpoint)
-        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
+        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicleName, nil)
         restoreBlips()
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -894,12 +905,12 @@ local function respawn()
             DeleteVehicle(vehicle)
         end
         local coord =  waypoints[prev].coord
-        if lastVehicleHash ~= nil then
-            RequestModel(lastVehicleHash)
-            while HasModelLoaded(lastVehicleHash) == false do
+        if currentVehicleHash ~= nil then
+            RequestModel(currentVehicleHash)
+            while HasModelLoaded(currentVehicleHash) == false do
                 Citizen.Wait(0)
             end
-            putPlayerInVehicle(lastVehicleHash, coord)
+            putPlayerInVehicle(currentVehicleHash, coord)
         else
             SetEntityCoords(PlayerPedId(), coord.x, coord.y, coord.z, false, false, false, true)
         end
@@ -1487,11 +1498,11 @@ AddEventHandler("races:register", function(index, coord, public, raceName, owner
         if "rest" == rdata.rtype then
             msg = msg .. " : using '" .. rdata.restrict .. "' vehicle"
         elseif "class" == rdata.rtype then
-            msg = msg .. " : using " .. getClass(rdata.vclass) .. " vehicle class"
+            msg = msg .. " : using " .. getClassName(rdata.vclass) .. " vehicle class"
         elseif "rand" == rdata.rtype then
             msg = msg .. " : using random "
             if rdata.vclass ~= nil then
-                msg = msg .. getClass(rdata.vclass) .. " vehicle class"
+                msg = msg .. getClassName(rdata.vclass) .. " vehicle class"
             else
                 msg = msg .. "vehicles"
             end
@@ -1570,7 +1581,7 @@ AddEventHandler("races:lvehicles", function(vehicleList, vclass)
         if nil == vclass then
             msg = msg .. ": "
         else
-            msg = msg .. " of class " .. getClass(vclass) .. ": "
+            msg = msg .. " of class " .. getClassName(vclass) .. ": "
         end
         local vehicleFound = false
         for _, vehicle in pairs(vehicleList) do
@@ -1608,9 +1619,9 @@ AddEventHandler("races:start", function(delay)
                 numRacers = -1
                 beginDNFTimeout = false
                 timeoutStart = -1
-                lastVehicleHash = nil
-                currentVehicle = "FEET"
-                bestLapVehicle = currentVehicle
+                currentVehicleHash = nil
+                currentVehicleName = "FEET"
+                bestLapVehicleName = currentVehicleName
                 results = {}
                 started = false
                 speedo = true
@@ -1674,37 +1685,36 @@ AddEventHandler("races:join", function(index, waypointCoords)
                 DNFTimeout = starts[index].timeout * 1000
                 loadWaypointBlips(waypointCoords)
                 restrictedHash = nil
-                restrictedClass = nil
+                restrictedClass = starts[index].vclass
+                customClassVehicleList = {}
                 startVehicle = starts[index].svehicle
                 randVehicles = {}
                 local msg = "Joined "
                 if nil == starts[index].savedRaceName then
                     msg = msg .. "unsaved race "
                 else
-                    msg = msg .. (true == starts[index].publicRace and "publicly" or "privately")
-                    msg = msg .. " saved race '" .. starts[index].savedRaceName .. "' "
+                    msg = msg .. (true == starts[index].publicRace and "publicly" or "privately") .. " saved race '" .. starts[index].savedRaceName .. "' "
                 end
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, starts[index].laps)
                 if "rest" == starts[index].rtype then
                     msg = msg .. " : using '" .. starts[index].restrict .. "' vehicle"
                     restrictedHash = GetHashKey(starts[index].restrict)
                 elseif "class" == starts[index].rtype then
-                    msg = msg .. " : using " .. getClass(starts[index].vclass) .. " vehicle class"
-                    restrictedClass = starts[index].vclass
+                    msg = msg .. " : using " .. getClassName(restrictedClass) .. " vehicle class"
+                    customClassVehicleList = starts[index].vehicleList
                 elseif "rand" == starts[index].rtype then
                     msg = msg .. " : using random "
-                    restrictedClass = starts[index].vclass
-                    if starts[index].vclass ~= nil then
-                        msg = msg .. getClass(starts[index].vclass) .. " vehicle class"
+                    if restrictedClass ~= nil then
+                        msg = msg .. getClassName(restrictedClass) .. " vehicle class"
                     else
                         msg = msg .. "vehicles"
                     end
                     if startVehicle ~= nil then
                         msg = msg .. " : '" .. startVehicle .. "'"
                     end
-                    for _, vehicle in pairs(starts[index].vehicleList) do
-                        if nil == starts[index].vclass or GetVehicleClassFromName(vehicle) == starts[index].vclass then
-                            randVehicles[#randVehicles + 1] = vehicle
+                    for _, vehName in pairs(starts[index].vehicleList) do
+                        if nil == restrictedClass or GetVehicleClassFromName(vehName) == restrictedClass then
+                            randVehicles[#randVehicles + 1] = vehName
                         end
                     end
                     if #randVehicles == 0 then
@@ -1903,15 +1913,15 @@ Citizen.CreateThread(function()
                 if IsPedInAnyVehicle(player, false) == 1 then
                     vehicle = GetVehiclePedIsIn(player, false)
                     FreezeEntityPosition(vehicle, false)
-                    lastVehicleHash = GetEntityModel(vehicle)
-                    currentVehicle = GetLabelText(GetDisplayNameFromVehicleModel(lastVehicleHash))
+                    currentVehicleHash = GetEntityModel(vehicle)
+                    currentVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(currentVehicleHash))
                 else
-                    currentVehicle = "FEET"
+                    currentVehicleName = "FEET"
                 end
                 if false == started then
                     started = true
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
-                    bestLapVehicle = currentVehicle
+                    bestLapVehicleName = currentVehicleName
                     lapTimeStart = currentTime
                 end
 
@@ -1953,7 +1963,7 @@ Citizen.CreateThread(function()
                 drawMsg(rightSide, topSide + 0.09, ("%02d:%05.2f"):format(minutes, seconds), 0.5, 1)
 
                 drawMsg(leftSide, topSide + 0.12, "Vehicle", 0.5, 1)
-                drawMsg(rightSide, topSide + 0.12, currentVehicle, 0.5, 1)
+                drawMsg(rightSide, topSide + 0.12, currentVehicleName, 0.5, 1)
 
                 local lapTime = currentTime - lapTimeStart
                 minutes, seconds = minutesSeconds(lapTime)
@@ -1976,7 +1986,7 @@ Citizen.CreateThread(function()
                         drawMsg(rightSide, topSide + 0.29, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
                     else -- DNF
                         DeleteCheckpoint(raceCheckpoint)
-                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicle, nil)
+                        TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, -1, bestLapTime, bestLapVehicleName, nil)
                         restoreBlips()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -2005,7 +2015,7 @@ Citizen.CreateThread(function()
                         elseif restrictedClass ~= nil then
                             if vehicle ~= nil then
                                 if 22 == restrictedClass then
-                                    if GetEntityModel(vehicle) ~= originalVehicleHash then
+                                    if vehicleInList(vehicle, customClassVehicleList) == false then
                                         waypointPassed = false
                                     end
                                 elseif GetVehicleClass(vehicle) ~= restrictedClass then
@@ -2029,7 +2039,7 @@ Citizen.CreateThread(function()
                                 lapTimeStart = currentTime
                                 if -1 == bestLapTime or lapTime < bestLapTime then
                                     bestLapTime = lapTime
-                                    bestLapVehicle = currentVehicle
+                                    bestLapVehicleName = currentVehicleName
                                 end
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
@@ -2038,7 +2048,7 @@ Citizen.CreateThread(function()
                                         PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
-                                    TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, bestLapVehicle, nil)
+                                    TriggerServerEvent("races:finish", raceIndex, numWaypointsPassed, elapsedTime, bestLapTime, bestLapVehicleName, nil)
                                     restoreBlips()
                                     SetBlipRoute(waypoints[1].blip, true)
                                     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -2125,11 +2135,11 @@ Citizen.CreateThread(function()
                 if "rest" == starts[closestIndex].rtype then
                     msg = msg .. " : using '" .. starts[closestIndex].restrict .. "' vehicle"
                 elseif "class" == starts[closestIndex].rtype then
-                    msg = msg .. " : using " .. getClass(starts[closestIndex].vclass) .. " vehicle class"
+                    msg = msg .. " : using " .. getClassName(starts[closestIndex].vclass) .. " vehicle class"
                 elseif "rand" == starts[closestIndex].rtype then
                     msg = msg .. " : using random "
                     if starts[closestIndex].vclass ~= nil then
-                        msg = msg .. getClass(starts[closestIndex].vclass) .. " vehicle class"
+                        msg = msg .. getClassName(starts[closestIndex].vclass) .. " vehicle class"
                     else
                         msg = msg .. "vehicles"
                     end
@@ -2164,11 +2174,11 @@ Citizen.CreateThread(function()
                             if vehicle ~= nil then
                                 if GetVehicleClass(vehicle) ~= starts[closestIndex].vclass then
                                     joinRace = false
-                                    notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                    notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
                                 end
                             else
                                 joinRace = false
-                                notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
                             end
                         else
                             if #(starts[closestIndex].vehicleList) == 0 then
@@ -2181,14 +2191,7 @@ Citizen.CreateThread(function()
                                 end
                                 vehicleList = string.sub(vehicleList, 1, -3)
                                 if vehicle ~= nil then
-                                    local vehicleInList = false
-                                    for _, vehName in pairs(starts[closestIndex].vehicleList) do
-                                        if GetEntityModel(vehicle) == GetHashKey(vehName) then
-                                            vehicleInList = true
-                                            break
-                                        end
-                                    end
-                                    if false == vehicleInList then
+                                    if vehicleInList(vehicle, starts[closestIndex].vehicleList) == false then
                                         joinRace = false
                                         notifyPlayer("Cannot join race.  Player needs to be in one of the following vehicles:  " .. vehicleList)
                                     end
@@ -2208,11 +2211,11 @@ Citizen.CreateThread(function()
                                     if vehicle ~= nil then
                                         if GetVehicleClass(vehicle) ~= starts[closestIndex].vclass then
                                             joinRace = false
-                                            notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                            notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
                                         end
                                     else
                                         joinRace = false
-                                        notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClass(starts[closestIndex].vclass) .. " class.")
+                                        notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
                                     end
                                 end
                             end

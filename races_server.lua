@@ -542,7 +542,7 @@ local function loadVehicleFile(source, vehicleFile)
     return vehicles
 end
 
-local function getClass(vclass)
+local function getClassName(vclass)
     if 0 == vclass then
         return "'Compacts'(0)"
     elseif 1 == vclass then
@@ -642,11 +642,11 @@ local function saveResults(race)
     if "rest" == race.rtype then
         msg = msg .. " : using '" .. race.restrict .. "' vehicle"
     elseif "class" == race.rtype then
-        msg = msg .. " : using " .. getClass(race.vclass) .. " vehicle class"
+        msg = msg .. " : using " .. getClassName(race.vclass) .. " vehicle class"
     elseif "rand" == race.rtype then
         msg = msg .. " : using random "
         if race.vclass ~= nil then
-            msg = msg .. getClass(race.vclass) .. " vehicle class"
+            msg = msg .. getClassName(race.vclass) .. " vehicle class"
         else
             msg = msg .. "vehicles"
         end
@@ -1141,7 +1141,7 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                 registerRace = false
                                 sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
                             else
-                                umsg = " : using " .. getClass(rdata.vclass) .. " vehicle class"
+                                umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
                                 if 22 == rdata.vclass then
                                     if nil == rdata.filename then
                                         registerRace = false
@@ -1171,7 +1171,7 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                         registerRace = false
                                         sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
                                     else
-                                        umsg = umsg .. getClass(rdata.vclass) .. " vehicle class"
+                                        umsg = umsg .. getClassName(rdata.vclass) .. " vehicle class"
                                     end
                                 else
                                     umsg = umsg .. "vehicles"
