@@ -35,10 +35,11 @@ local STATE_RACING <const> = 1
 
 local raceDataFile <const> = "./resources/races/raceData.json"
 
-local defaultFilename <const> = "random.txt" -- default random vehicle filename
-local defaultRadius <const> = 5.0 -- default waypoint radius
+local randomVehicleFile <const> = "random.txt" -- default file used for random races
 
-local allVehicleFilename <const> = "vehicles.txt" -- list of all vehicles filename
+local allVehicleFile <const> = "vehicles.txt" -- list of all vehicles filename
+
+local defaultRadius <const> = 5.0 -- default waypoint radius
 
 local dist <const> = {60, 20, 10, 5, 3, 2} -- prize distribution
 local distValid = true -- flag indicating if prize distribution is valid
@@ -77,7 +78,7 @@ if true == requirePermission then
     end
 end
 
-local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -586,6 +587,8 @@ local function getClass(vclass)
         return "'Commercial'(20)"
     elseif 21 == vclass then
         return "'Trains'(21)"
+    elseif 22 == vclass then
+        return "'Custom'(22)"
     else
         return "'Unknown'(" .. vclass .. ")"
     end
@@ -627,7 +630,7 @@ local function minutesSeconds(milliseconds)
 end
 
 local function saveResults(race)
-    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, filename, vclass, svehicle, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
     local msg = "Race: "
     if nil == race.savedRaceName then
         msg = msg .. "Unsaved race "
@@ -897,8 +900,6 @@ AddEventHandler("races:init", function()
 
     TriggerClientEvent("races:permission", source, getPermission(source))
 
-    TriggerClientEvent("races:init", source, defaultFilename, defaultRadius)
-
     -- if funds < 5000, set funds to 5000
     if GetFunds(source) < 5000 then
         SetFunds(source, 5000)
@@ -908,7 +909,7 @@ AddEventHandler("races:init", function()
     for i, race in pairs(races) do
         if STATE_REGISTERING == race.state then
             local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
-            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.publicRace, race.savedRaceName, race.owner, race.buyin, race.laps, race.timeout, rdata)
+            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.publicRace, race.savedRaceName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
         end
     end
 end)
@@ -980,9 +981,9 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
                 end
             else
                 if true == public then
-                    sendMessage(source, ("Public race '%s' exists.  Use 'overwritePublic' command instead.\n"):format(raceName))
+                    sendMessage(source, "Public race '" .. raceName .. "' exists.  Use 'overwritePublic' command instead.\n")
                 else
-                    sendMessage(source, ("Private race '%s' exists.  Use 'overwrite' command instead.\n"):format(raceName))
+                    sendMessage(source, "Private race '" .. raceName .. "' exists.  Use 'overwrite' command instead.\n")
                 end
             end
         else
@@ -1012,9 +1013,9 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
                 end
             else
                 if true == public then
-                    sendMessage(source, ("Public race '%s' does not exist.  Use 'savePublic' command instead.\n"):format(raceName))
+                    sendMessage(source, "Public race '" .. raceName .. "' does not exist.  Use 'savePublic' command instead.\n")
                 else
-                    sendMessage(source, ("Private race '%s' does not exist.  Use 'save' command instead.\n"):format(raceName))
+                    sendMessage(source, "Private race '" .. raceName .. "' does not exist.  Use 'save' command instead.\n")
                 end
             end
         else
@@ -1127,49 +1128,61 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                     if nil == races[source] then
                         local registerRace = true
                         local umsg = ""
+                        local vehicleList = {}
                         if "rest" == rdata.rtype then
                             if nil == rdata.restrict then
                                 registerRace = false
-                                sendMessage("Cannot register.  Invalid restricted vehicle.\n")
+                                sendMessage(source, "Cannot register.  Invalid restricted vehicle.\n")
                             else
                                 umsg = " : using '" .. rdata.restrict .. "' vehicle"
                             end
                         elseif "class" == rdata.rtype then
-                            if nil == rdata.vclass or rdata.vclass < 0 or rdata.vclass > 21 then
+                            if nil == rdata.vclass or rdata.vclass < 0 or rdata.vclass > 22 then
                                 registerRace = false
-                                sendMessage("Cannot register.  Invalid vehicle class.\n")
+                                sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
                             else
                                 umsg = " : using " .. getClass(rdata.vclass) .. " vehicle class"
+                                if 22 == rdata.vclass then
+                                    if nil == rdata.filename then
+                                        registerRace = false
+                                        sendMessage(source, "Cannot register.  Invalid file name.\n")
+                                    else
+                                        vehicleList = loadVehicleFile(source, rdata.filename)
+                                        if #vehicleList == 0 then
+                                            registerRace = false
+                                            sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
+                                        end
+                                    end
+                                end
                             end
                         elseif "rand" == rdata.rtype then
                             buyin = 0
                             if nil == rdata.filename then
-                                rdata.filename = defaultFilename
+                                rdata.filename = randomVehicleFile
                             end
-                            local file, errMsg, errCode = io.open("./resources/races/" .. rdata.filename, "r")
-                            if nil == file then
-                                sendMessage(source, "Cannot register.  Error opening file '" .. rdata.filename .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
+                            vehicleList = loadVehicleFile(source, rdata.filename)
+                            if #vehicleList == 0 then
                                 registerRace = false
+                                sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
                             else
-                                file:close()
-                                if rdata.vclass ~= nil and (rdata.vclass < 0 or rdata.vclass > 21) then
-                                    registerRace = false
-                                    sendMessage("Cannot register.  Invalid vehicle class.\n")
-                                else
-                                    umsg = " : using random "
-                                    if rdata.vclass ~= nil then
-                                        umsg = umsg .. getClass(rdata.vclass) .. " vehicle class"
+                                umsg = " : using random "
+                                if rdata.vclass ~= nil then
+                                    if (rdata.vclass < 0 or rdata.vclass > 21) then
+                                        registerRace = false
+                                        sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
                                     else
-                                        umsg = umsg .. "vehicles"
+                                        umsg = umsg .. getClass(rdata.vclass) .. " vehicle class"
                                     end
-                                    if rdata.svehicle ~= nil then
-                                        umsg = umsg .. " : '" .. rdata.svehicle .. "'"
-                                    end
+                                else
+                                    umsg = umsg .. "vehicles"
+                                end
+                                if true == registerRace and rdata.svehicle ~= nil then
+                                    umsg = umsg .. " : '" .. rdata.svehicle .. "'"
                                 end
                             end
                         elseif rdata.rtype ~= nil then
                             registerRace = false
-                            sendMessage("Cannot register.  Unknown race type.\n")
+                            sendMessage(source, "Cannot register.  Unknown race type.\n")
                         end
                         if true == registerRace then
                             local owner = GetPlayerName(source)
@@ -1197,14 +1210,14 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                 timeout = timeout,
                                 rtype = rdata.rtype,
                                 restrict = rdata.restrict,
-                                filename = rdata.filename,
                                 vclass = rdata.vclass,
                                 svehicle = rdata.svehicle,
+                                vehicleList = vehicleList,
                                 numRacing = 0,
                                 players = {},
                                 results = {}
                             }
-                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, rdata)
+                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, vehicleList, rdata)
                         end
                     else
                         if STATE_RACING == races[source].state then
@@ -1339,7 +1352,7 @@ end)
 RegisterNetEvent("races:lvehicles")
 AddEventHandler("races:lvehicles", function(vclass)
     local source = source
-    local vehicleList = loadVehicleFile(source, allVehicleFilename)
+    local vehicleList = loadVehicleFile(source, allVehicleFile)
     if #vehicleList > 0 then
         TriggerClientEvent("races:lvehicles", source, vehicleList, vclass)
     else
@@ -1362,15 +1375,8 @@ AddEventHandler("races:join", function(index)
                 if STATE_REGISTERING == races[index].state then
                     races[index].numRacing = races[index].numRacing + 1
                     races[index].players[source] = {playerName = GetPlayerName(source), numWaypointsPassed = -1, data = -1, finished = false}
-                    if "rand" == races[index].rtype then
-                        local randVehicles = loadVehicleFile(source, races[index].filename)
-                        if #randVehicles > 0 then
-                            TriggerClientEvent("races:join", source, index, races[index].waypointCoords, randVehicles)
-                        else
-                            notifyPlayer(source, "Cannot join.  Random vehicle list not loaded.\n")
-                        end
-                    else
-                        TriggerClientEvent("races:join", source, index, races[index].waypointCoords, nil)
+                    TriggerClientEvent("races:join", source, index, races[index].waypointCoords)
+                    if races[index].rtype ~= "rand"  then
                         Withdraw(source, races[index].buyin)
                         notifyPlayer(source, races[index].buyin .. " was withdrawn from your funds.\n")
                     end

@@ -46,7 +46,6 @@ $(function() {
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
             $("#vehicle0").val(data.defaultVehicle)
-            $("#filename").val(data.defaultFilename)
             $("#main").show();
             openPanel = "main"
         } else if ("restricted" == data.panel) {

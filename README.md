@@ -28,7 +28,7 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\
 **`/races register (buy-in) (laps) (DNF timeout)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`** - register your race restricted to [vehicle]\
-**`/races register (buy-in) (laps) (DNF timeout) class [class]`** - register your race restricted to vehicles of type [class]\
+**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class] in (filename) file\
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any
 
 **`/races unregister`** - unregister your race\
@@ -85,7 +85,7 @@ Look for purple circled star blips on the waypoint map.  There will be correspon
 
 If the race is restricted to a specific vehicle, the label will include **'using [vehicle]'** where [vehicle] is the name of the restricted vehicle.  You must be in that vehicle when prompted to join the race.  You can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle.  For example, if the label shows **using 'adder'**, you can spawn the vehicle by typing **`/races spawn adder`**.
 
-If the race is restricted to a specific vehicle class, the label will include **'using [class] vehicle class'** where [class] is the vehicle class.  The class number will be in parentheses.  You must be in a vehicle of that class when prompted to join the race.  You can list vehicles of a specific class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
+If the race is restricted to a specific vehicle class, the label will include **'using [class] vehicle class'** where [class] is the vehicle class.  The class number will be in parentheses.  You must be in a vehicle of that class when prompted to join the race.  If the class is 22 (Custom), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration point on foot and trying to join the race.  The chat window will list which vehicles you can use in the class 22 (Custom) race.  If the class is not 22 (Custom), you can list vehicles of the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
 
 If the race changes vehicles randomly every lap, the label will include **'using random vehicles'**.  If a vehicle is specified after the **'using random vehicles'** message, racers will be placed in the specified vehicle when the race starts.
 
@@ -117,7 +117,7 @@ By default, permission is not required to use any of the commands.  If permissio
 **`/races listPublic`**\
 **`/races register (buy-in) (laps) (DNF timeout)`**\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`**\
-**`/races register (buy-in) (laps) (DNF timeout) class [class]`**\
+**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`**\
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`**\
 **`/races unregister`**\
 **`/races start (delay)`**
@@ -174,17 +174,19 @@ If you want to restrict the vehicle used in a race, type **`/races register 100 
 
 If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 class 0`** to restrict vehicles to class 0 (Compacts).
 
-If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`random.txt`**.  You can add vehicles from **`vehicles.txt`** to **`random.txt`** or remove vehicles from **`random.txt`**.
+If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 class 22 tier.txt`** to restrict vehicles to class 22 (Custom) which are specified in a file named **`resources/races/tier.txt`**.  If you specify class 22, you must provide a file containing the vehicles you want in the race.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`myvehicles.txt`** that you created, type **`/races register 100 2 180 rand myvehicles.txt`**.  You can add vehicles from **`vehicles.txt`** to **`myvehicles.txt`**.
+If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`resources/races/random.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/random.txt`** or remove vehicles from **`resources/races/random.txt`**.
 
-If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in **`random.txt`** or the file that you specified.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.
+If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** that you created, type **`/races register 100 2 180 rand myvehicles.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`myvehicles.txt`**, type **`/races register 100 2 180 rand myvehicles.txt 0`**.
+If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in **`resources/races/random.txt`** or the file that you specified.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`myvehicles.txt`** and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt . adder`**.  The period between **`myvehicles.txt`** and **`adder`** indicates that vehicles can come from any class in **`myvehicles.txt`**.
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`resources/races/myvehicles.txt`**, type **`/races register 100 2 180 rand myvehicles.txt 0`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`myvehicles.txt`** and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt 0 blista`**.  When you specify a class like 0 (Compacts), the start vehicle must be of class 0 (Compacts).
+If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt . adder`**.  The period between **`myvehicles.txt`** and **`adder`** indicates that vehicles can come from any class in **`resources/races/myvehicles.txt`**.
+
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`resources/races/myvehicles.txt`** and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt 0 blista`**.  When you specify a class like 0 (Compacts), the start vehicle must be of class 0 (Compacts).
 
 The different classes of vehicle you can specify are listed here:
 
@@ -209,11 +211,12 @@ The different classes of vehicle you can specify are listed here:
 18: Emergency\
 19: Military\
 20: Commercial\
-21: Trains
+21: Trains\
+22: Custom
 
-As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class 0 have been placed in **`00.txt`**.  Vehicles of class 1 have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files.  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
+As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class 0 have been placed in **`00.txt`**.  Vehicles of class 1 have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files except for class 22.  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
 
-If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (**`random.txt`**) and vehicles of class 9 (Off-road).  This is the equivalent of **`/races register 500 4 120 rand random.txt 9`**.
+If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (**`resources/races/random.txt`**) and vehicles of class 9 (Off-road).  This is the equivalent of **`/races register 500 4 120 rand random.txt 9`**.
 
 If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
@@ -227,7 +230,7 @@ Players who want to join the race will need to have enough funds to pay for the 
 
 If the race is restricted to specific vehicle, its name is shown at the registration point.  Players will need to be in the restricted vehicle at the registration point in order to join the race.  Players can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle name.
 
-If the race is restricted to a specific vehicle class, the class name and number is shown at the registration point.  You must be in a vehicle of the restricted class to join the race.  You can view all vehicles in a class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
+If the race is restricted to a specific vehicle class, the class name and number is shown at the registration point.  You must be in a vehicle of the restricted class to join the race.  If the class is 22 (Custom), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration point on foot and trying to join the race.  The chat window will list which vehicles you can use in the class 22 (Custom) race.  If the class is not 22 (Custom), you can list vehicles of the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
 
 To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the race waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  If you do not join the race you registered, you will not see the results of that race.
 
