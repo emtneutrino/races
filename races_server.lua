@@ -232,31 +232,38 @@ end
 
 local function approve(playerID)
     if true == requirePermission then
-        if GetPlayerPed(playerID) ~= 0 then
-            local license = GetPlayerIdentifier(playerID, 0)
-            if license ~= nil then
-                license = string.sub(license, 9)
-                if nil == roles[license] then
-                    roles[license] = {role = ADMIN, name = GetPlayerName(playerID)}
-                    requests[tonumber(playerID)] = nil
-                    print("approve: Request approved.")
-                    notifyPlayer(playerID, "Request approved.\n")
-                    TriggerClientEvent("races:permission", playerID, true)
-                    local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-                    if file ~= nil then
-                        file:write(json.encode(roles))
-                        file:close()
+        if playerID ~= nil then
+            if GetPlayerPed(playerID) ~= 0 then
+                local license = GetPlayerIdentifier(playerID, 0)
+                if license ~= nil then
+                    license = string.sub(license, 9)
+                    if nil == roles[license] then
+                        roles[license] = {role = ADMIN, name = GetPlayerName(playerID)}
+                        requests[tonumber(playerID)] = nil
+                        print("approve: Request approved.")
+                        notifyPlayer(playerID, "Request approved.\n")
+                        TriggerClientEvent("races:permission", playerID, true)
+                        local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                        if file ~= nil then
+                            file:write(json.encode(roles))
+                            file:close()
+                        else
+                            print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                        end
                     else
-                        print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                        print("approve: Request already approved.")
                     end
                 else
-                    print("approve: Request already approved.")
+                    print("approve: Could not get license.")
                 end
             else
-                print("approve: Could not get license.")
+                print("approve: Invalid player ID: " .. playerID)
+                print(GetPlayerPed(playerID))
+                print(GetPlayerIdentifier(playerID, 0)) -- will this work????
+                print(GetPlayerName(playerID)) -- will this work????
             end
         else
-            print("approve: Invalid player ID.")
+            print("approve: Invalid argument.")
         end
     else
         print("approve: Permission not required.")
@@ -265,12 +272,16 @@ end
 
 local function deny(playerID)
     if true == requirePermission then
-        if GetPlayerPed(playerID) ~= 0 then
-            requests[tonumber(playerID)] = nil
-            print("deny: Request denied.")
-            notifyPlayer(playerID, "Request denied.\n")
+        if playerID ~= nil then
+            if GetPlayerPed(playerID) ~= 0 then
+                requests[tonumber(playerID)] = nil
+                print("deny: Request denied.")
+                notifyPlayer(playerID, "Request denied.\n")
+            else
+                print("deny: Invalid player ID.")
+            end
         else
-            print("deny: Invalid player ID.")
+            print("deny: Invalid argument.")
         end
     else
         print("deny: Permission not required.")
@@ -285,45 +296,49 @@ end
 
 local function removeRole(name)
     if true == requirePermission then
-        local lic = nil
-        for l, role in pairs(roles) do
-            if role.name == name then
-                roles[l] = nil
-                lic = l
-                print("removeRole: '" .. name .. "' role removed.")
-                local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-                if file ~= nil then
-                    file:write(json.encode(roles))
-                    file:close()
-                else
-                    print("removeRole: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
-                end
-                break
-            end
-        end
-        if lic ~= nil then
-            for _, index in pairs(GetPlayers()) do
-                local license = GetPlayerIdentifier(index, 0)
-                if license ~= nil then
-                    if string.sub(license, 9) == lic then
-                        index = tonumber(index)
-                        if races[index] ~= nil then
-                            for i in pairs(races[index].players) do
-                                Deposit(i, races[index].buyin)
-                                notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
-                            end
-                            races[index] = nil
-                            TriggerClientEvent("races:unregister", -1, index)
-                        end
-                        TriggerClientEvent("races:permission", index, false)
-                        break
+        if name ~= nil then
+            local lic = nil
+            for l, role in pairs(roles) do
+                if role.name == name then
+                    roles[l] = nil
+                    lic = l
+                    print("removeRole: '" .. name .. "' role removed.")
+                    local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                    if file ~= nil then
+                        file:write(json.encode(roles))
+                        file:close()
+                    else
+                        print("removeRole: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                     end
-                else
-                    print("removeRole: Could not get license for player index '" .. index .. "'.")
+                    break
                 end
+            end
+            if lic ~= nil then
+                for _, index in pairs(GetPlayers()) do
+                    local license = GetPlayerIdentifier(index, 0)
+                    if license ~= nil then
+                        if string.sub(license, 9) == lic then
+                            index = tonumber(index)
+                            if races[index] ~= nil then
+                                for i in pairs(races[index].players) do
+                                    Deposit(i, races[index].buyin)
+                                    notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
+                                end
+                                races[index] = nil
+                                TriggerClientEvent("races:unregister", -1, index)
+                            end
+                            TriggerClientEvent("races:permission", index, false)
+                            break
+                        end
+                    else
+                        print("removeRole: Could not get license for player index '" .. index .. "'.")
+                    end
+                end
+            else
+                print("removeRole: '" .. name .. "' not found.")
             end
         else
-            print("removeRole: '" .. name .. "' not found.")
+            print("removeRole: Invalid argument.")
         end
     else
         print("removeRole: Permission not required.")

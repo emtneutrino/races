@@ -2005,11 +2005,7 @@ Citizen.CreateThread(function()
                     if #(pedCoord - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
                         local waypointPassed = true
                         if restrictedHash ~= nil then
-                            if vehicle ~= nil then
-                                if GetEntityModel(vehicle) ~= restrictedHash then
-                                    waypointPassed = false
-                                end
-                            else
+                            if nil == vehicle or currentVehicleHash ~= restrictedHash then
                                 waypointPassed = false
                             end
                         elseif restrictedClass ~= nil then
@@ -2151,13 +2147,8 @@ Citizen.CreateThread(function()
                 if IsControlJustReleased(0, 51) == 1 then -- E key or DPAD RIGHT
                     local joinRace = true
                     local vehicle = nil
-                    originalVehicleHash = nil
-                    colorPri = nil
-                    colorSec = nil
                     if IsPedInAnyVehicle(player, false) == 1 then
                         vehicle = GetVehiclePedIsIn(player, false)
-                        originalVehicleHash = GetEntityModel(vehicle)
-                        colorPri, colorSec = GetVehicleColours(vehicle)
                     end
                     if "rest" == starts[closestIndex].rtype then
                         if vehicle ~= nil then
@@ -2206,6 +2197,14 @@ Citizen.CreateThread(function()
                             joinRace = false
                             notifyPlayer("Cannot join race.  No valid vehicles in vehicle list.")
                         else
+                            if vehicle ~= nil then
+                                originalVehicleHash = GetEntityModel(vehicle)
+                                colorPri, colorSec = GetVehicleColours(vehicle)
+                            else
+                                originalVehicleHash = nil
+                                colorPri = nil
+                                colorSec = nil
+                            end
                             if starts[closestIndex].vclass ~= nil then
                                 if nil == starts[closestIndex].svehicle then
                                     if vehicle ~= nil then
