@@ -233,12 +233,13 @@ end
 local function approve(playerID)
     if true == requirePermission then
         if playerID ~= nil then
-            if GetPlayerPed(playerID) ~= 0 then
+            local name = GetPlayerName(playerID)
+            if name ~= nil then
                 local license = GetPlayerIdentifier(playerID, 0)
                 if license ~= nil then
                     license = string.sub(license, 9)
                     if nil == roles[license] then
-                        roles[license] = {role = ADMIN, name = GetPlayerName(playerID)}
+                        roles[license] = {role = ADMIN, name = name}
                         requests[tonumber(playerID)] = nil
                         print("approve: Request approved.")
                         notifyPlayer(playerID, "Request approved.\n")
@@ -257,10 +258,7 @@ local function approve(playerID)
                     print("approve: Could not get license.")
                 end
             else
-                print("approve: Invalid player ID: " .. playerID)
-                print(GetPlayerPed(playerID))
-                print(GetPlayerIdentifier(playerID, 0)) -- will this work????
-                print(GetPlayerName(playerID)) -- will this work????
+                print("approve: Invalid player ID.")
             end
         else
             print("approve: Invalid argument.")
@@ -273,7 +271,7 @@ end
 local function deny(playerID)
     if true == requirePermission then
         if playerID ~= nil then
-            if GetPlayerPed(playerID) ~= 0 then
+            if GetPlayerName(playerID) ~= nil then
                 requests[tonumber(playerID)] = nil
                 print("deny: Request denied.")
                 notifyPlayer(playerID, "Request denied.\n")
