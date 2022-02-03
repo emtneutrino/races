@@ -235,27 +235,31 @@ local function approve(playerID)
         if playerID ~= nil then
             local name = GetPlayerName(playerID)
             if name ~= nil then
-                local license = GetPlayerIdentifier(playerID, 0)
-                if license ~= nil then
-                    license = string.sub(license, 9)
-                    if nil == roles[license] then
-                        roles[license] = {role = ADMIN, name = name}
-                        requests[tonumber(playerID)] = nil
-                        print("approve: Request approved.")
-                        notifyPlayer(playerID, "Request approved.\n")
-                        TriggerClientEvent("races:permission", playerID, true)
-                        local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-                        if file ~= nil then
-                            file:write(json.encode(roles))
-                            file:close()
+                if requests[tonumber(playerID)] ~= nil then
+                    local license = GetPlayerIdentifier(playerID, 0)
+                    if license ~= nil then
+                        license = string.sub(license, 9)
+                        if nil == roles[license] then
+                            roles[license] = {role = ADMIN, name = name}
+                            requests[tonumber(playerID)] = nil
+                            print("approve: Request approved.")
+                            notifyPlayer(playerID, "Request approved.\n")
+                            TriggerClientEvent("races:permission", playerID, true)
+                            local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                            if file ~= nil then
+                                file:write(json.encode(roles))
+                                file:close()
+                            else
+                                print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                            end
                         else
-                            print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                            print("approve: Request already approved.")
                         end
                     else
-                        print("approve: Request already approved.")
+                        print("approve: Could not get license.")
                     end
                 else
-                    print("approve: Could not get license.")
+                    print("approve: Player did not request approval.")
                 end
             else
                 print("approve: Invalid player ID.")
@@ -272,9 +276,13 @@ local function deny(playerID)
     if true == requirePermission then
         if playerID ~= nil then
             if GetPlayerName(playerID) ~= nil then
-                requests[tonumber(playerID)] = nil
-                print("deny: Request denied.")
-                notifyPlayer(playerID, "Request denied.\n")
+                if requests[tonumber(playerID)] ~= nil then
+                    requests[tonumber(playerID)] = nil
+                    print("deny: Request denied.")
+                    notifyPlayer(playerID, "Request denied.\n")
+                else
+                    print("deny: Player did not request approval.")
+                end
             else
                 print("deny: Invalid player ID.")
             end
