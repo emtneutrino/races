@@ -265,7 +265,7 @@ local function approve(playerID)
                 print("approve: Invalid player ID.")
             end
         else
-            print("approve: Invalid argument.")
+            print("approve: Player ID required.")
         end
     else
         print("approve: Permission not required.")
@@ -287,7 +287,7 @@ local function deny(playerID)
                 print("deny: Invalid player ID.")
             end
         else
-            print("deny: Invalid argument.")
+            print("deny: Player ID required.")
         end
     else
         print("deny: Permission not required.")
