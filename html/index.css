@@ -34,7 +34,114 @@ body {
     background: none !important;
 }
 
-#main {
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+}
+
+#mainPanel {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#request {
+    width: 25%;
+}
+
+#role {
+    height: 44px;
+}
+
+#main_clear {
+    width: 25%;
+}
+
+#main_name {
+    width: 80%;
+}
+
+#main_blt {
+    width: 25%;
+}
+
+#main_list {
+    width: 25%;
+}
+
+#main_namePublic {
+    width: 80%;
+}
+
+#main_bltPublic {
+    width: 25%;
+}
+
+#main_listPublic {
+    width: 25%;
+}
+
+#leave {
+    width: 20%;
+}
+
+#rivals {
+    width: 20%;
+}
+
+#respawn {
+    width: 20%;
+}
+
+#results {
+    width: 20%;
+}
+
+#spawn {
+    width: 25%;
+}
+
+#vehicle {
+    width: 25%;
+}
+
+#lvehicles {
+    width: 25%;
+}
+
+#main_vclass {
+    height: 44px;
+}
+
+#speedo {
+    width: 25%;
+}
+
+#change {
+    width: 25%;
+}
+
+#unit {
+    height: 44px;
+}
+
+#funds {
+    width: 25%;
+}
+
+#editPanel {
     text-align: center;
     font-size: 25px;
     padding: 25px;
@@ -52,7 +159,7 @@ body {
     width: 25%;
 }
 
-#clear0 {
+#edit_clear {
     width: 25%;
 }
 
@@ -60,11 +167,11 @@ body {
     width: 25%;
 }
 
-#name {
+#edit_name {
     width: 80%;
 }
 
-#load {
+#edit_load {
     width: 15%;
 }
 
@@ -80,19 +187,19 @@ body {
     width: 15%;
 }
 
-#blt {
+#edit_blt {
     width: 15%;
 }
 
-#list {
+#edit_list {
     width: 15%;
 }
 
-#namePublic {
+#edit_namePublic {
     width: 80%;
 }
 
-#loadPublic {
+#edit_loadPublic {
     width: 15%;
 }
 
@@ -108,12 +215,58 @@ body {
     width: 15%;
 }
 
-#bltPublic {
+#edit_bltPublic {
     width: 15%;
 }
 
-#listPublic {
+#edit_listPublic {
     width: 15%;
+}
+
+#registerPanel {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#register_name {
+    width: 80%;
+}
+
+#register_load {
+    width: 25%;
+}
+
+#register_blt {
+    width: 25%;
+}
+
+#register_list {
+    width: 25%;
+}
+
+#register_namePublic {
+    width: 80%;
+}
+
+#register_loadPublic {
+    width: 25%;
+}
+
+#register_bltPublic {
+    width: 25%;
+}
+
+#register_listPublic {
+    width: 25%;
 }
 
 #register {
@@ -144,7 +297,7 @@ body {
     width: 20%;
 }
 
-#vclass0 {
+#register_vclass {
     height: 44px;
 }
 
@@ -164,125 +317,7 @@ body {
     width: 10%;
 }
 
-#leave0 {
-    width: 20%;
-}
-
-#rivals0 {
-    width: 20%;
-}
-
-#respawn0 {
-    width: 20%;
-}
-
-#results0 {
-    width: 20%;
-}
-
-#spawn0 {
-    width: 25%;
-}
-
-#vehicle0 {
-    width: 25%;
-}
-
-#lvehicles0 {
-    width: 25%;
-}
-
-#vclass1 {
-    height: 44px;
-}
-
-#speedo0 {
-    width: 25%;
-}
-
-#change0 {
-    width: 25%;
-}
-
-#unit0 {
-    height: 44px;
-}
-
-#funds0 {
-    width: 25%;
-}
-
-#restricted {
-    text-align: center;
-    font-size: 25px;
-    padding: 25px;
-    color: rgb(191, 191, 191);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgb(255, 255, 255);
-    border-radius: 7px;
-}
-
-#request {
-    width: 25%;
-}
-
-#clear1 {
-    width: 25%;
-}
-
-#leave1 {
-    width: 20%;
-}
-
-#rivals1 {
-    width: 20%;
-}
-
-#respawn1 {
-    width: 20%;
-}
-
-#results1 {
-    width: 20%;
-}
-
-#spawn1 {
-    width: 25%;
-}
-
-#vehicle1 {
-    width: 25%;
-}
-
-#lvehicles1 {
-    width: 25%;
-}
-
-#vclass2 {
-    height: 44px;
-}
-
-#speedo1 {
-    width: 25%;
-}
-
-#change1 {
-    width: 25%;
-}
-
-#unit1 {
-    height: 44px;
-}
-
-#funds1 {
-    width: 25%;
-}
-
-#reply {
+#replyPanel {
     text-align: center;
     padding: 25px;
     position: fixed;
@@ -309,6 +344,7 @@ body {
 button {
     background-color: rgb(127, 127, 127);
     padding: 10px;
+    margin: 5px;
     min-width: max-content;
 }
 

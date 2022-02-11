@@ -34,41 +34,129 @@ $(function() {
     let replyOpen = false;
     let openPanel = ""
 
-    $("#main").hide();
-    $("#restricted").hide();
-    $("#reply").hide();
+    $("#mainPanel").hide();
+    $("#editPanel").hide();
+    $("#registerPanel").hide();
+    $("#replyPanel").hide();
 
     window.addEventListener("message", function(event) {
         let data = event.data;
         if ("main" == data.panel) {
+            $("#vehicle").val(data.defaultVehicle)
+            $("#mainPanel").show();
+            openPanel = "main"
+        } else if ("edit" == data.panel) {
+            $("#editPanel").show();
+            openPanel = "edit"
+        } else if ("register" == data.panel) {
             $("#buyin").val(data.defaultBuyin)
             $("#laps").val(data.defaultLaps)
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
-            $("#vehicle0").val(data.defaultVehicle)
-            $("#main").show();
-            openPanel = "main"
-        } else if ("restricted" == data.panel) {
-            $("#vehicle1").val(data.defaultVehicle)
-            $("#restricted").show();
-            openPanel = "restricted"
+            $("#registerPanel").show();
+            openPanel = "register"
         } else if ("reply" == data.panel) {
-            if ("main" == openPanel) {
-                $("#main").hide();
-            } else if("restricted" == openPanel) {
-                $("#restricted").hide();
-            }
+            $("#mainPanel").hide();
+            $("#editPanel").hide();
+            $("#registerPanel").hide();
             document.getElementById("message").innerHTML = data.message;
-            $("#reply").show();
+            $("#replyPanel").show();
             replyOpen = true;
         }
     });
 
+    /* main panel */
+    $("#request").click(function() {
+        $.post("https://races/request", JSON.stringify({
+            role: $("#role").val()
+        }));
+    });
+
+    $("#main_clear").click(function() {
+        $.post("https://races/clear");
+    });
+
+    $("#main_blt").click(function() {
+        $.post("https://races/blt", JSON.stringify({
+            public: false,
+            raceName: $("#main_name").val()
+        }));
+    });
+
+    $("#main_list").click(function() {
+        $.post("https://races/list", JSON.stringify({
+            public: false
+        }));
+    });
+
+    $("#main_bltPublic").click(function() {
+        $.post("https://races/blt", JSON.stringify({
+            public: true,
+            raceName: $("#main_namePublic").val()
+        }));
+    });
+
+    $("#main_listPublic").click(function() {
+        $.post("https://races/list", JSON.stringify({
+            public: true
+        }));
+    });
+
+    $("#leave").click(function() {
+        $.post("https://races/leave");
+    });
+
+    $("#rivals").click(function() {
+        $.post("https://races/rivals");
+    });
+
+    $("#respawn").click(function() {
+        $.post("https://races/respawn");
+    });
+
+    $("#results").click(function() {
+        $.post("https://races/results");
+    });
+
+    $("#spawn").click(function() {
+        $.post("https://races/spawn", JSON.stringify({
+            vehicle: $("#vehicle").val()
+        }));
+    });
+
+    $("#lvehicles").click(function() {
+        $.post("https://races/lvehicles", JSON.stringify({
+            vclass: $("#main_vclass").val()
+        }));
+    });
+
+    $("#speedo").click(function() {
+        $.post("https://races/speedo", JSON.stringify({
+            unit: ""
+        }));
+    });
+
+    $("#change").click(function() {
+        $.post("https://races/speedo", JSON.stringify({
+            unit: $("#unit").val()
+        }));
+    });
+
+    $("#funds").click(function() {
+        $.post("https://races/funds");
+    });
+
+    $("#main_close").click(function() {
+        $("#mainPanel").hide();
+        $.post("https://races/close");
+    });
+
+    /* edit panel */
     $("#edit").click(function() {
         $.post("https://races/edit");
     });
 
-    $("#clear0").click(function() {
+    $("#edit_clear").click(function() {
         $.post("https://races/clear");
     });
 
@@ -76,83 +164,129 @@ $(function() {
         $.post("https://races/reverse");
     });
 
-    $("#load").click(function() {
+    $("#edit_load").click(function() {
         $.post("https://races/load", JSON.stringify({
             public: false,
-            raceName: $("#name").val()
+            raceName: $("#edit_name").val()
         }));
     });
 
     $("#save").click(function() {
         $.post("https://races/save", JSON.stringify({
             public: false,
-            raceName: $("#name").val()
+            raceName: $("#edit_name").val()
         }));
     });
 
     $("#overwrite").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
             public: false,
-            raceName: $("#name").val()
+            raceName: $("#edit_name").val()
         }));
     });
 
     $("#delete").click(function() {
         $.post("https://races/delete", JSON.stringify({
             public: false,
-            raceName: $("#name").val()
+            raceName: $("#edit_name").val()
         }));
     });
 
-    $("#blt").click(function() {
+    $("#edit_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
             public: false,
-            raceName: $("#name").val()
+            raceName: $("#edit_name").val()
         }));
     });
 
-    $("#list").click(function() {
+    $("#edit_list").click(function() {
         $.post("https://races/list", JSON.stringify({
             public: false
         }));
     });
 
-    $("#loadPublic").click(function() {
+    $("#edit_loadPublic").click(function() {
         $.post("https://races/load", JSON.stringify({
             public: true,
-            raceName: $("#namePublic").val()
+            raceName: $("#edit_namePublic").val()
         }));
     });
 
     $("#savePublic").click(function() {
         $.post("https://races/save", JSON.stringify({
             public: true,
-            raceName: $("#namePublic").val()
+            raceName: $("#edit_namePublic").val()
         }));
     });
 
     $("#overwritePublic").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
             public: true,
-            raceName: $("#namePublic").val()
+            raceName: $("#edit_namePublic").val()
         }));
     });
 
     $("#deletePublic").click(function() {
         $.post("https://races/delete", JSON.stringify({
             public: true,
-            raceName: $("#namePublic").val()
+            raceName: $("#edit_namePublic").val()
         }));
     });
 
-    $("#bltPublic").click(function() {
+    $("#edit_bltPublic").click(function() {
         $.post("https://races/blt", JSON.stringify({
             public: true,
-            raceName: $("#namePublic").val()
+            raceName: $("#edit_namePublic").val()
         }));
     });
 
-    $("#listPublic").click(function() {
+    $("#edit_listPublic").click(function() {
+        $.post("https://races/list", JSON.stringify({
+            public: true
+        }));
+    });
+
+    $("#edit_close").click(function() {
+        $("#editPanel").hide();
+        $.post("https://races/close");
+    });
+
+    /* register panel */
+    $("#register_load").click(function() {
+        $.post("https://races/load", JSON.stringify({
+            public: false,
+            raceName: $("#register_name").val()
+        }));
+    });
+
+    $("#register_blt").click(function() {
+        $.post("https://races/blt", JSON.stringify({
+            public: false,
+            raceName: $("#register_name").val()
+        }));
+    });
+
+    $("#register_list").click(function() {
+        $.post("https://races/list", JSON.stringify({
+            public: false
+        }));
+    });
+
+    $("#register_loadPublic").click(function() {
+        $.post("https://races/load", JSON.stringify({
+            public: true,
+            raceName: $("#register_namePublic").val()
+        }));
+    });
+
+    $("#register_bltPublic").click(function() {
+        $.post("https://races/blt", JSON.stringify({
+            public: true,
+            raceName: $("#register_namePublic").val()
+        }));
+    });
+
+    $("#register_listPublic").click(function() {
         $.post("https://races/list", JSON.stringify({
             public: true
         }));
@@ -166,7 +300,7 @@ $(function() {
             rtype: $("#rtype").val(),
             restrict: $("#restrict").val(),
             filename: $("#filename").val(),
-            vclass: $("#vclass0").val(),
+            vclass: $("#register_vclass").val(),
             svehicle: $("#svehicle").val()
         }));
     });
@@ -181,137 +315,40 @@ $(function() {
         }));
     });
 
-    $("#leave0").click(function() {
-        $.post("https://races/leave");
-    });
-
-    $("#rivals0").click(function() {
-        $.post("https://races/rivals");
-    });
-
-    $("#respawn0").click(function() {
-        $.post("https://races/respawn");
-    });
-
-    $("#results0").click(function() {
-        $.post("https://races/results");
-    });
-
-    $("#spawn0").click(function() {
-        $.post("https://races/spawn", JSON.stringify({
-            vehicle: $("#vehicle0").val()
-        }));
-    });
-
-    $("#lvehicles0").click(function() {
-        $.post("https://races/lvehicles", JSON.stringify({
-            vclass: $("#vclass1").val()
-        }));
-    });
-
-    $("#speedo0").click(function() {
-        $.post("https://races/speedo", JSON.stringify({
-            unit: ""
-        }));
-    });
-
-    $("#change0").click(function() {
-        $.post("https://races/speedo", JSON.stringify({
-            unit: $("#unit0").val()
-        }));
-    });
-
-    $("#funds0").click(function() {
-        $.post("https://races/funds");
-    });
-
-    $("#closeMain").click(function() {
-        $("#main").hide();
+    $("#register_close").click(function() {
+        $("#registerPanel").hide();
         $.post("https://races/close");
     });
 
-    $("#request").click(function() {
-        $.post("https://races/request");
-    });
-
-    $("#clear1").click(function() {
-        $.post("https://races/clear");
-    });
-
-    $("#leave1").click(function() {
-        $.post("https://races/leave");
-    });
-
-    $("#rivals1").click(function() {
-        $.post("https://races/rivals");
-    });
-
-    $("#respawn1").click(function() {
-        $.post("https://races/respawn");
-    });
-
-    $("#results1").click(function() {
-        $.post("https://races/results");
-    });
-
-    $("#spawn1").click(function() {
-        $.post("https://races/spawn", JSON.stringify({
-            vehicle: $("#vehicle1").val()
-        }));
-    });
-
-    $("#lvehicles1").click(function() {
-        $.post("https://races/lvehicles", JSON.stringify({
-            vclass: $("#vclass2").val()
-        }));
-    });
-
-    $("#speedo1").click(function() {
-        $.post("https://races/speedo", JSON.stringify({
-            unit: ""
-        }));
-    });
-
-    $("#change1").click(function() {
-        $.post("https://races/speedo", JSON.stringify({
-            unit: $("#unit1").val()
-        }));
-    });
-
-    $("#funds1").click(function() {
-        $.post("https://races/funds");
-    });
-
-    $("#closeRestricted").click(function() {
-        $("#restricted").hide();
-        $.post("https://races/close");
-    });
-
-    $("#closeReply").click(function() {
-        $("#reply").hide();
+    /* reply panel */
+    $("#reply_close").click(function() {
+        $("#replyPanel").hide();
+        replyOpen = false;
         if ("main" == openPanel) {
-            $("#main").show();
-        } else if("restricted" == openPanel) {
-            $("#restricted").show();
+            $("#mainPanel").show();
+        } else if("edit" == openPanel) {
+            $("#editPanel").show();
+        } else if("register" == openPanel) {
+            $("#registerPanel").show();
         }
     });
 
     document.onkeyup = function(data) {
         if (data.key == "Escape") {
             if (true == replyOpen) {
-                $("#reply").hide();
+                $("#replyPanel").hide();
                 replyOpen = false;
                 if ("main" == openPanel) {
-                    $("#main").show();
-                } else if("restricted" == openPanel) {
-                    $("#restricted").show();
+                    $("#mainPanel").show();
+                } else if("edit" == openPanel) {
+                    $("#editPanel").show();
+                } else if("register" == openPanel) {
+                    $("#registerPanel").show();
                 }
             } else {
-                if ("main" == openPanel) {
-                    $("#main").hide();
-                } else if("restricted" == openPanel) {
-                    $("#restricted").hide();
-                }
+                $("#mainPanel").hide();
+                $("#editPanel").hide();
+                $("#registerPanel").hide();
                 $.post("https://races/close");
             }
         }

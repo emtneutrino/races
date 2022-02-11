@@ -36,6 +36,10 @@ local STATE_REGISTERING <const> = 2
 local STATE_RACING <const> = 3
 local raceState = STATE_IDLE -- race state
 
+local ROLE_EDIT <const> = 1 -- editor role
+local ROLE_REGISTER <const> = 2 -- register race role
+local ROLE_SPAWN <const> = 4 -- spawn vehicles role
+
 local white <const> = {r = 255, g = 255, b = 255}
 local red <const> = {r = 255, g = 0, b = 0}
 local green <const> = {r = 0, g = 255, b = 0}
@@ -146,7 +150,7 @@ local unitom = "imperial" -- current unit of measurement
 
 local panelShown = false -- flag indicating if command button panel is shown
 
-local permit = true -- flag indicating if player is permitted to create tracks and register races
+local permissions = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
 
 math.randomseed(GetCloudTimeAsInt())
 
@@ -576,12 +580,28 @@ local function editWaypoints(coord)
     end
 end
 
-local function request()
-    TriggerServerEvent("races:request")
+local function request(role)
+    if role ~= nil then
+        local roleBit = 0
+        if "edit" == role then
+            roleBit = ROLE_EDIT
+        elseif "register" == role then
+            roleBit = ROLE_REGISTER
+        elseif "spawn" == role then
+            roleBit = ROLE_SPAWN
+        end
+        if roleBit > 0 then
+            TriggerServerEvent("races:request", roleBit)
+        else
+            sendMessage("Cannot make request.  Invalid role.\n")
+        end
+    else
+        sendMessage("Cannot make request.  Role required.\n")
+    end
 end
 
 local function edit()
-    if false == permit then
+    if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -628,7 +648,7 @@ local function clear()
 end
 
 local function reverse()
-    if false == permit then
+    if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -655,7 +675,7 @@ local function reverse()
 end
 
 local function loadRace(public, raceName)
-    if false == permit then
+    if permissions & (ROLE_EDIT | ROLE_REGISTER) == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -671,7 +691,7 @@ local function loadRace(public, raceName)
 end
 
 local function saveRace(public, raceName)
-    if false == permit then
+    if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -687,7 +707,7 @@ local function saveRace(public, raceName)
 end
 
 local function overwriteRace(public, raceName)
-    if false == permit then
+    if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -703,7 +723,7 @@ local function overwriteRace(public, raceName)
 end
 
 local function deleteRace(public, raceName)
-    if false == permit then
+    if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -715,10 +735,6 @@ local function deleteRace(public, raceName)
 end
 
 local function bestLapTimes(public, raceName)
-    if false == permit then
-        sendMessage("Permission required.\n")
-        return
-    end
     if raceName ~= nil then
         TriggerServerEvent("races:blt", public, raceName)
     else
@@ -727,15 +743,11 @@ local function bestLapTimes(public, raceName)
 end
 
 local function list(public)
-    if false == permit then
-        sendMessage("Permission required.\n")
-        return
-    end
     TriggerServerEvent("races:list", public)
 end
 
 local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
-    if false == permit then
+    if permissions & ROLE_REGISTER == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -828,7 +840,7 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
 end
 
 local function unregister()
-    if false == permit then
+    if permissions & ROLE_REGISTER == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -836,7 +848,7 @@ local function unregister()
 end
 
 local function startRace(delay)
-    if false == permit then
+    if permissions & ROLE_REGISTER == 0 then
         sendMessage("Permission required.\n")
         return
     end
@@ -904,7 +916,7 @@ local function respawn()
             SetEntityAsMissionEntity(vehicle, true, true)
             DeleteVehicle(vehicle)
         end
-        local coord =  waypoints[prev].coord
+        local coord = waypoints[prev].coord
         if currentVehicleHash ~= nil then
             RequestModel(currentVehicleHash)
             while HasModelLoaded(currentVehicleHash) == false do
@@ -949,6 +961,10 @@ local function viewResults(chatOnly)
 end
 
 local function spawn(vehicleHash)
+    if permissions & ROLE_SPAWN == 0 then
+        sendMessage("Permission required.\n")
+        return
+    end
     vehicleHash = vehicleHash or defaultVehicle
     if IsModelInCdimage(vehicleHash) == 1 and IsModelAVehicle(vehicleHash) == 1 then
         RequestModel(vehicleHash)
@@ -996,28 +1012,36 @@ local function viewFunds()
     TriggerServerEvent("races:funds")
 end
 
-local function showPanel()
+local function showPanel(panel)
     panelShown = true
-    SetNuiFocus(true, true)
-    if true == permit then
+    if nil == panel then
+        SetNuiFocus(true, true)
         SendNUIMessage({
             panel = "main",
+            defaultVehicle = defaultVehicle
+        })
+    elseif "edit" == panel then
+        SetNuiFocus(true, true)
+        SendNUIMessage({
+            panel = "edit"
+        })
+    elseif "register" == panel then
+        SetNuiFocus(true, true)
+        SendNUIMessage({
+            panel = "register",
             defaultBuyin = defaultBuyin,
             defaultLaps = defaultLaps,
             defaultTimeout = defaultTimeout,
-            defaultDelay = defaultDelay,
-            defaultVehicle = defaultVehicle
+            defaultDelay = defaultDelay
         })
     else
-        SendNUIMessage({
-            panel = "restricted",
-            defaultVehicle = defaultVehicle,
-        })
+        notifyPlayer("Invalid panel.\n")
+        panelShown = false
     end
 end
 
-RegisterNUICallback("request", function()
-    request()
+RegisterNUICallback("request", function(data)
+    request(data.role)
 end)
 
 RegisterNUICallback("edit", function()
@@ -1222,7 +1246,8 @@ AddEventHandler("sounds", function(sounds)
             sound.name ~= "CONTINUOUS_SLIDER" and
             sound.name ~= "SwitchWhiteWarning" and
             sound.name ~= "SwitchRedWarning" and
-            sound.name ~= "ZOOM" and sound.name ~= "Microphone" and
+            sound.name ~= "ZOOM" and
+            sound.name ~= "Microphone" and
             sound.ref ~= "MP_CCTV_SOUNDSET" and
             sound.ref ~= "SHORT_PLAYER_SWITCH_SOUND_SET"
         then
@@ -1280,7 +1305,7 @@ RegisterCommand("races", function(_, args)
         local msg = "Commands:\n"
         msg = msg .. "Required arguments are in square brackets.  Optional arguments are in parentheses.\n"
         msg = msg .. "/races - display list of available /races commands\n"
-        msg = msg .. "/races request - request permission to create tracks and register races\n"
+        msg = msg .. "/races request [role] - request permission to have [role] = {edit, register, spawn} role\n"
         msg = msg .. "/races edit - toggle editing race waypoints\n"
         msg = msg .. "/races clear - clear race waypoints\n"
         msg = msg .. "/races reverse - reverse order of race waypoints\n"
@@ -1311,12 +1336,12 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races spawn (name) - spawn a vehicle; (name) defaults to 'adder'\n"
         msg = msg .. "/races lvehicles (class) - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\n"
-        msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit); otherwise toggle display of speedometer if (unit) is not specified\n"
+        msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit) = {imp, met}; otherwise toggle display of speedometer if (unit) is not specified\n"
         msg = msg .. "/races funds - view available funds\n"
-        msg = msg .. "/races panel - display command button panel\n"
+        msg = msg .. "/races panel (panel) - display (panel) = {edit, register} panel; otherwise display main panel if (panel) is not specified\n"
         notifyPlayer(msg)
     elseif "request" == args[1] then
-        request()
+        request(args[2])
     elseif "edit" == args[1] then
         edit()
     elseif "clear" == args[1] then
@@ -1370,7 +1395,7 @@ RegisterCommand("races", function(_, args)
     elseif "funds" == args[1] then
         viewFunds()
     elseif "panel" == args[1] then
-        showPanel()
+        showPanel(args[2])
 --[[
     elseif "test" == args[1] then
         if "0" == args[2] then
@@ -1397,8 +1422,12 @@ RegisterCommand("races", function(_, args)
 end)
 
 RegisterNetEvent("races:permission")
-AddEventHandler("races:permission", function(permission)
-    permit = permission
+AddEventHandler("races:permission", function(perms)
+    if perms & ROLE_EDIT == 0 and STATE_EDITING == raceState then
+        permissions = permissions | ROLE_EDIT
+        edit()
+    end
+    permissions = perms
 end)
 
 RegisterNetEvent("races:message")
@@ -1918,6 +1947,7 @@ Citizen.CreateThread(function()
                 else
                     currentVehicleName = "FEET"
                 end
+
                 if false == started then
                     started = true
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)

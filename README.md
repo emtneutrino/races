@@ -8,7 +8,7 @@ CLIENT COMMANDS
 ---------------
 Required arguments are in square brackets.  Optional arguments are in parentheses.\
 **`/races`** - display list of available **`/races`** commands\
-**`/races request`** - request permission to create tracks and register races\
+**`/races request [role]`** - request permission to have [role] = {edit, register, spawn} role\
 **`/races edit`** - toggle editing race waypoints\
 **`/races clear`** - clear race waypoints\
 **`/races reverse`** - reverse order of race waypoints\
@@ -39,11 +39,11 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races results`** - view latest race results\
 **`/races spawn (name)`** - spawn a vehicle; (name) defaults to 'adder'\
 **`/races lvehicles (class)`** - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\
-**`/races speedo (unit)`** - change unit of speed measurement to (unit); otherwise toggle display of speedometer if (unit) is not specified\
+**`/races speedo (unit)`** - change unit of speed measurement to (unit) = {imp, met}; otherwise toggle display of speedometer if (unit) is not specified\
 **`/races funds`** - view available funds\
-**`/races panel`** - display command button panel
+**`/races panel (panel)`** - display (panel) = {edit, register} panel; otherwise display main panel if (panel) is not specified
 
-**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`.**
+**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`, `/races panel edit` or `/races panel register`.**
 
 SERVER COMMANDS
 ---------------
@@ -52,30 +52,28 @@ SERVER COMMANDS
 **`races import [name]`** - import race file named **`[name].json`** into public races without best lap times\
 **`races exportwblt [name]`** - export public race saved as [name] with best lap times to file named **`[name].json`**\
 **`races importwblt [name]`** - import race file named **`[name].json`** into public races with best lap times\
-**`races listReqs`** - list requests to create tracks and register races\
-**`races approve [playerID]`** - approve request of [playerID] to create tracks and register races\
-**`races deny [playerID]`** - deny request of [playerID] to create tracks and register races\
+**`races listReqs`** - list requests to edit tracks, register races and spawn vehicles\
+**`races approve [playerID]`** - approve request of [playerID] to edit tracks, register races or spawn vehicles\
+**`races deny [playerID]`** - deny request of [playerID] to edit tracks, register races or spawn vehicles\
 **`races listRoles`** - list approved players' roles\
-**`races removeRole [name]`** - remove player [name]'s role
+**`races removeRoles [name]`** - remove player [name]'s roles
 
 **IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
 **`races updateRaceData`** - update **`raceData.json`** to new format\
 **`races updateRace [name]`** - update exported race **`[name].json`** to new format
 
-**IF YOU WISH TO LIMIT WHO CAN CREATE TRACKS AND REGISTER RACES, YOU WILL NEED TO CHANGE THE LINE `requirePermission = false` IN `races_server.lua` TO `requirePermission = true`.**
+**IF YOU WISH TO LIMIT WHO CAN EDIT TRACKS, REGISTER RACES AND SPAWN VEHICLES, YOU WILL NEED TO CHANGE THE LINE `requirePermission = false` IN `races_server.lua` TO `requirePermission = true`.**
 
 SAMPLE RACES
 ------------
-If permission to create tracks and register races is not required or if it is required and you have been granted permission, the sample races will be available to you.  There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing **`/races loadPublic 00`**.  To race in the loaded race, you need to register by typing **`/races register`**.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type **`/races start`**.
+If permission to register races is not required, the sample races will be available to you.  There are six sample races:  '00', '01', '02', '03', '04' and '05' saved in the public races list.  You can load sample race '00' by typing **`/races loadPublic 00`**.  To race in the loaded race, you need to register by typing **`/races register`**.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type **`/races start`**.
 
 There are backups of the sample races in the **`sampleraces/`** folder with the extension '.json'.  Race '00' is backed up as **`sampleraces/00.json`**.  If any of the sample races were deleted from the public list of races, you can restore them.  Copy the deleted race from the **`sampleraces/`** folder to the **`resources/races/`** folder.  In the server console, type **`races import 00`** to import race '00' back into the public races list.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
-If permission to create tracks and register races is required, you will need to request permission.  Otherwise, all commands are permitted.  Type **`/races request`** on the client to request permission.  In the server console you will need to list who has made requests by typing **`races listReqs`**.  The format of each element of the list is **`[playerID]:[name]`** where [playerID] is the player ID who requested permission and [name] is the player's name.  To approve a request, type **`races approve [playerID]`**.  You should now have permission to create tracks and register races.
-
-Type **`/races edit`** until you see the message 'Editing started'.  Add at least 2 waypoints on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type **`/races edit`** again until you see the message 'Editing stopped'.  Save the race if you want by typing **`/races save myrace`**.  Register your race by typing **`/races register`**.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint which all players will see.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move towards the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once other people have joined, you can start the race by typing **`/races start`**.
+If permission to edit tracks and register races is not required, all the following **`/races`** commands are permitted.  Type **`/races edit`** until you see the message 'Editing started'.  Add at least 2 waypoints on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type **`/races edit`** again until you see the message 'Editing stopped'.  Save the race if you want by typing **`/races save myrace`**.  Register your race by typing **`/races register`**.  At the starting waypoint of the race, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint which all players will see.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move towards the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once other people have joined, you can start the race by typing **`/races start`**.
 
 QUICK GUIDE FOR RACING
 ----------------------
@@ -99,22 +97,23 @@ CLIENT COMMAND DETAILS
 ----------------------
 Type **`/races`** to see the list of available **`/races`** commands.  If you cannot see all the commands, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-By default, permission is not required to use any of the commands.  If permission is required, the following commands will be limited to players who have permission:
+By default, permission is not required to use any of the commands.  If permission is required, there are 3 types of permissions that can be given: edit tracks, register races and spawn vehicles.
+
+If permission is required to edit tracks, the following commands will be restricted to players who have permission:
 
 **`/races edit`**\
 **`/races reverse`**\
-**`/races load [name]`**\
+**`/races load [name]`**
 **`/races save [name]`**\
 **`/races overwrite [name]`**\
 **`/races delete [name]`**\
-**`/races blt [name]`**\
-**`/races list`**\
-**`/races loadPublic [name]`**\
+**`/races loadPublic [name]`**
 **`/races savePublic [name]`**\
 **`/races overwritePublic [name]`**\
-**`/races deletePublic [name]`**\
-**`/races bltPublic [name]`**\
-**`/races listPublic`**\
+**`/races deletePublic [name]`**
+
+If permission is required to register races, the following commands will be restricted to players who have permission:
+
 **`/races register (buy-in) (laps) (DNF timeout)`**\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`**\
 **`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`**\
@@ -122,7 +121,11 @@ By default, permission is not required to use any of the commands.  If permissio
 **`/races unregister`**\
 **`/races start (delay)`**
 
-If the server limits who can create tracks and register races, players will need to request permission.  Type **`/races request`** to request permission.  The server administrator will then approve or deny the request and the player will be notified.
+If permission is required to spawn vehicles, the following command will be restricted to players who have permission:
+
+**`/races spawn (name)`**
+
+If permission is required to edit tracks, register races and spawn vehicles, players who wish to do these tasks will need to request permission.  Type **`/races request edit`** to request permission to edit tracks.  Type **`/races request register`** to request permission to register races.  Type **`/races request spawn`** to request permission to spawn vehicles.  The server administrator will then approve or deny the request and the player will be notified.
 
 Type **`/races edit`** until you see the message 'Editing started' to start editing waypoints.  Once you are finished, type **`/races edit`** until you see the message 'Editing stopped' to stop editing.  You cannot edit waypoints if you are joined to a race.  Leave the race or finish it first.
 
@@ -264,7 +267,7 @@ To toggle the display of the speedometer at any time, type **`/races speedo`**. 
 
 To view your available funds for race buy-ins, type **`/races funds`**.
 
-Type **`/races panel`** to show the command button panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type **`/races panel`** to show the main panel.  Type **`/races panel edit`** to show the edit tracks panel.  Type **`/races panel register`** to show the register races panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its waypoints.  If you like the race, you can save the waypoints to your private list by typing **`/races save nicerace`**.
 
@@ -284,17 +287,17 @@ Type **`races exportwblt publicrace`** to export the public race saved as 'publi
 
 Type **`races importwblt myrace`** to import the race file named **`resources/races/myrace.json`** into the public races list with best lap times.  You cannot import 'myrace' if it already exists in the public races list.  You will need to rename the file and then import with the new name.
 
-If permission is required to create tracks and register races, the following commands administer these permissions:
+**If permission is required to edit tracks, register races and spawn vehicles, the following commands administer these permissions:**
 
-Type **`races listReqs`** to list requests by players to create tracks and register races.  The format of each element of the list is **`[playerID]:[name]`** where [playerID] is the player ID who requested permission and [name] is the player's name.
+Type **`races listReqs`** to list requests by players to edit tracks, register races and spawn vehicles.  The format of each element of the list is **`[playerID]:[name]:[role]`** where [playerID] is the player ID who requested permission, [name] is the player's name and [role] is either "EDIT", "REGISTER" or "SPAWN".
 
-Type **`races approve [playerID]`** to approve the request of the player with [playerID] to create tracks and register races.
+Type **`races approve [playerID]`** to approve the request of the player with [playerID].
 
-Type **`races deny [playerID]`** to deny the request of the player with [playerID] to create tracks and register races.
+Type **`races deny [playerID]`** to deny the request of the player with [playerID].
 
-Type **`races listRoles`** to list the players who have been approved to create tracks and register races.  The format of each element of the list is **`[role]:[name]`** where [role] is a number specifying the role and [name] is the name of the player.
+Type **`races listRoles`** to list the players who have had their roles approved.  The format of each element of the list is **`[name]:[roles]`** where [name] is the name of the player and [roles] is a list of roles the player has which can be any combination of "EDIT", "REGISTER" and "SPAWN".
 
-Type **`races removeRole [name]`** to remove the player [name] from the list of approved players who can create tracks and register races.
+Type **`races removeRoles [name]`** to remove all the roles of the player with [name].
 
 Roles are saved in the file **`resources/races/roles.json`**.
 
@@ -336,11 +339,14 @@ Editing waypoints in waypoint map\
 Editing waypoints in world\
 <img src="screenshots/Screenshot%20(8).png" width="800">
 
-Unrestricted command button panel\
+Main command button panel\
 <img src="screenshots/Screenshot%20(9).png" width="800">
 
-Restricted command button panel\
+Edit tracks command button panel\
 <img src="screenshots/Screenshot%20(10).png" width="800">
+
+Register races command button panel\
+<img src="screenshots/Screenshot%20(11).png" width="800">
 
 LICENSE
 -------
