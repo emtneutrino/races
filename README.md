@@ -47,6 +47,7 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 
 SERVER COMMANDS
 ---------------
+Required arguments are in square brackets.  Optional arguments are in parentheses.\
 **`races`** - display list of available **`races`** commands\
 **`races export [name]`** - export public race saved as [name] without best lap times to file named **`[name].json`**\
 **`races import [name]`** - import race file named **`[name].json`** into public races without best lap times\
