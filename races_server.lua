@@ -345,6 +345,10 @@ local function removeRole(playerName, roleName)
             for license, role in pairs(roles) do
                 if role.name == playerName then
                     lic = license
+                    if role.roleBits & roleBit == 0 then
+                        print("removeRole: Role was not assigned.")
+                        return
+                    end
                     roles[lic].roleBits = roles[lic].roleBits & ~roleBit
                     break
                 end
