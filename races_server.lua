@@ -227,6 +227,7 @@ local function import(raceName, withBLT)
 end
 
 local function listReqs()
+    --requests[playerID] = {name, roleBit}
     for playerID, request in pairs(requests) do
         local role = "INVALID ROLE"
         if ROLE_EDIT == request.roleBit then
@@ -326,74 +327,74 @@ local function listRoles()
     end
 end
 
-local function removeRoles(name)
+local function removeRole(playerName, roleName)
     if true == requirePermission then
-        if name ~= nil then
+        if playerName ~= nil then
+            local roleBit = ~0
+            if "edit" == roleName then
+                roleBit = ROLE_EDIT
+            elseif "register" == roleName then
+                roleBit = ROLE_REGISTER
+            elseif "spawn" == roleName then
+                roleBit = ROLE_SPAWN
+            elseif roleName ~= nil then
+                print("removeRole: Invalid role.")
+                return
+            end
             local lic = nil
             for license, role in pairs(roles) do
-                if role.name == name then
-                    roles[license] = nil
+                if role.name == playerName then
                     lic = license
-                    print("removeRoles: '" .. name .. "' roles removed.")
-                    local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-                    if file ~= nil then
-                        file:write(json.encode(roles))
-                        file:close()
-                    else
-                        print("removeRoles: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
-                    end
+                    roles[lic].roleBits = roles[lic].roleBits & ~roleBit
                     break
                 end
             end
             if lic ~= nil then
-                for _, index in pairs(GetPlayers()) do
-                    local license = GetPlayerIdentifier(index, 0)
-                    if license ~= nil then
-                        if string.sub(license, 9) == lic then
-                            index = tonumber(index)
-                            if races[index] ~= nil then
-                                if races[index].buyin > 0 then
-                                    for i in pairs(races[index].players) do
-                                        Deposit(i, races[index].buyin)
-                                        notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
+                if roles[lic].roleBits & ROLE_REGISTER == 0  then
+                    for _, index in pairs(GetPlayers()) do
+                        local license = GetPlayerIdentifier(index, 0)
+                        if license ~= nil then
+                            if string.sub(license, 9) == lic then
+                                index = tonumber(index)
+                                if races[index] ~= nil and STATE_REGISTERING == races[index].state then
+                                    if races[index].buyin > 0 then
+                                        for i in pairs(races[index].players) do
+                                            Deposit(i, races[index].buyin)
+                                            notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
+                                        end
                                     end
+                                    races[index] = nil
+                                    TriggerClientEvent("races:unregister", -1, index)
                                 end
-                                races[index] = nil
-                                TriggerClientEvent("races:unregister", -1, index)
+                                TriggerClientEvent("races:permission", index, roles[lic].roleBits)
+                                break
                             end
-                            TriggerClientEvent("races:permission", index, 0)
-                            break
+                        else
+                            print("removeRole: Could not get license for player index '" .. index .. "'.")
                         end
-                    else
-                        print("removeRoles: Could not get license for player index '" .. index .. "'.")
                     end
                 end
+                if 0 == roles[lic].roleBits then
+                    roles[lic] = nil
+                    print("removeRole: All '" .. playerName .. "' roles removed.")
+                else
+                    print("removeRole: '" .. playerName .. "' role removed.")
+                end
+                local file, errMsg, errCode = io.open(rolesDataFile, "w+")
+                if file ~= nil then
+                    file:write(json.encode(roles))
+                    file:close()
+                else
+                    print("removeRole: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                end
             else
-                print("removeRoles: '" .. name .. "' not found.")
+                print("removeRole: '" .. playerName .. "' not found.")
             end
         else
-            print("removeRoles: Name required.")
+            print("removeRole: Name required.")
         end
     else
-        print("removeRoles: Permission not required.")
-    end
-end
-
-local function getPermissions(source)
-    if true == requirePermission then
-        local license = GetPlayerIdentifier(source, 0)
-        if license ~= nil then
-            license = string.sub(license, 9)
-            if nil == roles[license] then
-                return 0
-            else
-                return roles[license].roleBits
-            end
-        else
-            return 0
-        end
-    else
-        return (ROLE_EDIT | ROLE_REGISTER | ROLE_SPAWN)
+        print("removeRole: Permission not required.")
     end
 end
 
@@ -756,6 +757,24 @@ local function round(f)
     return (f - math.floor(f) >= 0.5) and (math.floor(f) + 1) or math.floor(f)
 end
 
+local function getPermissions(source)
+    if true == requirePermission then
+        local license = GetPlayerIdentifier(source, 0)
+        if license ~= nil then
+            license = string.sub(license, 9)
+            if nil == roles[license] then
+                return 0
+            else
+                return roles[license].roleBits
+            end
+        else
+            return 0
+        end
+    else
+        return (ROLE_EDIT | ROLE_REGISTER | ROLE_SPAWN)
+    end
+end
+
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
@@ -768,7 +787,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "races approve [playerID] - approve request of [playerID] to edit tracks, register races or spawn vehicles\n"
         msg = msg .. "races deny [playerID] - deny request of [playerID] to edit tracks, register races or spawn vehicles\n"
         msg = msg .. "races listRoles - list approved players' roles\n"
-        msg = msg .. "races removeRoles [name] - remove player [name]'s roles\n"
+        msg = msg .. "races removeRole [name] (role) - remove player [name]'s (role) = {edit, register, spawn} role; otherwise remove all roles if (role) is not specified\n"
         msg = msg .. "races updateRaceData - update 'raceData.json' to new format\n"
         msg = msg .. "races updateRace [name] - update exported race '[name].json' to new format\n"
         print(msg)
@@ -788,8 +807,8 @@ RegisterCommand("races", function(_, args)
         deny(args[2])
     elseif "listRoles" == args[1] then
         listRoles()
-    elseif "removeRoles" == args[1] then
-        removeRoles(args[2])
+    elseif "removeRole" == args[1] then
+        removeRole(args[2], args[3])
     elseif "updateRaceData" == args[1] then
         updateRaceData()
     elseif "updateRace" == args[1] then

@@ -56,7 +56,7 @@ SERVER COMMANDS
 **`races approve [playerID]`** - approve request of [playerID] to edit tracks, register races or spawn vehicles\
 **`races deny [playerID]`** - deny request of [playerID] to edit tracks, register races or spawn vehicles\
 **`races listRoles`** - list approved players' roles\
-**`races removeRoles [name]`** - remove player [name]'s roles
+**`races removeRole [name] (role)`** - remove player [name]'s (role) = {edit, register, spawn} role; otherwise remove all roles if (role) is not specified
 
 **IF YOU WANT TO PRESERVE RACES FROM A PREVIOUS VERSION OF THESE SCRIPTS, YOU SHOULD UPDATE `raceData.json` AND ANY EXPORTED RACES BY EXECUTING THE FOLLOWING COMMANDS BEFORE CLIENTS CONNECT TO THE SERVER TO USE THE NEW RACE DATA FORMAT WHICH INCLUDES WAYPOINT RADIUS SIZES.**
 
@@ -297,7 +297,7 @@ Type **`races deny [playerID]`** to deny the request of the player with [playerI
 
 Type **`races listRoles`** to list the players who have had their roles approved.  The format of each element of the list is **`[name]:[roles]`** where [name] is the name of the player and [roles] is a list of roles the player has which can be any combination of "EDIT", "REGISTER" and "SPAWN".
 
-Type **`races removeRoles [name]`** to remove all the roles of the player with [name].
+Type **`races removeRole [name] (role)`** to remove player [name]'s (role) which can be "edit", "register" or "spawn".  If (role) is not specified, remove all roles.
 
 Roles are saved in the file **`resources/races/roles.json`**.
 
