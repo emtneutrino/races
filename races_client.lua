@@ -90,8 +90,8 @@ local selectedWaypoint = 0 -- index of currently selected waypoint
 local lastSelectedWaypoint = 0 -- index of last selected waypoint
 
 local raceIndex = -1 -- index of race player has joined
-local publicRace = false -- flag indicating if saved race is public or not
-local savedRaceName = nil -- name of saved waypoints - nil if waypoints not saved
+local isPublicTrack = false -- flag indicating if saved track is public or not
+local savedTrackName = nil -- name of saved track - nil if track not saved
 
 local waypoints = {} -- waypoints[] = {coord = {x, y, z, r}, checkpoint, blip, sprite, color, number, name}
 local startIsFinish = false -- flag indicating if start and finish are same waypoint
@@ -143,12 +143,12 @@ local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, 
 
 local started = false -- flag indicating if race started
 
-local starts = {} -- starts[playerID] = {publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, blip, checkpoint} - registration points
+local starts = {} -- starts[playerID] = {isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, blip, checkpoint} - registration points
 
 local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
 
-local panelShown = false -- flag indicating if command button panel is shown
+local panelShown = false -- flag indicating if main, edit or register panel is shown
 
 local permissions = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
 
@@ -201,10 +201,10 @@ end
 
 local function makeCheckpoint(checkpointType, coord, nextCoord, color, alpha, num)
     local zCoord = coord.z
-    if checkpointType ~= 42 and checkpointType ~= 45 then
-        zCoord = zCoord + coord.r / 2.0
-    else
+    if 42 == checkpointType or 45 == checkpointType then
         zCoord = zCoord - coord.r / 2.0
+    else
+        zCoord = zCoord + coord.r / 2.0
     end
     local checkpoint = CreateCheckpoint(checkpointType, coord.x, coord.y, zCoord, nextCoord.x, nextCoord.y, nextCoord.z, coord.r * 2.0, color.r, color.g, color.b, alpha, num)
     SetCheckpointCylinderHeight(checkpoint, 10.0, 10.0, coord.r * 2.0)
@@ -486,7 +486,7 @@ local function editWaypoints(coord)
             selectedWaypoint = lastSelectedWaypoint
         end
 
-        savedRaceName = nil
+        savedTrackName = nil
 
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
@@ -553,7 +553,7 @@ local function editWaypoints(coord)
 
                     selectedWaypoint = 0
                     lastSelectedWaypoint = 0
-                    savedRaceName = nil
+                    savedTrackName = nil
                 else
                     SetBlipColour(waypoints[lastSelectedWaypoint].blip, waypoints[lastSelectedWaypoint].color)
                     local color = getCheckpointColor(waypoints[lastSelectedWaypoint].color)
@@ -630,7 +630,7 @@ local function clear()
         deleteWaypointBlips()
         waypoints = {}
         startIsFinish = false
-        savedRaceName = nil
+        savedTrackName = nil
         sendMessage("Waypoints cleared.\n")
     elseif STATE_EDITING == raceState then
         highlightedCheckpoint = 0
@@ -640,7 +640,7 @@ local function clear()
         deleteWaypointBlips()
         waypoints = {}
         startIsFinish = false
-        savedRaceName = nil
+        savedTrackName = nil
         sendMessage("Waypoints cleared.\n")
     else
         sendMessage("Cannot clear waypoints.  Leave race first.\n")
@@ -654,11 +654,11 @@ local function reverse()
     end
     if #waypoints > 1 then
         if STATE_IDLE == raceState then
-            savedRaceName = nil
+            savedTrackName = nil
             loadWaypointBlips(waypointsToCoordsRev())
             sendMessage("Waypoints reversed.\n")
         elseif STATE_EDITING == raceState then
-            savedRaceName = nil
+            savedTrackName = nil
             highlightedCheckpoint = 0
             selectedWaypoint = 0
             lastSelectedWaypoint = 0
@@ -674,14 +674,14 @@ local function reverse()
     end
 end
 
-local function loadRace(public, raceName)
+local function loadTrack(isPublic, trackName)
     if permissions & (ROLE_EDIT | ROLE_REGISTER) == 0 then
         sendMessage("Permission required.\n")
         return
     end
-    if raceName ~= nil then
+    if trackName ~= nil then
         if STATE_IDLE == raceState or STATE_EDITING == raceState then
-            TriggerServerEvent("races:load", public, raceName)
+            TriggerServerEvent("races:load", isPublic, trackName)
         else
             sendMessage("Cannot load.  Leave race first.\n")
         end
@@ -690,60 +690,60 @@ local function loadRace(public, raceName)
     end
 end
 
-local function saveRace(public, raceName)
+local function saveTrack(isPublic, trackName)
     if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
-    if raceName ~= nil then
+    if trackName ~= nil then
         if #waypoints > 1 then
-            TriggerServerEvent("races:save", public, raceName, waypointsToCoords())
+            TriggerServerEvent("races:save", isPublic, trackName, waypointsToCoords())
         else
-            sendMessage("Cannot save.  Race needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot save.  Track needs to have at least 2 waypoints.\n")
         end
     else
         sendMessage("Cannot save.  Name required.\n")
     end
 end
 
-local function overwriteRace(public, raceName)
+local function overwriteTrack(isPublic, trackName)
     if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
-    if raceName ~= nil then
+    if trackName ~= nil then
         if #waypoints > 1 then
-            TriggerServerEvent("races:overwrite", public, raceName, waypointsToCoords())
+            TriggerServerEvent("races:overwrite", isPublic, trackName, waypointsToCoords())
         else
-            sendMessage("Cannot overwrite.  Race needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot overwrite.  Track needs to have at least 2 waypoints.\n")
         end
     else
         sendMessage("Cannot overwrite.  Name required.\n")
     end
 end
 
-local function deleteRace(public, raceName)
+local function deleteTrack(isPublic, trackName)
     if permissions & ROLE_EDIT == 0 then
         sendMessage("Permission required.\n")
         return
     end
-    if raceName ~= nil then
-        TriggerServerEvent("races:delete", public, raceName)
+    if trackName ~= nil then
+        TriggerServerEvent("races:delete", isPublic, trackName)
     else
         sendMessage("Cannot delete.  Name required.\n")
     end
 end
 
-local function bestLapTimes(public, raceName)
-    if raceName ~= nil then
-        TriggerServerEvent("races:blt", public, raceName)
+local function bestLapTimes(isPublic, trackName)
+    if trackName ~= nil then
+        TriggerServerEvent("races:blt", isPublic, trackName)
     else
         sendMessage("Cannot list best lap times.  Name required.\n")
     end
 end
 
-local function list(public)
-    TriggerServerEvent("races:list", public)
+local function list(isPublic)
+    TriggerServerEvent("races:list", isPublic)
 end
 
 local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
@@ -815,12 +815,12 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
                         if #waypoints > 1 then
                             if laps < 2 or (laps >= 2 and true == startIsFinish) then
                                 local rdata = {rtype = rtype, restrict = restrict, filename = filename, vclass = vclass, svehicle = svehicle}
-                                TriggerServerEvent("races:register", waypointsToCoords(), publicRace, savedRaceName, buyin, laps, timeout, rdata)
+                                TriggerServerEvent("races:register", waypointsToCoords(), isPublicTrack, savedTrackName, buyin, laps, timeout, rdata)
                             else
                                 sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
                             end
                         else
-                            sendMessage("Cannot register.  Race needs to have at least 2 waypoints.\n")
+                            sendMessage("Cannot register.  Track needs to have at least 2 waypoints.\n")
                         end
                     elseif STATE_EDITING == raceState then
                         sendMessage("Cannot register.  Stop editing first.\n")
@@ -991,12 +991,12 @@ local function setSpeedo(unit)
     if unit ~= nil then
         if "imp" == unit then
             unitom = "imperial"
-            sendMessage("Unit of measurement changed to Imperial.\n")     
+            sendMessage("Unit of measurement changed to Imperial.\n")
         elseif "met" == unit then
             unitom = "metric"
-            sendMessage("Unit of measurement changed to Metric.\n")     
+            sendMessage("Unit of measurement changed to Metric.\n")
         else
-            sendMessage("Invalid unit of measurement.\n")     
+            sendMessage("Invalid unit of measurement.\n")
         end
     else
         speedo = not speedo
@@ -1057,47 +1057,47 @@ RegisterNUICallback("reverse", function()
 end)
 
 RegisterNUICallback("load", function(data)
-    local raceName = data.raceName
-    if "" == raceName then
-        raceName = nil
+    local trackName = data.trackName
+    if "" == trackName then
+        trackName = nil
     end
-    loadRace(data.public, raceName)
+    loadTrack(data.isPublic, trackName)
 end)
 
 RegisterNUICallback("save", function(data)
-    local raceName = data.raceName
-    if "" == raceName then
-        raceName = nil
+    local trackName = data.trackName
+    if "" == trackName then
+        trackName = nil
     end
-    saveRace(data.public, raceName)
+    saveTrack(data.isPublic, trackName)
 end)
 
 RegisterNUICallback("overwrite", function(data)
-    local raceName = data.raceName
-    if "" == raceName then
-        raceName = nil
+    local trackName = data.trackName
+    if "" == trackName then
+        trackName = nil
     end
-    overwriteRace(data.public, raceName)
+    overwriteTrack(data.isPublic, trackName)
 end)
 
 RegisterNUICallback("delete", function(data)
-    local raceName = data.raceName
-    if "" == raceName then
-        raceName = nil
+    local trackName = data.trackName
+    if "" == trackName then
+        trackName = nil
     end
-    deleteRace(data.public, raceName)
+    deleteTrack(data.isPublic, trackName)
 end)
 
 RegisterNUICallback("blt", function(data)
-    local raceName = data.raceName
-    if "" == raceName then
-        raceName = nil
+    local trackName = data.trackName
+    if "" == trackName then
+        trackName = nil
     end
-    bestLapTimes(data.public, raceName)
+    bestLapTimes(data.isPublic, trackName)
 end)
 
 RegisterNUICallback("list", function(data)
-    list(data.public)
+    list(data.isPublic)
 end)
 
 RegisterNUICallback("register", function(data)
@@ -1306,21 +1306,21 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "Required arguments are in square brackets.  Optional arguments are in parentheses.\n"
         msg = msg .. "/races - display list of available /races commands\n"
         msg = msg .. "/races request [role] - request permission to have [role] = {edit, register, spawn} role\n"
-        msg = msg .. "/races edit - toggle editing race waypoints\n"
-        msg = msg .. "/races clear - clear race waypoints\n"
-        msg = msg .. "/races reverse - reverse order of race waypoints\n"
-        msg = msg .. "/races load [name] - load race waypoints saved as [name]\n"
-        msg = msg .. "/races save [name] - save new race waypoints as [name]\n"
-        msg = msg .. "/races overwrite [name] - overwrite existing race waypoints saved as [name]\n"
-        msg = msg .. "/races delete [name] - delete race waypoints saved as [name]\n"
-        msg = msg .. "/races blt [name] - list 10 best lap times of race saved as [name]\n"
-        msg = msg .. "/races list - list saved races\n"
-        msg = msg .. "/races loadPublic [name] - load public race waypoints saved as [name]\n"
-        msg = msg .. "/races savePublic [name] - save new public race waypoints as [name]\n"
-        msg = msg .. "/races overwritePublic [name] - overwrite existing public race waypoints saved as [name]\n"
-        msg = msg .. "/races deletePublic [name] - delete public race waypoints saved as [name]\n"
-        msg = msg .. "/races bltPublic [name] - list 10 best lap times of public race saved as [name]\n"
-        msg = msg .. "/races listPublic - list public saved races\n"
+        msg = msg .. "/races edit - toggle editing track waypoints\n"
+        msg = msg .. "/races clear - clear track waypoints\n"
+        msg = msg .. "/races reverse - reverse order of track waypoints\n"
+        msg = msg .. "/races load [name] - load track saved as [name]\n"
+        msg = msg .. "/races save [name] - save new track as [name]\n"
+        msg = msg .. "/races overwrite [name] - overwrite existing track saved as [name]\n"
+        msg = msg .. "/races delete [name] - delete track saved as [name]\n"
+        msg = msg .. "/races blt [name] - list 10 best lap times of track saved as [name]\n"
+        msg = msg .. "/races list - list saved tracks\n"
+        msg = msg .. "/races loadPublic [name] - load public track saved as [name]\n"
+        msg = msg .. "/races savePublic [name] - save new public track as [name]\n"
+        msg = msg .. "/races overwritePublic [name] - overwrite existing public track saved as [name]\n"
+        msg = msg .. "/races deletePublic [name] - delete public track saved as [name]\n"
+        msg = msg .. "/races bltPublic [name] - list 10 best lap times of public track saved as [name]\n"
+        msg = msg .. "/races listPublic - list public saved tracks\n"
         msg = msg .. "\n"
         msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) - register your race with no vehicle restrictions\n"
@@ -1349,25 +1349,25 @@ RegisterCommand("races", function(_, args)
     elseif "reverse" == args[1] then
         reverse()
     elseif "load" == args[1] then
-        loadRace(false, args[2])
+        loadTrack(false, args[2])
     elseif "save" == args[1] then
-        saveRace(false, args[2])
+        saveTrack(false, args[2])
     elseif "overwrite" == args[1] then
-        overwriteRace(false, args[2])
+        overwriteTrack(false, args[2])
     elseif "delete" == args[1] then
-        deleteRace(false, args[2])
+        deleteTrack(false, args[2])
     elseif "blt" == args[1] then
         bestLapTimes(false, args[2])
     elseif "list" == args[1] then
         list(false)
     elseif "loadPublic" == args[1] then
-        loadRace(true, args[2])
+        loadTrack(true, args[2])
     elseif "savePublic" == args[1] then
-        saveRace(true, args[2])
+        saveTrack(true, args[2])
     elseif "overwritePublic" == args[1] then
-        overwriteRace(true, args[2])
+        overwriteTrack(true, args[2])
     elseif "deletePublic" == args[1] then
-        deleteRace(true, args[2])
+        deleteTrack(true, args[2])
     elseif "bltPublic" == args[1] then
         bestLapTimes(true, args[2])
     elseif "listPublic" == args[1] then
@@ -1436,29 +1436,23 @@ AddEventHandler("races:message", function(msg)
 end)
 
 RegisterNetEvent("races:load")
-AddEventHandler("races:load", function(public, raceName, waypointCoords)
-    if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
+AddEventHandler("races:load", function(isPublic, trackName, waypointCoords)
+    if isPublic ~= nil and trackName ~= nil and waypointCoords ~= nil then
         if STATE_IDLE == raceState then
-            publicRace = public
-            savedRaceName = raceName
+            isPublicTrack = isPublic
+            savedTrackName = trackName
             loadWaypointBlips(waypointCoords)
-            local msg = "Loaded "
-            msg = msg .. (true == public and "public" or "private")
-            msg = msg .. " race '" .. raceName .. "'.\n"
-            sendMessage(msg)
+            sendMessage("Loaded " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
         elseif STATE_EDITING == raceState then
-            publicRace = public
-            savedRaceName = raceName
+            isPublicTrack = isPublic
+            savedTrackName = trackName
             highlightedCheckpoint = 0
             selectedWaypoint = 0
             lastSelectedWaypoint = 0
             deleteWaypointCheckpoints()
             loadWaypointBlips(waypointCoords)
             setStartToFinishCheckpoints()
-            local msg = "Loaded "
-            msg = msg .. (true == public and "public" or "private")
-            msg = msg .. " race '" .. raceName .. "'.\n"
-            sendMessage(msg)
+            sendMessage("Loaded " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
         else
             notifyPlayer("Ignoring load event.  Currently joined to race.\n")
         end
@@ -1468,38 +1462,31 @@ AddEventHandler("races:load", function(public, raceName, waypointCoords)
 end)
 
 RegisterNetEvent("races:save")
-AddEventHandler("races:save", function(public, raceName)
-    if public ~= nil and raceName ~= nil then
-        publicRace = public
-        savedRaceName = raceName
-        local msg = "Saved "
-        msg = msg .. (true == public and "public" or "private")
-        msg = msg .. " race '" .. raceName .. "'.\n"
-        sendMessage(msg)
+AddEventHandler("races:save", function(isPublic, trackName)
+    if isPublic ~= nil and trackName ~= nil then
+        isPublicTrack = isPublic
+        savedTrackName = trackName
+        sendMessage("Saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring save event.  Invalid parameters.\n")
     end
 end)
 
 RegisterNetEvent("races:overwrite")
-AddEventHandler("races:overwrite", function(public, raceName)
-    if public ~= nil and raceName ~= nil then
-        publicRace = public
-        savedRaceName = raceName
-        local msg = "Overwrote "
-        msg = msg .. (true == public and "public" or "private")
-        msg = msg .. " race '" .. raceName .. "'.\n"
-        sendMessage(msg)
+AddEventHandler("races:overwrite", function(isPublic, trackName)
+    if isPublic ~= nil and trackName ~= nil then
+        isPublicTrack = isPublic
+        savedTrackName = trackName
+        sendMessage("Overwrote " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring overwrite event.  Invalid parameters.\n")
     end
 end)
 
 RegisterNetEvent("races:blt")
-AddEventHandler("races:blt", function(public, raceName, bestLaps)
-    if public ~= nil and raceName ~=nil and bestLaps ~= nil then
-        local msg = true == public and "public" or "private"
-        msg = msg .. " race '" .. raceName .. "'"
+AddEventHandler("races:blt", function(isPublic, trackName, bestLaps)
+    if isPublic ~= nil and trackName ~=nil and bestLaps ~= nil then
+        local msg = (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'"
         if #bestLaps > 0 then
             msg = "Best lap times for " .. msg .. ":\n"
             for pos, bestLap in ipairs(bestLaps) do
@@ -1516,8 +1503,8 @@ AddEventHandler("races:blt", function(public, raceName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, coord, public, raceName, owner, buyin, laps, timeout, vehicleList, rdata)
-    if index ~= nil and coord ~= nil and public ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and vehicleList ~= nil and rdata ~= nil then
+AddEventHandler("races:register", function(index, coord, isPublic, trackName, owner, buyin, laps, timeout, vehicleList, rdata)
+    if index ~= nil and coord ~= nil and isPublic ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and vehicleList ~= nil and rdata ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipAsShortRange(blip, true)
         SetBlipSprite(blip, registerSprite)
@@ -1561,8 +1548,8 @@ AddEventHandler("races:register", function(index, coord, public, raceName, owner
         end
 
         starts[index] = {
-            publicRace = public,
-            savedRaceName = raceName,
+            isPublic = isPublic,
+            trackName = trackName,
             owner = owner,
             buyin = buyin,
             laps = laps,
@@ -1718,11 +1705,11 @@ AddEventHandler("races:join", function(index, waypointCoords)
                 customClassVehicleList = {}
                 startVehicle = starts[index].svehicle
                 randVehicles = {}
-                local msg = "Joined "
-                if nil == starts[index].savedRaceName then
-                    msg = msg .. "unsaved race "
+                local msg = "Joined race using "
+                if nil == starts[index].trackName then
+                    msg = msg .. "unsaved track "
                 else
-                    msg = msg .. (true == starts[index].publicRace and "publicly" or "privately") .. " saved race '" .. starts[index].savedRaceName .. "' "
+                    msg = msg .. (true == starts[index].isPublic and "publicly" or "privately") .. " saved track '" .. starts[index].trackName .. "' "
                 end
                 msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, starts[index].laps)
                 if "rest" == starts[index].rtype then
@@ -1886,7 +1873,7 @@ Citizen.CreateThread(function()
                     selectedWaypoint = 0
                     lastSelectedWaypoint = 0
 
-                    savedRaceName = nil
+                    savedTrackName = nil
 
                     if #waypoints > 0 then
                         if 1 == #waypoints then
@@ -1904,14 +1891,14 @@ Citizen.CreateThread(function()
                     local color = getCheckpointColor(selectedBlipColor)
                     local checkpointType = 38 == waypoints[selectedWaypoint].sprite and finishCheckpoint or midCheckpoint
                     waypoints[selectedWaypoint].checkpoint = makeCheckpoint(checkpointType, waypoints[selectedWaypoint].coord, waypoints[selectedWaypoint].coord, color, 127, selectedWaypoint - 1)
-                    savedRaceName = nil
+                    savedTrackName = nil
                 elseif IsControlJustReleased(0, 188) == 1 and waypoints[selectedWaypoint].coord.r < maxRadius then -- arrow up or DPAD UP
                     waypoints[selectedWaypoint].coord.r = waypoints[selectedWaypoint].coord.r + 0.5
                     DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
                     local color = getCheckpointColor(selectedBlipColor)
                     local checkpointType = 38 == waypoints[selectedWaypoint].sprite and finishCheckpoint or midCheckpoint
                     waypoints[selectedWaypoint].checkpoint = makeCheckpoint(checkpointType, waypoints[selectedWaypoint].coord, waypoints[selectedWaypoint].coord, color, 127, selectedWaypoint - 1)
-                    savedRaceName = nil
+                    savedTrackName = nil
                 end
             end
         elseif STATE_RACING == raceState then
@@ -2148,12 +2135,11 @@ Citizen.CreateThread(function()
                 end
             end
             if closestIndex ~= -1 then
-                local msg = "Join "
-                if nil == starts[closestIndex].savedRaceName then
-                    msg = msg .. "unsaved race "
+                local msg = "Join race using "
+                if nil == starts[closestIndex].trackName then
+                    msg = msg .. "unsaved track "
                 else
-                    msg = msg .. (true == starts[closestIndex].publicRace and "publicly" or "privately")
-                    msg = msg .. " saved race '" .. starts[closestIndex].savedRaceName .. "' "
+                    msg = msg .. (true == starts[closestIndex].isPublic and "publicly" or "privately") .. " saved track '" .. starts[closestIndex].trackName .. "' "
                 end
                 msg = msg .. ("registered by %s :"):format(starts[closestIndex].owner)
                 drawMsg(0.50, 0.50, msg, 0.7, 0)
@@ -2202,7 +2188,7 @@ Citizen.CreateThread(function()
                                 notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
                             end
                         else
-                            if #(starts[closestIndex].vehicleList) == 0 then
+                            if #starts[closestIndex].vehicleList == 0 then
                                 joinRace = false
                                 notifyPlayer("Cannot join race.  No valid vehicles in vehicle list.")
                             else
@@ -2223,7 +2209,7 @@ Citizen.CreateThread(function()
                             end
                         end
                     elseif "rand" == starts[closestIndex].rtype then
-                        if #(starts[closestIndex].vehicleList) == 0 then
+                        if #starts[closestIndex].vehicleList == 0 then
                             joinRace = false
                             notifyPlayer("Cannot join race.  No valid vehicles in vehicle list.")
                         else

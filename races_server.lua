@@ -62,7 +62,7 @@ if false == distValid then
     print("^1Prize distribution table is invalid.")
 end
 
-local requirePermission = false -- flag indicating whether permission is required to edit tracks, register races and spawn vehicles
+local requirePermission <const> = false -- flag indicating whether permission is required to edit tracks, register races and spawn vehicles
 
 local ROLE_EDIT <const> = 1 -- editor role
 local ROLE_REGISTER <const> = 2 -- register race role
@@ -70,7 +70,7 @@ local ROLE_SPAWN <const> = 4 -- spawn vehicles role
 
 local requests = {} -- requests[playerID] = {name, roleBit} - list of requests to edit tracks, register races and/or spawn vehicles
 
-local rolesDataFile = "./resources/races/roles.json"
+local rolesDataFile <const> = "./resources/races/roles.json"
 local roles = {} -- roles[license] = {name, roleBits} - list of players approved to edit tracks, register races and/or spawn vehicles
 if true == requirePermission then
     local file = io.open(rolesDataFile, "r")
@@ -80,7 +80,7 @@ if true == requirePermission then
     end
 end
 
-local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -94,81 +94,77 @@ local function sendMessage(source, msg)
     TriggerClientEvent("races:message", source, msg)
 end
 
-local function getRace(raceName)
-    local raceFile = "./resources/races/" .. raceName .. ".json"
-    local file, errMsg, errCode = io.open(raceFile, "r")
+local function getTrack(trackName)
+    local trackFile = "./resources/races/" .. trackName .. ".json"
+    local file, errMsg, errCode = io.open(trackFile, "r")
     if nil == file then
-        print("getRace: Error opening file '" .. raceFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+        print("getTrack: Error opening file '" .. trackFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         return nil
     end
 
-    local race = json.decode(file:read("a"))
+    local track = json.decode(file:read("a"))
     file:close()
 
-    if type(race) ~= "table" or type(race.waypointCoords) ~= "table" or type(race.bestLaps) ~= "table" then
-        print("getRace: race or race.waypointCoords or race.bestLaps not a table.")
+    if type(track) ~= "table" or type(track.waypointCoords) ~= "table" or type(track.bestLaps) ~= "table" then
+        print("getTrack: track or track.waypointCoords or track.bestLaps not a table.")
         return nil
     end
 
-    local newWaypointCoords = {}
-    for _, waypoint in ipairs(race.waypointCoords) do
+    if #track.waypointCoords < 2 then
+        print("getTrack: number of waypoints is less than 2.")
+        return nil
+    end
+
+    for _, waypoint in ipairs(track.waypointCoords) do
         if type(waypoint) ~= "table" or type(waypoint.x) ~= "number" or type(waypoint.y) ~= "number" or type(waypoint.z) ~= "number" or type(waypoint.r) ~= "number" then
-            print("getRace: waypoint not a table or waypoint.x or waypoint.y or waypoint.z or waypoint.r not a number.")
+            print("getTrack: waypoint not a table or waypoint.x or waypoint.y or waypoint.z or waypoint.r not a number.")
             return nil
         end
-        newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = waypoint.r}
     end
 
-    if #newWaypointCoords < 2 then
-        print("getRace: number of waypoints is less than 2.")
-        return nil
-    end
-
-    local newBestLaps = {}
-    for _, bestLap in ipairs(race.bestLaps) do
+    for _, bestLap in ipairs(track.bestLaps) do
         if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
-            print("getRace: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
+            print("getTrack: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
             return nil
         end
-        newBestLaps[#newBestLaps + 1] = {playerName = bestLap.playerName, bestLapTime = bestLap.bestLapTime, vehicleName = bestLap.vehicleName}
     end
 
-    return {waypointCoords = newWaypointCoords, bestLaps = newBestLaps}
+    return track
 end
 
-local function export(raceName, withBLT)
-    if raceName ~= nil then
+local function export(trackName, withBLT)
+    if trackName ~= nil then
         local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             local raceData = json.decode(file:read("a"))
             file:close()
             if raceData ~= nil then
-                local publicRaces = raceData["PUBLIC"]
-                if publicRaces ~= nil then
-                    if publicRaces[raceName] ~= nil then
-                        local raceFile = "./resources/races/" .. raceName .. ".json"
-                        file = io.open(raceFile, "r")
+                local publicTracks = raceData["PUBLIC"]
+                if publicTracks ~= nil then
+                    if publicTracks[trackName] ~= nil then
+                        local trackFile = "./resources/races/" .. trackName .. ".json"
+                        file = io.open(trackFile, "r")
                         if nil == file then
-                            file, errMsg, errCode = io.open(raceFile, "w+")
+                            file, errMsg, errCode = io.open(trackFile, "w+")
                             if file ~= nil then
                                 if false == withBLT then
-                                    publicRaces[raceName].bestLaps = {}
+                                    publicTracks[trackName].bestLaps = {}
                                 end
-                                file:write(json.encode(publicRaces[raceName]))
+                                file:write(json.encode(publicTracks[trackName]))
                                 file:close()
-                                print("Exported '" .. raceName .. "'.")
+                                print("Exported '" .. trackName .. "'.")
                             else
-                                print("export: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                                print("export: Error opening file '" .. trackFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
                         else
                             file:close()
-                            print("export: '" .. raceFile .. "' exists. Remove or rename the existing file, then export again.")
+                            print("export: '" .. trackFile .. "' exists. Remove or rename the existing file, then export again.")
                         end
                     else
-                        print("export: No public race named '" .. raceName .. "'.")
+                        print("export: No public track named '" .. trackName .. "'.")
                     end
                 else
-                    print("export: No public race data.")
+                    print("export: No public track data.")
                 end
             else
                 print("export: No race data.")
@@ -181,39 +177,39 @@ local function export(raceName, withBLT)
     end
 end
 
-local function import(raceName, withBLT)
-    if raceName ~= nil then
+local function import(trackName, withBLT)
+    if trackName ~= nil then
         local file, errMsg, errCode = io.open(raceDataFile, "r")
         if file ~= nil then
             local raceData = json.decode(file:read("a"))
             file:close()
             if raceData ~= nil then
-                local publicRaces = raceData["PUBLIC"]
-                if publicRaces ~= nil then
-                    if nil == publicRaces[raceName] then
-                        local race = getRace(raceName)
-                        if race ~= nil then
+                local publicTracks = raceData["PUBLIC"]
+                if publicTracks ~= nil then
+                    if nil == publicTracks[trackName] then
+                        local track = getTrack(trackName)
+                        if track ~= nil then
                             file, errMsg, errCode = io.open(raceDataFile, "w+")
                             if file ~= nil then
                                 if false == withBLT then
-                                    race.bestLaps = {}
+                                    track.bestLaps = {}
                                 end
-                                publicRaces[raceName] = race
-                                raceData["PUBLIC"] = publicRaces
+                                publicTracks[trackName] = track
+                                raceData["PUBLIC"] = publicTracks
                                 file:write(json.encode(raceData))
                                 file:close()
-                                print("Imported '" .. raceName .. "'.")
+                                print("Imported '" .. trackName .. "'.")
                             else
                                 print("import: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
                         else
-                            print("import: Could not import '" .. raceName .. "'.")
+                            print("import: Could not import '" .. trackName .. "'.")
                         end
                     else
-                        print("import: '" .. raceName .. "' already exists in the public races list.  Rename the file, then import with the new name.")
+                        print("import: '" .. trackName .. "' already exists in the public tracks list.  Rename the file, then import with the new name.")
                     end
                 else
-                    print("import: No public race data.")
+                    print("import: No public track data.")
                 end
             else
                 print("import: No race data.")
@@ -410,34 +406,33 @@ local function updateRaceData()
         if raceData ~= nil then
             local update = false
             local newRaceData = {}
-            for license, playerRaces in pairs(raceData) do
-                local newPlayerRaces = {}
-                for raceName, race in pairs(playerRaces) do
-                    local waypointCoords = race.waypointCoords
+            for license, tracks in pairs(raceData) do
+                local newTracks = {}
+                for trackName, track in pairs(tracks) do
                     local newWaypointCoords = {}
-                    for _, waypointCoord in ipairs(waypointCoords) do
+                    for _, waypointCoord in ipairs(track.waypointCoords) do
                         if nil == waypointCoord.r then
                             update = true
                             newWaypointCoords[#newWaypointCoords + 1] = {x = waypointCoord.x, y = waypointCoord.y, z = waypointCoord.z, r = defaultRadius}
                         end
                     end
                     if true == update then
-                        newPlayerRaces[raceName] = {waypointCoords = newWaypointCoords, bestLaps = race.bestLaps}
+                        newTracks[trackName] = {waypointCoords = newWaypointCoords, bestLaps = track.bestLaps}
                     end
                 end
                 if true == update then
-                    newRaceData[license] = newPlayerRaces
+                    newRaceData[license] = newTracks
                 end
             end
             if true == update then
-                local raceFile = "./resources/races/raceData_updated.json"
-                file, errMsg, errCode = io.open(raceFile, "w+")
+                local updatedRaceDataFile = "./resources/races/raceData_updated.json"
+                file, errMsg, errCode = io.open(updatedRaceDataFile, "w+")
                 if file ~= nil then
                     file:write(json.encode(newRaceData))
                     file:close()
-                    print("updateRaceData: raceData.json updated to new format in '" .. raceFile .. "'.")
+                    print("updateRaceData: raceData.json updated to new format in '" .. updatedRaceDataFile .. "'.")
                 else
-                    print("updateRaceData: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+                    print("updateRaceData: Error opening file '" .. updatedRaceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                 end
             else
                 print("updateRaceData: raceData.json not updated.")
@@ -450,32 +445,37 @@ local function updateRaceData()
     end
 end
 
-local function updateRace(raceName)
-    if nil == raceName then
-        print("updateRace: Name required.")
+local function updateTrack(trackName)
+    if nil == trackName then
+        print("updateTrack: Name required.")
         return
     end
 
     local update = false
-    local raceFile = "./resources/races/" .. raceName .. ".json"
-    local file, errMsg, errCode = io.open(raceFile, "r")
+    local trackFile = "./resources/races/" .. trackName .. ".json"
+    local file, errMsg, errCode = io.open(trackFile, "r")
     if nil == file then
-        print("updateRace: Error opening file '" .. raceFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
+        print("updateTrack: Error opening file '" .. trackFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         return
     end
 
-    local race = json.decode(file:read("a"))
+    local track = json.decode(file:read("a"))
     file:close()
 
-    if type(race) ~= "table" or type(race.waypointCoords) ~= "table" or type(race.bestLaps) ~= "table" then
-        print("updateRace: race or race.waypointCoords or race.bestLaps not a table.")
+    if type(track) ~= "table" or type(track.waypointCoords) ~= "table" or type(track.bestLaps) ~= "table" then
+        print("updateTrack: track or track.waypointCoords or track.bestLaps not a table.")
+        return
+    end
+
+    if #track.waypointCoords < 2 then
+        print("updateTrack: number of waypoints is less than 2.")
         return
     end
 
     local newWaypointCoords = {}
-    for _, waypoint in ipairs(race.waypointCoords) do
+    for _, waypoint in ipairs(track.waypointCoords) do
         if type(waypoint) ~= "table" or type(waypoint.x) ~= "number" or type(waypoint.y) ~= "number" or type(waypoint.z) ~= "number" then
-            print("updateRace: waypoint not a table or waypoint.x or waypoint.y or waypoint.z not a number.")
+            print("updateTrack: waypoint not a table or waypoint.x or waypoint.y or waypoint.z not a number.")
             return
         end
         if nil == waypoint.r then
@@ -484,44 +484,37 @@ local function updateRace(raceName)
         elseif type(waypoint.r) == "number" then
             newWaypointCoords[#newWaypointCoords + 1] = {x = waypoint.x, y = waypoint.y, z = waypoint.z, r = waypoint.r}
         else
-            print("updateRace: waypoint.r not a number.")
+            print("updateTrack: waypoint.r not a number.")
             return
         end
-    end
-
-    if #newWaypointCoords < 2 then
-        print("updateRace: number of waypoints is less than 2.")
-        return
-    end
-
-    local newBestLaps = {}
-    for _, bestLap in ipairs(race.bestLaps) do
-        if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
-            print("updateRace: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
-            return
-        end
-        newBestLaps[#newBestLaps + 1] = {playerName = bestLap.playerName, bestLapTime = bestLap.bestLapTime, vehicleName = bestLap.vehicleName}
     end
 
     if true == update then
-        raceFile = "./resources/races/" .. raceName .. "_updated.json"
-        file, errMsg, errCode = io.open(raceFile, "w+")
+        for _, bestLap in ipairs(track.bestLaps) do
+            if type(bestLap) ~= "table" or type(bestLap.playerName) ~= "string" or type(bestLap.bestLapTime) ~= "number" or type(bestLap.vehicleName) ~= "string" then
+                print("updateTrack: bestLap not a table or bestLap.playerName not a string or bestLap.bestLapTime not a number or bestLap.vehicleName not a string.")
+                return
+            end
+        end
+
+        trackFile = "./resources/races/" .. trackName .. "_updated.json"
+        file, errMsg, errCode = io.open(trackFile, "w+")
         if file ~= nil then
-            file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = newBestLaps}))
+            file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = track.bestLaps}))
             file:close()
-            print("updateRace: '" .. raceName .. ".json' updated to new format in '" .. raceFile .. "'.")
+            print("updateTrack: '" .. trackName .. ".json' updated to new format in '" .. trackFile .. "'.")
         else
-            print("updateRace: Error opening file '" .. raceFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
+            print("updateTrack: Error opening file '" .. trackFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
         end
     else
-        print("updateRace: '" .. raceName .. ".json' not updated.")
+        print("updateTrack: '" .. trackName .. ".json' not updated.")
     end
 end
 
-local function loadPlayerData(public, source)
-    local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
+local function loadTracks(isPublic, source)
+    local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
-    local playerRaces = nil
+    local tracks = nil
 
     if license ~= nil then
         if license ~= "PUBLIC" then
@@ -535,30 +528,30 @@ local function loadPlayerData(public, source)
             raceData = json.decode(file:read("a"))
             file:close()
         else
-            notifyPlayer(source, "loadPlayerData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
+            notifyPlayer(source, "loadTracks: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
             return nil
         end
 
         if nil == raceData then
-            notifyPlayer(source, "loadPlayerData: No race data.\n")
+            notifyPlayer(source, "loadTracks: No race data.\n")
             return nil
         end
 
-        playerRaces = raceData[license]
+        tracks = raceData[license]
 
-        if nil == playerRaces then
-            playerRaces = {}
+        if nil == tracks then
+            tracks = {}
         end
     else
-        notifyPlayer(source, "loadPlayerData: Could not get license.\n")
+        notifyPlayer(source, "loadTracks: Could not get license.\n")
         return nil
     end
 
-    return playerRaces
+    return tracks
 end
 
-local function savePlayerData(public, source, data)
-    local license = true == public and "PUBLIC" or GetPlayerIdentifier(source, 0)
+local function saveTracks(isPublic, source, tracks)
+    local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
 
     if license ~= nil then
         if license ~= "PUBLIC" then
@@ -572,27 +565,27 @@ local function savePlayerData(public, source, data)
             raceData = json.decode(file:read("a"))
             file:close()
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
+            notifyPlayer(source, "saveTracks: Error opening file '" .. raceDataFile .. "' for read : '" .. errMsg .. "' : " .. errCode .. "\n")
             return false
         end
 
         if nil == raceData then
-            notifyPlayer(source, "savePlayerData: No race data.\n")
+            notifyPlayer(source, "saveTracks: No race data.\n")
             return false
         end
 
-        raceData[license] = data
+        raceData[license] = tracks
 
         file, errMsg, errCode = io.open(raceDataFile, "w+")
         if file ~= nil then
             file:write(json.encode(raceData))
             file:close()
         else
-            notifyPlayer(source, "savePlayerData: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode .. "\n")
+            notifyPlayer(source, "saveTracks: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode .. "\n")
             return false
         end
     else
-        notifyPlayer(source, "savePlayerData: Could not get license.\n")
+        notifyPlayer(source, "saveTracks: Could not get license.\n")
         return false
     end
 
@@ -600,8 +593,9 @@ local function savePlayerData(public, source, data)
 end
 
 local function loadVehicleFile(source, vehicleFile)
+    vehicleFile = "./resources/races/" .. vehicleFile
     local vehicles = {}
-    local file, errMsg, errCode = io.open("./resources/races/" .. vehicleFile, "r")
+    local file, errMsg, errCode = io.open(vehicleFile, "r")
     if nil == file then
         notifyPlayer(source, "Error opening file '" .. vehicleFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
     else
@@ -667,10 +661,10 @@ local function getClassName(vclass)
 end
 
 local function updateBestLapTimes(index)
-    local playerRaces = loadPlayerData(races[index].publicRace, index)
-    if playerRaces ~= nil then
-        if playerRaces[races[index].savedRaceName] ~= nil then -- saved race still exists - not deleted in middle of race
-            local bestLaps = playerRaces[races[index].savedRaceName].bestLaps
+    local tracks = loadTracks(races[index].isPublic, index)
+    if tracks ~= nil then
+        if tracks[races[index].trackName] ~= nil then -- saved track still exists - not deleted in middle of race
+            local bestLaps = tracks[races[index].trackName].bestLaps
             for _, result in pairs(races[index].results) do
                 if result.bestLapTime ~= -1 then
                     bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
@@ -682,12 +676,12 @@ local function updateBestLapTimes(index)
             for i = 11, #bestLaps do
                 bestLaps[i] = nil
             end
-            playerRaces[races[index].savedRaceName].bestLaps = bestLaps
-            if false == savePlayerData(races[index].publicRace, index, playerRaces) then
+            tracks[races[index].trackName].bestLaps = bestLaps
+            if false == saveTracks(races[index].isPublic, index, tracks) then
                 notifyPlayer(index, "Save error updating best lap times.\n")
             end
         else
-            notifyPlayer(index, "Cannot save best lap times.  Race '" .. races[index].savedRaceName .. "' has been deleted.\n")
+            notifyPlayer(index, "Cannot save best lap times.  Track '" .. races[index].trackName .. "' has been deleted.\n")
         end
     else
         notifyPlayer(index, "Load error updating best lap times.\n")
@@ -702,13 +696,12 @@ local function minutesSeconds(milliseconds)
 end
 
 local function saveResults(race)
-    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, publicRace, savedRaceName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
-    local msg = "Race: "
-    if nil == race.savedRaceName then
-        msg = msg .. "Unsaved race "
+    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, numWaypointsPassed, data, finished}, results[] = {source, playerName, finishTime, bestLapTime, vehicleName}}
+    local msg = "Race using "
+    if nil == race.trackName then
+        msg = msg .. "unsaved track "
     else
-        msg = msg .. (true == race.publicRace and "Publicly" or "Privately")
-        msg = msg .. " saved race '" .. race.savedRaceName .. "' "
+        msg = msg .. (true == race.isPublic and "publicly" or "privately") .. " saved track '" .. race.trackName .. "' "
     end
     msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(race.owner, race.buyin, race.laps)
     if "rest" == race.rtype then
@@ -747,13 +740,13 @@ local function saveResults(race)
     else
         msg = msg .. "No results.\n"
     end
-    local filePath = "./resources/races/" .. race.owner .. "_results.txt"
-    local file, errMsg, errCode = io.open(filePath, "w+")
+    local resultsFile = "./resources/races/" .. race.owner .. "_results.txt"
+    local file, errMsg, errCode = io.open(resultsFile, "w+")
     if file ~= nil then
         file:write(msg)
         file:close()
     else
-        print("Error opening file '" .. filePath .. "' for write : '" .. errMsg .. "' : " .. errCode)
+        print("Error opening file '" .. resultsFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
     end
 end
 
@@ -783,17 +776,17 @@ RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"
         msg = msg .. "races - display list of available races commands\n"
-        msg = msg .. "races export [name] - export public race saved as [name] without best lap times to file named '[name].json'\n"
-        msg = msg .. "races import [name] - import race file named '[name].json' into public races without best lap times\n"
-        msg = msg .. "races exportwblt [name] - export public race saved as [name] with best lap times to file named '[name].json'\n"
-        msg = msg .. "races importwblt [name] - import race file named '[name].json' into public races with best lap times\n"
+        msg = msg .. "races export [name] - export public track saved as [name] without best lap times to file named '[name].json'\n"
+        msg = msg .. "races import [name] - import track file named '[name].json' into public tracks without best lap times\n"
+        msg = msg .. "races exportwblt [name] - export public track saved as [name] with best lap times to file named '[name].json'\n"
+        msg = msg .. "races importwblt [name] - import track file named '[name].json' into public tracks with best lap times\n"
         msg = msg .. "races listReqs - list requests to edit tracks, register races and spawn vehicles\n"
         msg = msg .. "races approve [playerID] - approve request of [playerID] to edit tracks, register races or spawn vehicles\n"
         msg = msg .. "races deny [playerID] - deny request of [playerID] to edit tracks, register races or spawn vehicles\n"
         msg = msg .. "races listRoles - list approved players' roles\n"
         msg = msg .. "races removeRole [name] (role) - remove player [name]'s (role) = {edit, register, spawn} role; otherwise remove all roles if (role) is not specified\n"
         msg = msg .. "races updateRaceData - update 'raceData.json' to new format\n"
-        msg = msg .. "races updateRace [name] - update exported race '[name].json' to new format\n"
+        msg = msg .. "races updateTrack [name] - update exported track '[name].json' to new format\n"
         print(msg)
     elseif "export" == args[1] then
         export(args[2], false)
@@ -815,8 +808,8 @@ RegisterCommand("races", function(_, args)
         removeRole(args[2], args[3])
     elseif "updateRaceData" == args[1] then
         updateRaceData()
-    elseif "updateRace" == args[1] then
-        updateRace(args[2])
+    elseif "updateTrack" == args[1] then
+        updateTrack(args[2])
     else
         print("Unknown command.")
     end
@@ -986,7 +979,7 @@ AddEventHandler("races:init", function()
     for i, race in pairs(races) do
         if STATE_REGISTERING == race.state then
             local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
-            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.publicRace, race.savedRaceName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
+            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
         end
     end
 end)
@@ -1030,19 +1023,19 @@ AddEventHandler("races:request", function(roleBit)
 end)
 
 RegisterNetEvent("races:load")
-AddEventHandler("races:load", function(public, raceName)
+AddEventHandler("races:load", function(isPublic, trackName)
     local source = source
     if getPermissions(source) & (ROLE_EDIT | ROLE_REGISTER) == 0 then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if public ~= nil and raceName ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if playerRaces[raceName] ~= nil then
-                TriggerClientEvent("races:load", source, public, raceName, playerRaces[raceName].waypointCoords)
+    if isPublic ~= nil and trackName ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
+            if tracks[trackName] ~= nil then
+                TriggerClientEvent("races:load", source, isPublic, trackName, tracks[trackName].waypointCoords)
             else
-                sendMessage(source, "Cannot load.  '" .. raceName .. "' not found.\n")
+                sendMessage(source, "Cannot load.  '" .. trackName .. "' not found.\n")
             end
         else
             sendMessage(source, "Cannot load.  Error loading data.\n")
@@ -1053,27 +1046,27 @@ AddEventHandler("races:load", function(public, raceName)
 end)
 
 RegisterNetEvent("races:save")
-AddEventHandler("races:save", function(public, raceName, waypointCoords)
+AddEventHandler("races:save", function(isPublic, trackName, waypointCoords)
     local source = source
     if getPermissions(source) & ROLE_EDIT == 0 then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if nil == playerRaces[raceName] then
-                playerRaces[raceName] = {waypointCoords = waypointCoords, bestLaps = {}}
-                if true == savePlayerData(public, source, playerRaces) then
-                    TriggerClientEvent("races:save", source, public, raceName)
+    if isPublic ~= nil and trackName ~= nil and waypointCoords ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
+            if nil == tracks[trackName] then
+                tracks[trackName] = {waypointCoords = waypointCoords, bestLaps = {}}
+                if true == saveTracks(isPublic, source, tracks) then
+                    TriggerClientEvent("races:save", source, isPublic, trackName)
                 else
-                    sendMessage(source, "Error saving '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error saving '" .. trackName .. "'.\n")
                 end
             else
-                if true == public then
-                    sendMessage(source, "Public race '" .. raceName .. "' exists.  Use 'overwritePublic' command instead.\n")
+                if true == isPublic then
+                    sendMessage(source, "Public track '" .. trackName .. "' exists.  Use 'overwritePublic' command instead.\n")
                 else
-                    sendMessage(source, "Private race '" .. raceName .. "' exists.  Use 'overwrite' command instead.\n")
+                    sendMessage(source, "Private track '" .. trackName .. "' exists.  Use 'overwrite' command instead.\n")
                 end
             end
         else
@@ -1085,27 +1078,27 @@ AddEventHandler("races:save", function(public, raceName, waypointCoords)
 end)
 
 RegisterNetEvent("races:overwrite")
-AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
+AddEventHandler("races:overwrite", function(isPublic, trackName, waypointCoords)
     local source = source
     if getPermissions(source) & ROLE_EDIT == 0 then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if public ~= nil and raceName ~= nil and waypointCoords ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if playerRaces[raceName] ~= nil then
-                playerRaces[raceName] = {waypointCoords = waypointCoords, bestLaps = {}}
-                if true == savePlayerData(public, source, playerRaces) then
-                    TriggerClientEvent("races:overwrite", source, public, raceName)
+    if isPublic ~= nil and trackName ~= nil and waypointCoords ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
+            if tracks[trackName] ~= nil then
+                tracks[trackName] = {waypointCoords = waypointCoords, bestLaps = {}}
+                if true == saveTracks(isPublic, source, tracks) then
+                    TriggerClientEvent("races:overwrite", source, isPublic, trackName)
                 else
-                    sendMessage(source, "Error overwriting '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error overwriting '" .. trackName .. "'.\n")
                 end
             else
-                if true == public then
-                    sendMessage(source, "Public race '" .. raceName .. "' does not exist.  Use 'savePublic' command instead.\n")
+                if true == isPublic then
+                    sendMessage(source, "Public track '" .. trackName .. "' does not exist.  Use 'savePublic' command instead.\n")
                 else
-                    sendMessage(source, "Private race '" .. raceName .. "' does not exist.  Use 'save' command instead.\n")
+                    sendMessage(source, "Private track '" .. trackName .. "' does not exist.  Use 'save' command instead.\n")
                 end
             end
         else
@@ -1117,27 +1110,24 @@ AddEventHandler("races:overwrite", function(public, raceName, waypointCoords)
 end)
 
 RegisterNetEvent("races:delete")
-AddEventHandler("races:delete", function(public, raceName)
+AddEventHandler("races:delete", function(isPublic, trackName)
     local source = source
     if getPermissions(source) & ROLE_EDIT == 0 then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if public ~= nil and raceName ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if playerRaces[raceName] ~= nil then
-                playerRaces[raceName] = nil
-                if true == savePlayerData(public, source, playerRaces) then
-                    local msg = "Deleted "
-                    msg = msg .. (true == public and "public" or "private")
-                    msg = msg .. " race '" .. raceName .. "'.\n"
-                    sendMessage(source, msg)
+    if isPublic ~= nil and trackName ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
+            if tracks[trackName] ~= nil then
+                tracks[trackName] = nil
+                if true == saveTracks(isPublic, source, tracks) then
+                    sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
                 else
-                    sendMessage(source, "Error deleting '" .. raceName .. "'.\n")
+                    sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
                 end
             else
-                sendMessage(source, "Cannot delete.  '" .. raceName .. "' not found.\n")
+                sendMessage(source, "Cannot delete.  '" .. trackName .. "' not found.\n")
             end
         else
             sendMessage(source, "Cannot delete.  Error loading data.\n")
@@ -1148,15 +1138,15 @@ AddEventHandler("races:delete", function(public, raceName)
 end)
 
 RegisterNetEvent("races:blt")
-AddEventHandler("races:blt", function(public, raceName)
+AddEventHandler("races:blt", function(isPublic, trackName)
     local source = source
-    if public ~= nil and raceName ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
-            if playerRaces[raceName] ~= nil then
-                TriggerClientEvent("races:blt", source, public, raceName, playerRaces[raceName].bestLaps)
+    if isPublic ~= nil and trackName ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
+            if tracks[trackName] ~= nil then
+                TriggerClientEvent("races:blt", source, isPublic, trackName, tracks[trackName].bestLaps)
             else
-                sendMessage(source, "Cannot list best lap times.  '" .. raceName .. "' not found.\n")
+                sendMessage(source, "Cannot list best lap times.  '" .. trackName .. "' not found.\n")
             end
         else
             sendMessage(source, "Cannot list best lap times.  Error loading data.\n")
@@ -1167,26 +1157,24 @@ AddEventHandler("races:blt", function(public, raceName)
 end)
 
 RegisterNetEvent("races:list")
-AddEventHandler("races:list", function(public)
+AddEventHandler("races:list", function(isPublic)
     local source = source
-    if public ~= nil then
-        local playerRaces = loadPlayerData(public, source)
-        if playerRaces ~= nil then
+    if isPublic ~= nil then
+        local tracks = loadTracks(isPublic, source)
+        if tracks ~= nil then
             local names = {}
-            for name in pairs(playerRaces) do
+            for name in pairs(tracks) do
                 names[#names + 1] = name
             end
             if #names > 0 then
                 table.sort(names)
-                local msg = "Saved "
-                msg = msg .. (true == public and "public" or "private")
-                msg = msg .. " races:\n"
+                local msg = "Saved " .. (true == isPublic and "public" or "private") .. " tracks:\n"
                 for _, name in ipairs(names) do
                     msg = msg .. name .. "\n"
                 end
                 sendMessage(source, msg)
             else
-                sendMessage(source, "No saved races.\n")
+                sendMessage(source, "No saved tracks.\n")
             end
         else
             sendMessage(source, "Cannot list.  Error loading data.\n")
@@ -1197,13 +1185,13 @@ AddEventHandler("races:list", function(public)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(waypointCoords, publicRace, savedRaceName, buyin, laps, timeout, rdata)
+AddEventHandler("races:register", function(waypointCoords, isPublic, trackName, buyin, laps, timeout, rdata)
     local source = source
     if getPermissions(source) & ROLE_REGISTER == 0 then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if waypointCoords ~= nil and publicRace ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and rdata ~= nil then
+    if waypointCoords ~= nil and isPublic ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and rdata ~= nil then
         if buyin >= 0 then
             if laps > 0 then
                 if timeout >= 0 then
@@ -1268,12 +1256,11 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                         end
                         if true == registerRace then
                             local owner = GetPlayerName(source)
-                            local msg = "Registered "
-                            if nil == savedRaceName then
-                                msg = msg .. "unsaved race "
+                            local msg = "Registered race using "
+                            if nil == trackName then
+                                msg = msg .. "unsaved track "
                             else
-                                msg = msg .. (true == publicRace and "publicly" or "privately")
-                                msg = msg .. " saved race '" .. savedRaceName .. "' "
+                                msg = msg .. (true == isPublic and "publicly" or "privately") .. " saved track '" .. trackName .. "' "
                             end
                             msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
                             msg = msg .. umsg .. ".\n"
@@ -1284,8 +1271,8 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                             races[source] = {
                                 state = STATE_REGISTERING,
                                 waypointCoords = waypointCoords,
-                                publicRace = publicRace,
-                                savedRaceName = savedRaceName,
+                                isPublic = isPublic,
+                                trackName = trackName,
                                 owner = owner,
                                 buyin = buyin,
                                 laps = laps,
@@ -1299,7 +1286,7 @@ AddEventHandler("races:register", function(waypointCoords, publicRace, savedRace
                                 players = {},
                                 results = {}
                             }
-                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], publicRace, savedRaceName, owner, buyin, laps, timeout, vehicleList, rdata)
+                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], isPublic, trackName, owner, buyin, laps, timeout, vehicleList, rdata)
                         end
                     else
                         if STATE_RACING == races[source].state then
@@ -1493,7 +1480,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         TriggerClientEvent("races:finish", i, races[index].players[source].playerName, finishTime, bestLapTime, vehicleName)
                     end
 
-                    races[index].results[#(races[index].results) + 1] = {source = source, playerName = races[index].players[source].playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
+                    races[index].results[#races[index].results + 1] = {source = source, playerName = races[index].players[source].playerName, finishTime = finishTime, bestLapTime = bestLapTime, vehicleName = vehicleName}
 
                     races[index].numRacing = races[index].numRacing - 1
                     if 0 == races[index].numRacing then
@@ -1511,7 +1498,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                         end
 
                         if true == distValid and races[index].rtype ~= "rand" then
-                            local numRacers = #(races[index].results)
+                            local numRacers = #races[index].results
                             local numFinished = 0
                             local totalPool = numRacers * races[index].buyin
                             local pool = totalPool
@@ -1569,7 +1556,7 @@ AddEventHandler("races:finish", function(index, numWaypointsPassed, finishTime, 
                             end
                         end
 
-                        if races[index].savedRaceName ~= nil then
+                        if races[index].trackName ~= nil then
                             updateBestLapTimes(index)
                         end
                         races[index] = nil -- delete race after all players finish

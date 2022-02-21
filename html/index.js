@@ -78,27 +78,27 @@ $(function() {
 
     $("#main_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: false,
-            raceName: $("#main_name").val()
+            isPublic: false,
+            trackName: $("#main_name").val()
         }));
     });
 
     $("#main_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: false
+            isPublic: false
         }));
     });
 
     $("#main_bltPublic").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: true,
-            raceName: $("#main_namePublic").val()
+            isPublic: true,
+            trackName: $("#main_namePublic").val()
         }));
     });
 
     $("#main_listPublic").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: true
+            isPublic: true
         }));
     });
 
@@ -166,83 +166,83 @@ $(function() {
 
     $("#edit_load").click(function() {
         $.post("https://races/load", JSON.stringify({
-            public: false,
-            raceName: $("#edit_name").val()
+            isPublic: false,
+            trackName: $("#edit_name").val()
         }));
     });
 
     $("#save").click(function() {
         $.post("https://races/save", JSON.stringify({
-            public: false,
-            raceName: $("#edit_name").val()
+            isPublic: false,
+            trackName: $("#edit_name").val()
         }));
     });
 
     $("#overwrite").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
-            public: false,
-            raceName: $("#edit_name").val()
+            isPublic: false,
+            trackName: $("#edit_name").val()
         }));
     });
 
     $("#delete").click(function() {
         $.post("https://races/delete", JSON.stringify({
-            public: false,
-            raceName: $("#edit_name").val()
+            isPublic: false,
+            trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: false,
-            raceName: $("#edit_name").val()
+            isPublic: false,
+            trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: false
+            isPublic: false
         }));
     });
 
     $("#edit_loadPublic").click(function() {
         $.post("https://races/load", JSON.stringify({
-            public: true,
-            raceName: $("#edit_namePublic").val()
+            isPublic: true,
+            trackName: $("#edit_namePublic").val()
         }));
     });
 
     $("#savePublic").click(function() {
         $.post("https://races/save", JSON.stringify({
-            public: true,
-            raceName: $("#edit_namePublic").val()
+            isPublic: true,
+            trackName: $("#edit_namePublic").val()
         }));
     });
 
     $("#overwritePublic").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
-            public: true,
-            raceName: $("#edit_namePublic").val()
+            isPublic: true,
+            trackName: $("#edit_namePublic").val()
         }));
     });
 
     $("#deletePublic").click(function() {
         $.post("https://races/delete", JSON.stringify({
-            public: true,
-            raceName: $("#edit_namePublic").val()
+            isPublic: true,
+            trackName: $("#edit_namePublic").val()
         }));
     });
 
     $("#edit_bltPublic").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: true,
-            raceName: $("#edit_namePublic").val()
+            isPublic: true,
+            trackName: $("#edit_namePublic").val()
         }));
     });
 
     $("#edit_listPublic").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: true
+            isPublic: true
         }));
     });
 
@@ -254,41 +254,41 @@ $(function() {
     /* register panel */
     $("#register_load").click(function() {
         $.post("https://races/load", JSON.stringify({
-            public: false,
-            raceName: $("#register_name").val()
+            isPublic: false,
+            trackName: $("#register_name").val()
         }));
     });
 
     $("#register_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: false,
-            raceName: $("#register_name").val()
+            isPublic: false,
+            trackName: $("#register_name").val()
         }));
     });
 
     $("#register_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: false
+            isPublic: false
         }));
     });
 
     $("#register_loadPublic").click(function() {
         $.post("https://races/load", JSON.stringify({
-            public: true,
-            raceName: $("#register_namePublic").val()
+            isPublic: true,
+            trackName: $("#register_namePublic").val()
         }));
     });
 
     $("#register_bltPublic").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            public: true,
-            raceName: $("#register_namePublic").val()
+            isPublic: true,
+            trackName: $("#register_namePublic").val()
         }));
     });
 
     $("#register_listPublic").click(function() {
         $.post("https://races/list", JSON.stringify({
-            public: true
+            isPublic: true
         }));
     });
 
