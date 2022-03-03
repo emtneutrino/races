@@ -670,7 +670,7 @@ local function reverse()
             sendMessage("Cannot reverse waypoints.  Leave race first.\n")
         end
     else
-        sendMessage("Cannot reverse waypoints.  Race needs to have at least 2 waypoints.\n")
+        sendMessage("Cannot reverse waypoints.  Track needs to have at least 2 waypoints.\n")
     end
 end
 

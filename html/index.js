@@ -53,6 +53,10 @@ $(function() {
             $("#laps").val(data.defaultLaps)
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
+            $("#rest").hide()
+            $("#file").hide()
+            $("#vclass").hide()
+            $("#sveh").hide()
             $("#registerPanel").show();
             openPanel = "register"
         } else if ("reply" == data.panel) {
@@ -291,6 +295,44 @@ $(function() {
             isPublic: true
         }));
     });
+
+    $("#rtype").change(function() {
+        if ($("#rtype").val() == "norm") {
+            $("#rest").hide()
+            $("#file").hide()
+            $("#vclass").hide()
+            $("#sveh").hide()
+        } else if ($("#rtype").val() == "rest") {
+            $("#rest").show()
+            $("#file").hide()
+            $("#vclass").hide()
+            $("#sveh").hide()
+        } else if ($("#rtype").val() == "class") {
+            $("#rest").hide()
+            if ($("#register_vclass").val() == "22") {
+                $("#file").show()
+            } else {
+                $("#file").hide()
+            }
+            $("#vclass").show()
+            $("#sveh").hide()
+        } else if ($("#rtype").val() == "rand") {
+            $("#rest").hide()
+            $("#file").show()
+            $("#vclass").show()
+            $("#sveh").show()
+        }
+    })
+
+    $("#register_vclass").change(function() {
+        if ($("#rtype").val() == "class") {
+            if ($("#register_vclass").val() == "22") {
+                $("#file").show()
+            } else {
+                $("#file").hide()
+            }
+        }
+    })
 
     $("#register").click(function() {
         $.post("https://races/register", JSON.stringify({

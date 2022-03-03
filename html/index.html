@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <div id = "mainPanel">
             <div class = "row">
                 <button id = "request">Request Permission</button>
-                <label for = "role">Role: </label>
+                <label for = "role">Role:</label>
                 <select id = "role">
                     <option value = "edit">Edit</option>
                     <option value = "register">Register</option>
@@ -53,7 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Private Track: <input id = "main_name" placeholder="Track name">
+                Private Track:<input id = "main_name" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "main_blt">Best Laps</button>
@@ -61,7 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Public Track: <input id = "main_namePublic" placeholder="Track name">
+                Public Track:<input id = "main_namePublic" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "main_bltPublic">Best Laps</button>
@@ -77,12 +77,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <br>
             <div class = "row">
                 <button id = "spawn">Spawn Vehicle</button>
-                Vehicle: <input id = "vehicle" placeholder="Vehicle name">
+                Vehicle:<input id = "vehicle" placeholder = "Vehicle name">
             </div>
             <br>
             <div class = "row">
                 <button id = "lvehicles">List Vehicles</button>
-                <label for = "main_vclass">Vehicle Class: </label>
+                <label for = "main_vclass">Vehicle Class:</label>
                 <select id = "main_vclass">
                     <option value = -1>Any</option>
                     <option value = 0>0:Compacts</option>
@@ -113,7 +113,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <div class = "row">
                 <button id = "speedo">Toggle Speedometer</button>
                 <button id = "change">Change Unit of Measurement</button>
-                <label for = "unit">Unit: </label>
+                <label for = "unit">Unit:</label>
                 <select id = "unit">
                     <option value = "imp">Imperial</option>
                     <option value = "met">Metric</option>
@@ -137,7 +137,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Private Track: <input id = "edit_name" placeholder="Track name">
+                Private Track:<input id = "edit_name" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "edit_load">Load</button>
@@ -149,7 +149,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Public Track: <input id = "edit_namePublic" placeholder="Track name">
+                Public Track:<input id = "edit_namePublic" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "edit_loadPublic">Load</button>
@@ -167,7 +167,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         <div id = "registerPanel">
             <div class = "row">
-                Private Track: <input id = "register_name" placeholder="Track name">
+                Private Track:<input id = "register_name" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "register_load">Load</button>
@@ -176,7 +176,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Public Track: <input id = "register_namePublic" placeholder="Track name">
+                Public Track:<input id = "register_namePublic" placeholder = "Track name">
             </div>
             <div class = "row">
                 <button id = "register_loadPublic">Load</button>
@@ -186,10 +186,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <br>
             <div class = "row">
                 <button id = "register">Register Race</button>
-                Buy-in: <input id = "buyin" placeholder = "Buy-in">
-                Laps: <input id = "laps" placeholder = "Laps">
-                Timeout: <input id = "timeout" placeholder = "Timeout">
-                <label for = "rtype">Race Type: </label>
+                Buy-in:<input id = "buyin" placeholder = "Buy-in">
+                Laps:<input id = "laps" placeholder = "Laps">
+                Timeout:<input id = "timeout" placeholder = "Timeout">
+                <label for = "rtype">Race Type:</label>
                 <select id = "rtype">
                     <option value = "norm">Normal</option>
                     <option value = "rest">Restricted</option>
@@ -198,38 +198,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 </select>
             </div>
             <div class = "row">
-                Restrict: <input id = "restrict" placeholder = "Vehicle">
-                Vehicle File: <input id = "filename" placeholder = "File Name">
-                <label for = "register_vclass">Vehicle Class: </label>
-                <select id = "register_vclass">
-                    <option value = -1>Any</option>
-                    <option value = 0>0:Compacts</option>
-                    <option value = 1>1:Sedans</option>
-                    <option value = 2>2:SUVs</option>
-                    <option value = 3>3:Coupes</option>
-                    <option value = 4>4:Muscle</option>
-                    <option value = 5>5:Sports Classics</option>
-                    <option value = 6>6:Sports</option>
-                    <option value = 7>7:Super</option>
-                    <option value = 8>8:Motorcycles</option>
-                    <option value = 9>9:Off-road</option>
-                    <option value = 10>10:Industrial</option>
-                    <option value = 11>11:Utility</option>
-                    <option value = 12>12:Vans</option>
-                    <option value = 13>13:Cycles</option>
-                    <option value = 14>14:Boats</option>
-                    <option value = 15>15:Helicopters</option>
-                    <option value = 16>16:Planes</option>
-                    <option value = 17>17:Service</option>
-                    <option value = 18>18:Emergency</option>
-                    <option value = 19>19:Military</option>
-                    <option value = 20>20:Commercial</option>
-                    <option value = 21>21:Trains</option>
-                    <option value = 22>22:Custom</option>
-                </select>
-            </div>
-            <div class = "row">
-                Start Vehicle: <input id = "svehicle" placeholder = "Vehicle">
+                <div id = "rest">
+                    Restrict:<input id = "restrict" placeholder = "Vehicle">
+                </div>
+                <div id = "file">
+                    Vehicle File:<input id = "filename" placeholder = "File Name">
+                </div>
+                <div id = "vclass">
+                    <label for = "register_vclass">Vehicle Class:</label>
+                    <select id = "register_vclass">
+                        <option value = -1>Any</option>
+                        <option value = 0>0:Compacts</option>
+                        <option value = 1>1:Sedans</option>
+                        <option value = 2>2:SUVs</option>
+                        <option value = 3>3:Coupes</option>
+                        <option value = 4>4:Muscle</option>
+                        <option value = 5>5:Sports Classics</option>
+                        <option value = 6>6:Sports</option>
+                        <option value = 7>7:Super</option>
+                        <option value = 8>8:Motorcycles</option>
+                        <option value = 9>9:Off-road</option>
+                        <option value = 10>10:Industrial</option>
+                        <option value = 11>11:Utility</option>
+                        <option value = 12>12:Vans</option>
+                        <option value = 13>13:Cycles</option>
+                        <option value = 14>14:Boats</option>
+                        <option value = 15>15:Helicopters</option>
+                        <option value = 16>16:Planes</option>
+                        <option value = 17>17:Service</option>
+                        <option value = 18>18:Emergency</option>
+                        <option value = 19>19:Military</option>
+                        <option value = 20>20:Commercial</option>
+                        <option value = 21>21:Trains</option>
+                        <option value = 22>22:Custom</option>
+                    </select>
+                </div>
+                <div id="sveh">
+                    Start Vehicle:<input id = "svehicle" placeholder = "Vehicle">
+                </div>
             </div>
             <br>
             <div class = "row">
@@ -238,7 +244,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <br>
             <div class = "row">
                 <button id = "start">Start Race</button>
-                Delay: <input id = "delay" placeholder="Delay">
+                Delay:<input id = "delay" placeholder = "Delay">
             </div>
             <br>
             <div class = "row">

@@ -289,20 +289,8 @@ body {
     height: 44px;
 }
 
-#restrict {
-    width: 20%;
-}
-
-#filename {
-    width: 20%;
-}
-
 #register_vclass {
     height: 44px;
-}
-
-#svehicle {
-    width: 25%;
 }
 
 #unregister {
