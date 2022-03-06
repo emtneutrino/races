@@ -54,7 +54,11 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`races exportwblt [name]`** - export public track saved as [name] with best lap times to file named **`[name].json`**\
 **`races importwblt [name]`** - import track file named **`[name].json`** into public tracks with best lap times
 
-**IF YOU WISH TO LIMIT WHO CAN EDIT TRACKS, REGISTER RACES AND SPAWN VEHICLES, YOU WILL NEED TO CHANGE THE LINE `local requirePermission <const> = false` IN `races_server.lua` TO `local requirePermission <const> = true`.**
+**IF YOU WISH TO LIMIT WHO CAN EDIT TRACKS, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToEdit <const> = false` TO `local requirePermissionToEdit <const> = true` IN `races_server.lua`.**
+
+**IF YOU WISH TO LIMIT WHO CAN REGISTER RACES, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToRegister <const> = false` TO `local requirePermissionToRegister <const> = true` IN `races_server.lua`.**
+
+**IF YOU WISH TO LIMIT WHO CAN SPAWN VEHICLES, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToSpawn <const> = false` TO `local requirePermissionToSpawn <const> = true` IN `races_server.lua`.**
 
 **`races listReqs`** - list requests to edit tracks, register races and spawn vehicles\
 **`races approve [playerID]`** - approve request of [playerID] to edit tracks, register races or spawn vehicles\
@@ -297,7 +301,7 @@ Type **`races approve [playerID]`** to approve the request of the player with [p
 
 Type **`races deny [playerID]`** to deny the request of the player with [playerID].
 
-Type **`races listRoles`** to list the players who have had their roles approved.  The format of each element of the list is **`[name]:[roles]`** where [name] is the name of the player and [roles] is a list of roles the player has which can be any combination of 'EDIT', 'REGISTER' and 'SPAWN'.
+Type **`races listRoles`** to list if permission is required to edit tracks, register races and spawn vehicles and list the players who have had their roles approved.  The format of each element of the list is **`[name]:[roles]`** where [name] is the name of the player and [roles] is a list of roles the player has which can be any combination of 'EDIT', 'REGISTER' and 'SPAWN'.
 
 Type **`races removeRole [name] (role)`** to remove player [name]'s (role) which can be 'edit', 'register' or 'spawn'.  If (role) is not specified, remove all roles.
 

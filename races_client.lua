@@ -32,12 +32,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local STATE_IDLE <const> = 0
 local STATE_EDITING <const> = 1
-local STATE_REGISTERING <const> = 2
+local STATE_JOINING <const> = 2
 local STATE_RACING <const> = 3
 local raceState = STATE_IDLE -- race state
 
-local ROLE_EDIT <const> = 1 -- editor role
-local ROLE_REGISTER <const> = 2 -- register race role
+local ROLE_EDIT <const> = 1 -- edit tracks role
+local ROLE_REGISTER <const> = 2 -- register races role
 local ROLE_SPAWN <const> = 4 -- spawn vehicles role
 
 local white <const> = {r = 255, g = 255, b = 255}
@@ -150,7 +150,7 @@ local unitom = "imperial" -- current unit of measurement
 
 local panelShown = false -- flag indicating if main, edit or register panel is shown
 
-local permissions = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
+local roleBits = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
 
 math.randomseed(GetCloudTimeAsInt())
 
@@ -590,7 +590,7 @@ local function request(role)
         elseif "spawn" == role then
             roleBit = ROLE_SPAWN
         end
-        if roleBit > 0 then
+        if roleBit ~= 0 then
             TriggerServerEvent("races:request", roleBit)
         else
             sendMessage("Cannot make request.  Invalid role.\n")
@@ -601,7 +601,7 @@ local function request(role)
 end
 
 local function edit()
-    if permissions & ROLE_EDIT == 0 then
+    if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
@@ -648,7 +648,7 @@ local function clear()
 end
 
 local function reverse()
-    if permissions & ROLE_EDIT == 0 then
+    if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
@@ -675,7 +675,7 @@ local function reverse()
 end
 
 local function loadTrack(isPublic, trackName)
-    if permissions & (ROLE_EDIT | ROLE_REGISTER) == 0 then
+    if 0 == roleBits & (ROLE_EDIT | ROLE_REGISTER) then
         sendMessage("Permission required.\n")
         return
     end
@@ -691,7 +691,7 @@ local function loadTrack(isPublic, trackName)
 end
 
 local function saveTrack(isPublic, trackName)
-    if permissions & ROLE_EDIT == 0 then
+    if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
@@ -707,7 +707,7 @@ local function saveTrack(isPublic, trackName)
 end
 
 local function overwriteTrack(isPublic, trackName)
-    if permissions & ROLE_EDIT == 0 then
+    if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
@@ -723,7 +723,7 @@ local function overwriteTrack(isPublic, trackName)
 end
 
 local function deleteTrack(isPublic, trackName)
-    if permissions & ROLE_EDIT == 0 then
+    if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
@@ -747,7 +747,7 @@ local function list(isPublic)
 end
 
 local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
-    if permissions & ROLE_REGISTER == 0 then
+    if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
@@ -840,7 +840,7 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
 end
 
 local function unregister()
-    if permissions & ROLE_REGISTER == 0 then
+    if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
@@ -848,7 +848,7 @@ local function unregister()
 end
 
 local function startRace(delay)
-    if permissions & ROLE_REGISTER == 0 then
+    if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
@@ -861,7 +861,7 @@ local function startRace(delay)
 end
 
 local function leave()
-    if STATE_REGISTERING == raceState then
+    if STATE_JOINING == raceState then
         TriggerServerEvent("races:leave", raceIndex)
         sendMessage("Left race.\n")
         raceState = STATE_IDLE
@@ -890,7 +890,7 @@ local function leave()
 end
 
 local function rivals()
-    if STATE_REGISTERING == raceState or STATE_RACING == raceState then
+    if STATE_JOINING == raceState or STATE_RACING == raceState then
         TriggerServerEvent("races:rivals", raceIndex)
     else
         sendMessage("Cannot list competitors.  Not joined to any race.\n")
@@ -961,7 +961,7 @@ local function viewResults(chatOnly)
 end
 
 local function spawn(vehicleHash)
-    if permissions & ROLE_SPAWN == 0 then
+    if 0 == roleBits & ROLE_SPAWN then
         sendMessage("Permission required.\n")
         return
     end
@@ -1421,13 +1421,13 @@ RegisterCommand("races", function(_, args)
     end
 end)
 
-RegisterNetEvent("races:permission")
-AddEventHandler("races:permission", function(perms)
-    if perms & ROLE_EDIT == 0 and STATE_EDITING == raceState then
-        permissions = permissions | ROLE_EDIT
+RegisterNetEvent("races:roles")
+AddEventHandler("races:roles", function(roles)
+    if 0 == roles & ROLE_EDIT and STATE_EDITING == raceState then
+        roleBits = roleBits | ROLE_EDIT
         edit()
     end
-    permissions = perms
+    roleBits = roles
 end)
 
 RegisterNetEvent("races:message")
@@ -1573,7 +1573,7 @@ AddEventHandler("races:unregister", function(index)
         if starts[index] ~= nil then
             removeRegistrationPoint(index)
         end
-        if STATE_REGISTERING == raceState and raceIndex == index then
+        if STATE_JOINING == raceState and raceIndex == index then
             raceState = STATE_IDLE
             notifyPlayer("Race canceled.\n")
         elseif STATE_RACING == raceState and raceIndex == index then
@@ -1623,7 +1623,7 @@ RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(delay)
     if delay ~= nil then
         if delay >= 5 then
-            if STATE_REGISTERING == raceState then
+            if STATE_JOINING == raceState then
                 raceStart = GetGameTimer()
                 raceDelay = delay
                 countdown = 5
@@ -1695,7 +1695,7 @@ AddEventHandler("races:join", function(index, waypointCoords)
     if index ~= nil and waypointCoords ~= nil then
         if starts[index] ~= nil then
             if STATE_IDLE == raceState then
-                raceState = STATE_REGISTERING
+                raceState = STATE_JOINING
                 raceIndex = index
                 numLaps = starts[index].laps
                 DNFTimeout = starts[index].timeout * 1000
