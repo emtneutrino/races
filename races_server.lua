@@ -66,7 +66,7 @@ local ROLE_EDIT <const> = 1 -- edit tracks role
 local ROLE_REGISTER <const> = 2 -- register races role
 local ROLE_SPAWN <const> = 4 -- spawn vehicles role
 
-local requirePermissionToEdit <const> = true -- flag indicating if permission is required to edit tracks
+local requirePermissionToEdit <const> = false -- flag indicating if permission is required to edit tracks
 local requirePermissionToRegister <const> = false -- flag indicating if permission is required to register races
 local requirePermissionToSpawn <const> = false -- flag indicating if permission is required to spawn vehicles
 
