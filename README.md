@@ -354,6 +354,12 @@ Edit tracks command button panel\
 Register races command button panel\
 <img src="screenshots/Screenshot%20(11).png" width="800">
 
+VIDEO
+-----
+[Point-to-point race](https://www.youtube.com/watch?v=K8pEdsXJRtc)
+
+[Multi-lap race](https://www.youtube.com/watch?v=TKibGh_11FA)
+
 LICENSE
 -------
 Copyright (c) 2021, Neil J. Tan
