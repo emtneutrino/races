@@ -360,6 +360,8 @@ VIDEO
 
 [Multi-lap race](https://www.youtube.com/watch?v=TKibGh_11FA)
 
+[Multi-lap random vehicle race](https://www.youtube.com/watch?v=Cwtz6t8Q82E)
+
 LICENSE
 -------
 Copyright (c) 2021, Neil J. Tan
