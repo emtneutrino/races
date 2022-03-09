@@ -28,7 +28,7 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\
 **`/races register (buy-in) (laps) (DNF timeout)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`** - register your race restricted to [vehicle]\
-**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class] in (filename) file\
+**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '22' then use vehicles in (filename) file\
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any
 
 **`/races unregister`** - unregister your race\
