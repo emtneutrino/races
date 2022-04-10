@@ -53,6 +53,7 @@ $(function() {
             $("#laps").val(data.defaultLaps)
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
+            $("#ai_vehicle").val(data.defaultVehicle)
             $("#rest").hide()
             $("#file").hide()
             $("#vclass").hide()
@@ -321,6 +322,11 @@ $(function() {
             $("#file").show()
             $("#vclass").show()
             $("#sveh").show()
+        } else if ($("#rtype").val() == "ai") {
+            $("#rest").hide()
+            $("#file").hide()
+            $("#vclass").hide()
+            $("#sveh").hide()
         }
     })
 
@@ -355,6 +361,29 @@ $(function() {
         $.post("https://races/start", JSON.stringify({
             delay: $("#delay").val()
         }));
+    });
+
+    $("#add_ai").click(function() {
+        $.post("https://races/add_ai", JSON.stringify({
+            aiName: $("#ai_name").val()
+        }));
+    });
+
+    $("#delete_ai").click(function() {
+        $.post("https://races/delete_ai", JSON.stringify({
+            aiName: $("#ai_name").val()
+        }));
+    });
+
+    $("#spawn_ai").click(function() {
+        $.post("https://races/spawn_ai", JSON.stringify({
+            aiName: $("#ai_name").val(),
+            vehicle: $("#ai_vehicle").val()
+        }));
+    });
+
+    $("#list_ai").click(function() {
+        $.post("https://races/list_ai");
     });
 
     $("#register_close").click(function() {

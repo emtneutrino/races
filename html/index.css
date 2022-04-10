@@ -305,6 +305,30 @@ body {
     width: 10%;
 }
 
+#ai_name {
+    width: 25%;
+}
+
+#ai_vehicle {
+    width: 25%;
+}
+
+#add_ai {
+    width: 10%;
+}
+
+#delete_ai {
+    width: 10%;
+}
+
+#spawn_ai {
+    width: 10%;
+}
+
+#list_ai {
+    width: 10%;
+}
+
 #replyPanel {
     text-align: center;
     padding: 25px;
