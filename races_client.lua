@@ -858,6 +858,27 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
     end
 end
 
+local function unregister()
+    if 0 == roleBits & ROLE_REGISTER then
+        sendMessage("Permission required.\n")
+        return
+    end
+    TriggerServerEvent("races:unregister")
+end
+
+local function startRace(delay)
+    if 0 == roleBits & ROLE_REGISTER then
+        sendMessage("Permission required.\n")
+        return
+    end
+    delay = nil == delay and defaultDelay or tonumber(delay)
+    if delay ~= nil and delay >= 5 then
+        TriggerServerEvent("races:start", delay)
+    else
+        sendMessage("Cannot start.  Invalid delay.\n")
+    end
+end
+
 local function addAIDriver(aiName)
     if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
@@ -1030,27 +1051,6 @@ local function listAIDrivers()
         end
     else
         sendMessage("No AI drivers.\n")
-    end
-end
-
-local function unregister()
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    TriggerServerEvent("races:unregister")
-end
-
-local function startRace(delay)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    delay = nil == delay and defaultDelay or tonumber(delay)
-    if delay ~= nil and delay >= 5 then
-        TriggerServerEvent("races:start", delay)
-    else
-        sendMessage("Cannot start.  Invalid delay.\n")
     end
 end
 
@@ -1283,38 +1283,6 @@ RegisterNUICallback("list", function(data)
     list(data.isPublic)
 end)
 
-RegisterNUICallback("add_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    addAIDriver(aiName)
-end)
-
-RegisterNUICallback("delete_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    deleteAIDriver(aiName)
-end)
-
-RegisterNUICallback("spawn_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    local vehicle = data.vehicle
-    if "" == vehicle then
-        vehicle = nil
-    end
-    spawnAIDriver(aiName, vehicle)
-end)
-
-RegisterNUICallback("list_ai", function()
-    listAIDrivers()
-end)
-
 RegisterNUICallback("register", function(data)
     local buyin = data.buyin
     if "" == buyin then
@@ -1371,6 +1339,38 @@ RegisterNUICallback("start", function(data)
         delay = nil
     end
     startRace(delay)
+end)
+
+RegisterNUICallback("add_ai", function(data)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    addAIDriver(aiName)
+end)
+
+RegisterNUICallback("delete_ai", function(data)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    deleteAIDriver(aiName)
+end)
+
+RegisterNUICallback("spawn_ai", function(data)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    local vehicle = data.vehicle
+    if "" == vehicle then
+        vehicle = nil
+    end
+    spawnAIDriver(aiName, vehicle)
+end)
+
+RegisterNUICallback("list_ai", function()
+    listAIDrivers()
 end)
 
 RegisterNUICallback("leave", function()

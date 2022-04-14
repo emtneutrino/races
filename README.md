@@ -32,12 +32,12 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any\
 **`/races register (buy-in) (laps) (DNF timeout) ai`** - register your race allowing AI drivers to join
 
+**`/races unregister`** - unregister your race\
+**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
 **`/races ai add [name]`** - Add an AI racer named [name]\
 **`/races ai delete [name]`** - Delete an AI racer named [name]\
 **`/races ai spawn [name] (vehicle)`** - Spawn an AI racer named [name] in (vehicle); (vehicle) defaults to 'adder'\
 **`/races ai list`** - List AI racer names\
-**`/races unregister`** - unregister your race\
-**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
 **`/races leave`** - leave a race that you joined\
 **`/races rivals`** - list competitors in a race that you joined\
 **`/races respawn`** - respawn at last waypoint\
@@ -132,12 +132,12 @@ If permission is required to register races, the following commands will be rest
 **`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`**\
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`**\
 **`/races register (buy-in) (laps) (DNF timeout) ai`**\
+**`/races unregister`**\
+**`/races start (delay)`**\
 **`/races ai add [name]`**\
 **`/races ai delete [name]`**\
 **`/races ai spawn [name] (vehicle)`**\
-**`/races ai list`**\
-**`/races unregister`**\
-**`/races start (delay)`**
+**`/races ai list`**
 
 If permission is required to spawn vehicles, the following command will be restricted to players who have permission:
 
@@ -239,7 +239,7 @@ As a convenience, each class of vehicle has been separated into different files 
 
 If you want a race where AI drivers are allowed, type **`/races register 100 2 180 ai`**.  Only the person who registered the race can add AI drivers.  Buy-in amounts will be set to 0 and there will be no payouts.
 
-To add an AI driver named 'adam' at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an 'elegy2' vehicle at the location and heading you set.  If you do not specify a vehicle, an 'adder' vehicle is spawned by default.  To delete an AI driver you added named 'adam', type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To list the names of the AI drivers you added, type **`/races ai list`**.
+To add an AI driver named **`adam`** at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  To delete an AI driver you added named **`adam`**, type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To list the names of the AI drivers you added, type **`/races ai list`**.
 
 If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (**`resources/races/random.txt`**) and vehicles of class 9 (Off-road).  This is the equivalent of **`/races register 500 4 120 rand random.txt 9`**.
 
