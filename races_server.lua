@@ -87,7 +87,7 @@ end
 
 local requests = {} -- requests[playerID] = {name, roleBit} - list of requests to edit tracks, register races and/or spawn vehicles
 
-local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, aiName, numWaypointsPassed, data, finished}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
+local races = {} -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, aiName, numWaypointsPassed, data, coord}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
 
 local function notifyPlayer(source, msg)
     TriggerClientEvent("chat:addMessage", source, {
@@ -352,26 +352,26 @@ local function removeRole(playerName, roleName)
         end
         if lic ~= nil then
             if roleBits & ROLE_REGISTER ~= 0 then
-                for _, index in pairs(GetPlayers()) do
-                    local license = GetPlayerIdentifier(index, 0)
+                for _, rIndex in pairs(GetPlayers()) do
+                    local license = GetPlayerIdentifier(rIndex, 0)
                     if license ~= nil then
                         if string.sub(license, 9) == lic then
-                            index = tonumber(index)
-                            if races[index] ~= nil and STATE_REGISTERING == races[index].state then
-                                if races[index].buyin > 0 then
-                                    for i in pairs(races[index].players) do
-                                        Deposit(i, races[index].buyin)
-                                        notifyPlayer(i, races[index].buyin .. " was deposited in your funds.\n")
+                            rIndex = tonumber(rIndex)
+                            if races[rIndex] ~= nil and STATE_REGISTERING == races[rIndex].state then
+                                if races[rIndex].buyin > 0 then
+                                    for i in pairs(races[rIndex].players) do
+                                        Deposit(i, races[rIndex].buyin)
+                                        notifyPlayer(i, races[rIndex].buyin .. " was deposited in your funds.\n")
                                     end
                                 end
-                                races[index] = nil
-                                TriggerClientEvent("races:unregister", -1, index)
+                                races[rIndex] = nil
+                                TriggerClientEvent("races:unregister", -1, rIndex)
                             end
-                            TriggerClientEvent("races:roles", index, roles[lic].roleBits)
+                            TriggerClientEvent("races:roles", rIndex, roles[lic].roleBits)
                             break
                         end
                     else
-                        print("removeRole: Could not get license for player index '" .. index .. "'.")
+                        print("removeRole: Could not get license for player index '" .. rIndex .. "'.")
                     end
                 end
             end
@@ -658,12 +658,12 @@ local function getClassName(vclass)
     end
 end
 
-local function updateBestLapTimes(index)
-    local tracks = loadTracks(races[index].isPublic, index)
+local function updateBestLapTimes(rIndex)
+    local tracks = loadTracks(races[rIndex].isPublic, rIndex)
     if tracks ~= nil then
-        if tracks[races[index].trackName] ~= nil then -- saved track still exists - not deleted in middle of race
-            local bestLaps = tracks[races[index].trackName].bestLaps
-            for _, result in pairs(races[index].results) do
+        if tracks[races[rIndex].trackName] ~= nil then -- saved track still exists - not deleted in middle of race
+            local bestLaps = tracks[races[rIndex].trackName].bestLaps
+            for _, result in pairs(races[rIndex].results) do
                 if result.bestLapTime ~= -1 and nil == result.aiName then
                     bestLaps[#bestLaps + 1] = {playerName = result.playerName, bestLapTime = result.bestLapTime, vehicleName = result.vehicleName}
                 end
@@ -674,15 +674,15 @@ local function updateBestLapTimes(index)
             for i = 11, #bestLaps do
                 bestLaps[i] = nil
             end
-            tracks[races[index].trackName].bestLaps = bestLaps
-            if false == saveTracks(races[index].isPublic, index, tracks) then
-                notifyPlayer(index, "Save error updating best lap times.\n")
+            tracks[races[rIndex].trackName].bestLaps = bestLaps
+            if false == saveTracks(races[rIndex].isPublic, rIndex, tracks) then
+                notifyPlayer(rIndex, "Save error updating best lap times.\n")
             end
         else
-            notifyPlayer(index, "Cannot save best lap times.  Track '" .. races[index].trackName .. "' has been deleted.\n")
+            notifyPlayer(rIndex, "Cannot save best lap times.  Track '" .. races[rIndex].trackName .. "' has been deleted.\n")
         end
     else
-        notifyPlayer(index, "Load error updating best lap times.\n")
+        notifyPlayer(rIndex, "Load error updating best lap times.\n")
     end
 end
 
@@ -694,7 +694,7 @@ local function minutesSeconds(milliseconds)
 end
 
 local function saveResults(race)
-    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, aiName, numWaypointsPassed, data, finished}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
+    -- races[playerID] = {state, waypointCoords[] = {x, y, z, r}, isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, numRacing, players[playerID] = {playerName, aiName, numWaypointsPassed, data, coord}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
     local msg = "Race using "
     if nil == race.trackName then
         msg = msg .. "unsaved track "
@@ -831,7 +831,7 @@ AddEventHandler("playerDropped", function()
                 race.players[source] = nil
                 race.numRacing = race.numRacing - 1
             else
-                TriggerEvent("races:finish", i, 0, -1, -1, "", source)
+                TriggerEvent("races:finish", i, nil, 0, -1, -1, "", source)
             end
             break
         end
@@ -969,10 +969,10 @@ AddEventHandler("races:init", function()
     end
 
     -- register any races created before player joined
-    for i, race in pairs(races) do
+    for rIndex, race in pairs(races) do
         if STATE_REGISTERING == race.state then
             local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
-            TriggerClientEvent("races:register", source, i, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
+            TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
         end
     end
 end)
@@ -1376,18 +1376,18 @@ AddEventHandler("races:start", function(delay)
 end)
 
 RegisterNetEvent("races:leave")
-AddEventHandler("races:leave", function(index, aiName)
+AddEventHandler("races:leave", function(rIndex, aiName)
     local source = source
-    if index ~= nil then
-        if races[index] ~= nil then
-            if STATE_REGISTERING == races[index].state then
+    if rIndex ~= nil then
+        if races[rIndex] ~= nil then
+            if STATE_REGISTERING == races[rIndex].state then
                 local playerSource = aiName ~= nil and (source .. aiName) or source
-                if races[index].players[playerSource] ~= nil then
-                    races[index].players[playerSource] = nil
-                    races[index].numRacing = races[index].numRacing - 1
-                    if races[index].buyin > 0 and nil == aiName then
-                        Deposit(source, races[index].buyin)
-                        sendMessage(source, races[index].buyin .. " was deposited in your funds.\n")
+                if races[rIndex].players[playerSource] ~= nil then
+                    races[rIndex].players[playerSource] = nil
+                    races[rIndex].numRacing = races[rIndex].numRacing - 1
+                    if races[rIndex].buyin > 0 and nil == aiName then
+                        Deposit(source, races[rIndex].buyin)
+                        sendMessage(source, races[rIndex].buyin .. " was deposited in your funds.\n")
                     end
                 else
                     sendMessage(source, "Cannot leave.  Not a member of this race.\n")
@@ -1404,13 +1404,13 @@ AddEventHandler("races:leave", function(index, aiName)
 end)
 
 RegisterNetEvent("races:rivals")
-AddEventHandler("races:rivals", function(index)
+AddEventHandler("races:rivals", function(rIndex)
     local source = source
-    if index ~= nil then
-        if races[index] ~= nil then
-            if races[index].players[source] ~= nil then
+    if rIndex ~= nil then
+        if races[rIndex] ~= nil then
+            if races[rIndex].players[source] ~= nil then
                 local names = {}
-                for i, player in pairs(races[index].players) do
+                for i, player in pairs(races[rIndex].players) do
                     names[#names + 1] = player.playerName
                 end
                 table.sort(names)
@@ -1448,20 +1448,20 @@ AddEventHandler("races:funds", function()
 end)
 
 RegisterNetEvent("races:join")
-AddEventHandler("races:join", function(index, aiName)
+AddEventHandler("races:join", function(rIndex, aiName)
     local source = source
-    if index ~= nil then
-        if races[index] ~= nil then
-            if (nil == aiName and GetFunds(source) >= races[index].buyin) or aiName ~= nil then
-                if STATE_REGISTERING == races[index].state then
-                    races[index].numRacing = races[index].numRacing + 1
+    if rIndex ~= nil then
+        if races[rIndex] ~= nil then
+            if (nil == aiName and GetFunds(source) >= races[rIndex].buyin) or aiName ~= nil then
+                if STATE_REGISTERING == races[rIndex].state then
+                    races[rIndex].numRacing = races[rIndex].numRacing + 1
                     local playerSource = aiName ~= nil and (source .. aiName) or source
                     local playerName = aiName ~= nil and ("(AI) " .. aiName) or GetPlayerName(source)
-                    races[index].players[playerSource] = {playerName = playerName, aiName = aiName, numWaypointsPassed = -1, data = -1, finished = false}
-                    TriggerClientEvent("races:join", source, index, aiName, races[index].waypointCoords)
-                    if races[index].buyin > 0 and nil == aiName then
-                        Withdraw(source, races[index].buyin)
-                        notifyPlayer(source, races[index].buyin .. " was withdrawn from your funds.\n")
+                    races[rIndex].players[playerSource] = {playerName = playerName, aiName = aiName, numWaypointsPassed = -1, data = -1, coord = nil}
+                    TriggerClientEvent("races:join", source, rIndex, aiName, races[rIndex].waypointCoords)
+                    if races[rIndex].buyin > 0 and nil == aiName then
+                        Withdraw(source, races[rIndex].buyin)
+                        notifyPlayer(source, races[rIndex].buyin .. " was withdrawn from your funds.\n")
                     end
                 else
                     notifyPlayer(source, "Cannot join.  Race in progress.\n")
@@ -1478,54 +1478,53 @@ AddEventHandler("races:join", function(index, aiName)
 end)
 
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(index, aiName, numWaypointsPassed, finishTime, bestLapTime, vehicleName, altSource)
+AddEventHandler("races:finish", function(rIndex, aiName, numWaypointsPassed, finishTime, bestLapTime, vehicleName, altSource)
     local source = altSource ~= nil and altSource or source
-    if index ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
-        if races[index] ~= nil then
-            if STATE_RACING == races[index].state then
+    if rIndex ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
+        if races[rIndex] ~= nil then
+            if STATE_RACING == races[rIndex].state then
                 local playerSource = aiName ~= nil and (source .. aiName) or source
-                if races[index].players[playerSource] ~= nil then
-                    races[index].players[playerSource].numWaypointsPassed = numWaypointsPassed
-                    races[index].players[playerSource].data = finishTime
-                    races[index].players[playerSource].finished = true
+                if races[rIndex].players[playerSource] ~= nil then
+                    races[rIndex].players[playerSource].numWaypointsPassed = numWaypointsPassed
+                    races[rIndex].players[playerSource].data = finishTime
 
-                    for i, player in pairs(races[index].players) do
+                    for i, player in pairs(races[rIndex].players) do
                         if nil == player.aiName then
-                            TriggerClientEvent("races:finish", i, races[index].players[playerSource].playerName, finishTime, bestLapTime, vehicleName)
+                            TriggerClientEvent("races:finish", i, rIndex, races[rIndex].players[playerSource].playerName, finishTime, bestLapTime, vehicleName)
                         end
                     end
 
-                    races[index].results[#races[index].results + 1] = {
+                    races[rIndex].results[#races[rIndex].results + 1] = {
                         source = source,
-                        playerName = races[index].players[playerSource].playerName,
+                        playerName = races[rIndex].players[playerSource].playerName,
                         aiName = aiName,
                         finishTime = finishTime,
                         bestLapTime = bestLapTime,
                         vehicleName = vehicleName
                     }
 
-                    races[index].numRacing = races[index].numRacing - 1
-                    if 0 == races[index].numRacing then
-                        table.sort(races[index].results, function(p0, p1)
+                    races[rIndex].numRacing = races[rIndex].numRacing - 1
+                    if 0 == races[rIndex].numRacing then
+                        table.sort(races[rIndex].results, function(p0, p1)
                             return
                                 (p0.finishTime >= 0 and (-1 == p1.finishTime or p0.finishTime < p1.finishTime)) or
                                 (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
                         end)
 
-                        if true == distValid and races[index].rtype ~= "rand" and races[index].rtype ~= "ai" then
-                            local numRacers = #races[index].results
+                        if true == distValid and races[rIndex].rtype ~= "rand" and races[rIndex].rtype ~= "ai" then
+                            local numRacers = #races[rIndex].results
                             local numFinished = 0
-                            local totalPool = numRacers * races[index].buyin
+                            local totalPool = numRacers * races[rIndex].buyin
                             local pool = totalPool
                             local winnings = {}
 
                             local winningsRL = {}
-                            for _, result in pairs(races[index].results) do
-                                winningsRL[result.source] = races[index].buyin
+                            for _, result in pairs(races[rIndex].results) do
+                                winningsRL[result.source] = races[rIndex].buyin
                             end
     
-                            for i, result in ipairs(races[index].results) do
-                                winnings[i] = {payout = races[index].buyin, source = result.source}
+                            for i, result in ipairs(races[rIndex].results) do
+                                winnings[i] = {payout = races[rIndex].buyin, source = result.source}
                                 if result.finishTime ~= -1 then
                                     numFinished = numFinished + 1
                                 end
@@ -1567,7 +1566,7 @@ AddEventHandler("races:finish", function(index, aiName, numWaypointsPassed, fini
                                 winningsRL[winning.source] = winning.payout
                             end
 
-                            for i in pairs(races[index].players) do
+                            for i in pairs(races[rIndex].players) do
                                 if winningsRL[i] > 0 then
                                     Deposit(i, winningsRL[i])
                                     notifyPlayer(i, winningsRL[i] .. " was deposited in your funds.\n")
@@ -1575,19 +1574,19 @@ AddEventHandler("races:finish", function(index, aiName, numWaypointsPassed, fini
                             end
                         end
 
-                        for i, player in pairs(races[index].players) do
+                        for i, player in pairs(races[rIndex].players) do
                             if nil == player.aiName then
-                                TriggerClientEvent("races:results", i, races[index].results)
+                                TriggerClientEvent("races:results", i, rIndex, races[rIndex].results)
                             end
                         end
 
-                        saveResults(races[index])
+                        saveResults(races[rIndex])
 
-                        if races[index].trackName ~= nil then
-                            updateBestLapTimes(index)
+                        if races[rIndex].trackName ~= nil then
+                            updateBestLapTimes(rIndex)
                         end
                         
-                        races[index] = nil -- delete race after all players finish
+                        races[rIndex] = nil -- delete race after all players finish
                     end
                 else
                     notifyPlayer(source, "Cannot finish.  Not a member of this race.\n")
@@ -1604,15 +1603,14 @@ AddEventHandler("races:finish", function(index, aiName, numWaypointsPassed, fini
 end)
 
 RegisterNetEvent("races:report")
-AddEventHandler("races:report", function(index, aiName, numWaypointsPassed, distance)
+AddEventHandler("races:report", function(rIndex, aiName, numWaypointsPassed, distance, coord)
     local playerSource = aiName ~= nil and (source .. aiName) or source
-    if index ~= nil and numWaypointsPassed ~= nil and distance ~= nil then
-        if races[index] ~= nil then
-            if races[index].players[playerSource] ~= nil then
-                if false == races[index].players[playerSource].finished then
-                    races[index].players[playerSource].numWaypointsPassed = numWaypointsPassed
-                    races[index].players[playerSource].data = distance
-                end
+    if rIndex ~= nil and numWaypointsPassed ~= nil and distance ~= nil and coord ~= nil then
+        if races[rIndex] ~= nil then
+            if races[rIndex].players[playerSource] ~= nil then
+                races[rIndex].players[playerSource].numWaypointsPassed = numWaypointsPassed
+                races[rIndex].players[playerSource].data = distance
+                races[rIndex].players[playerSource].coord = coord
             else
                 notifyPlayer(source, "Cannot report.  Not a member of this race.\n")
             end
@@ -1627,14 +1625,15 @@ end)
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(500)
-        for _, race in pairs(races) do
+        for rIndex, race in pairs(races) do
             if STATE_RACING == race.state then
                 local sortedPlayers = {} -- will contain players still racing and players that finished without DNF
+                local coords = {}
                 local complete = true
 
-                -- race.players[playerID] = {playerName, aiName, numWaypointsPassed, data, finished}
+                -- race.players[playerID] = {playerName, aiName, numWaypointsPassed, data, coord}
                 for i, player in pairs(race.players) do
-                    if -1 == player.numWaypointsPassed then -- player client hasn't updated numWaypointsPassed and data
+                    if -1 == player.numWaypointsPassed then -- player client hasn't updated numWaypointsPassed, data and coord
                         complete = false
                         break
                     end
@@ -1646,9 +1645,9 @@ Citizen.CreateThread(function()
                             index = i,
                             aiName = player.aiName,
                             numWaypointsPassed = player.numWaypointsPassed,
-                            data = player.data,
-                            finished = player.finished
+                            data = player.data
                         }
+                        coords[i] = player.coord
                     end
                 end
 
@@ -1658,8 +1657,8 @@ Citizen.CreateThread(function()
                     end)
                     -- players sorted into sortedPlayers table
                     for position, sortedPlayer in pairs(sortedPlayers) do
-                        if false == sortedPlayer.finished and nil == sortedPlayer.aiName then
-                            TriggerClientEvent("races:position", sortedPlayer.index, position, #sortedPlayers)
+                        if nil == sortedPlayer.aiName then
+                            TriggerClientEvent("races:position", sortedPlayer.index, rIndex, position, #sortedPlayers, coords)
                         end
                     end
                 end

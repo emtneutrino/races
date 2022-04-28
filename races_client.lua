@@ -52,6 +52,7 @@ local startBlipColor <const> = 2 -- green
 local finishBlipColor <const> = 0 -- white
 local midBlipColor <const> = 38 -- dark blue
 local registerBlipColor <const> = 83 -- purple
+local racerBlipColor <const> = 2 -- green
 
 local selectedBlipColor <const> = 1 -- red
 
@@ -62,6 +63,7 @@ local startSprite <const> = 38 -- checkered flag
 local finishSprite <const> = 38 -- checkered flag
 local midSprite <const> = 1 -- numbered circle
 local registerSprite <const> = 58 -- circled star
+local racerSprite <const> = 1 -- circle
 
 local finishCheckpoint <const> = 9 -- cylinder checkered flag
 local midCheckpoint <const> = 42 -- cylinder with number
@@ -110,6 +112,7 @@ local drawLights = false -- draw start lights
 
 local position = -1 -- position in race out of numRacers players
 local numRacers = -1 -- number of players in race - no DNF players included
+local racerBlips = {} -- blips for all racers participating in race
 
 local lapTimeStart = -1 -- start time of current lap
 local bestLapTime = -1 -- best lap time
@@ -279,7 +282,6 @@ local function loadWaypointBlips(waypointCoords)
 
     for i = 1, #waypointCoords - 1 do
         local blip = AddBlipForCoord(waypointCoords[i].x, waypointCoords[i].y, waypointCoords[i].z)
-        SetBlipAsShortRange(blip, true)
         waypoints[i] = {coord = waypointCoords[i], checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
     end
 
@@ -290,7 +292,6 @@ local function loadWaypointBlips(waypointCoords)
 
     if false == startIsFinish then
         local blip = AddBlipForCoord(waypointCoords[#waypointCoords].x, waypointCoords[#waypointCoords].y, waypointCoords[#waypointCoords].z)
-        SetBlipAsShortRange(blip, true)
         waypoints[#waypointCoords] = {coord = waypointCoords[#waypointCoords], checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
     end
 
@@ -306,10 +307,10 @@ local function restoreBlips()
     end
 end
 
-local function removeRegistrationPoint(index)
-    RemoveBlip(starts[index].blip) -- delete registration blip
-    DeleteCheckpoint(starts[index].checkpoint) -- delete registration checkpoint
-    starts[index] = nil
+local function removeRegistrationPoint(rIndex)
+    RemoveBlip(starts[rIndex].blip) -- delete registration blip
+    DeleteCheckpoint(starts[rIndex].checkpoint) -- delete registration checkpoint
+    starts[rIndex] = nil
 end
 
 local function drawMsg(x, y, msg, scale, justify)
@@ -480,7 +481,6 @@ local function editWaypoints(coord)
     if 0 == selectedWaypoint then -- no existing waypoint selected
         if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists, add new waypoint
             local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
-            SetBlipAsShortRange(blip, true)
 
             local coordRad = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}
             waypoints[#waypoints + 1] = {coord = coordRad, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
@@ -768,11 +768,11 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
         sendMessage("Permission required.\n")
         return
     end
-    buyin = (nil == buyin or "." == buyin) and defaultBuyin or tonumber(buyin)
+    buyin = (nil == buyin or "." == buyin) and defaultBuyin or math.tointeger(tonumber(buyin))
     if buyin ~= nil and buyin >= 0 then
-        laps = (nil == laps or "." == laps) and defaultLaps or tonumber(laps)
+        laps = (nil == laps or "." == laps) and defaultLaps or math.tointeger(tonumber(laps))
         if laps ~= nil and laps > 0 then
-            timeout = (nil == timeout or "." == timeout) and defaultTimeout or tonumber(timeout)
+            timeout = (nil == timeout or "." == timeout) and defaultTimeout or math.tointeger(tonumber(timeout))
             if timeout ~= nil and timeout >= 0 then
                 local registerRace = true
                 local restrict = nil
@@ -786,7 +786,7 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
                         sendMessage("Cannot register.  Invalid restricted vehicle.\n")
                     end
                 elseif "class" == rtype then
-                    vclass = tonumber(arg6)
+                    vclass = math.tointeger(tonumber(arg6))
                     filename = arg7
                     if nil == vclass or vclass < 0 or vclass > 22 then
                         registerRace = false
@@ -807,7 +807,7 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
                         arg8 = nil
                     end
                     filename = arg6
-                    vclass = tonumber(arg7)
+                    vclass = math.tointeger(tonumber(arg7))
                     if vclass ~= nil and (vclass < 0 or vclass > 21) then
                         registerRace = false
                         sendMessage("Cannot register.  Invalid vehicle class.\n")
@@ -871,7 +871,7 @@ local function startRace(delay)
         sendMessage("Permission required.\n")
         return
     end
-    delay = nil == delay and defaultDelay or tonumber(delay)
+    delay = nil == delay and defaultDelay or math.tointeger(tonumber(delay))
     if delay ~= nil and delay >= 5 then
         TriggerServerEvent("races:start", delay)
     else
@@ -885,16 +885,16 @@ local function addAIDriver(aiName)
         return
     end
     if aiName ~= nil then
-        local index = GetPlayerServerId(PlayerId())
-        if starts[index] ~= nil then
-            if "ai" == starts[index].rtype then
+        local pIndex = GetPlayerServerId(PlayerId())
+        if starts[pIndex] ~= nil then
+            if "ai" == starts[pIndex].rtype then
                 if nil == aiState then
                     aiState = {
                         numRacing = 0,
                         raceStart = -1,
                         raceDelay = -1,
-                        numLaps = starts[index].laps,
-                        DNFTimeout = starts[index].timeout * 1000,
+                        numLaps = starts[pIndex].laps,
+                        DNFTimeout = starts[pIndex].timeout * 1000,
                         beginDNFTimeout = false,
                         timeoutStart = -1,
                         waypointCoords = nil,
@@ -917,8 +917,7 @@ local function addAIDriver(aiName)
                         currentLap = 1,
                         lapTimeStart = -1,
                         destWP = nil,
-                        destSet = false,
-                        finished = false
+                        destSet = false
                     }
                     aiState.numRacing = aiState.numRacing + 1
                     sendMessage("AI driver '" .. aiName .. "' added.\n")
@@ -993,7 +992,6 @@ local function spawnAIDriver(aiName, vehicleHash)
                             Citizen.Wait(0)
                         end
                         aiState.drivers[aiName].vehicle = CreateVehicle(vehicleHash, aiState.drivers[aiName].startWP, aiState.drivers[aiName].heading, true, false)
-                        SetEntityAsNoLongerNeeded(aiState.drivers[aiName].vehicle)
                         SetVehicleEngineOn(aiState.drivers[aiName].vehicle, true, true, false)
                         SetModelAsNoLongerNeeded(vehicleHash)
 
@@ -1005,7 +1003,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                         aiState.drivers[aiName].ped = CreatePedInsideVehicle(aiState.drivers[aiName].vehicle, PED_TYPE_CIVMALE, pedHash, -1, true, false)
                         SetModelAsNoLongerNeeded(pedHash)
                         SetDriverAbility(aiState.drivers[aiName].ped, 1.0)
-                        SetDriverAggressiveness(aiState.drivers[aiName].ped, 1.0)
+                        SetDriverAggressiveness(aiState.drivers[aiName].ped, 0.0)
 
                         aiState.drivers[aiName].bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
 
@@ -1162,7 +1160,7 @@ local function spawn(vehicleHash)
 end
 
 local function lvehicles(vclass)
-    vclass = tonumber(vclass)
+    vclass = math.tointeger(tonumber(vclass))
     if nil == vclass or (vclass >= 0 and vclass <= 21) then
         TriggerServerEvent("races:lvehicles", vclass)
     else
@@ -1737,10 +1735,9 @@ AddEventHandler("races:blt", function(isPublic, trackName, bestLaps)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(index, coord, isPublic, trackName, owner, buyin, laps, timeout, vehicleList, rdata)
-    if index ~= nil and coord ~= nil and isPublic ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and vehicleList ~= nil and rdata ~= nil then
+AddEventHandler("races:register", function(rIndex, coord, isPublic, trackName, owner, buyin, laps, timeout, vehicleList, rdata)
+    if rIndex ~= nil and coord ~= nil and isPublic ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and vehicleList ~= nil and rdata ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
-        SetBlipAsShortRange(blip, true)
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
         BeginTextCommandSetBlipName("STRING")
@@ -1783,7 +1780,7 @@ AddEventHandler("races:register", function(index, coord, isPublic, trackName, ow
             end
         end
 
-        starts[index] = {
+        starts[rIndex] = {
             isPublic = isPublic,
             trackName = trackName,
             owner = owner,
@@ -1804,12 +1801,12 @@ AddEventHandler("races:register", function(index, coord, isPublic, trackName, ow
 end)
 
 RegisterNetEvent("races:unregister")
-AddEventHandler("races:unregister", function(index)
-    if index ~= nil then
-        if starts[index] ~= nil then
-            removeRegistrationPoint(index)
+AddEventHandler("races:unregister", function(rIndex)
+    if rIndex ~= nil then
+        if starts[rIndex] ~= nil then
+            removeRegistrationPoint(rIndex)
         end
-        if raceIndex == index then
+        if rIndex == raceIndex then
             if STATE_JOINING == raceState then
                 raceState = STATE_IDLE
                 notifyPlayer("Race canceled.\n")
@@ -1820,10 +1817,14 @@ AddEventHandler("races:unregister", function(index)
                 SetBlipRoute(waypoints[1].blip, true)
                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                 speedo = false
+                for _, blip in pairs(racerBlips) do
+                    RemoveBlip(blip)
+                end
+                racerBlips = {}
                 notifyPlayer("Race canceled.\n")
             end
         end
-        if GetPlayerServerId(PlayerId()) == index and aiState ~= nil then
+        if aiState ~= nil and GetPlayerServerId(PlayerId()) == rIndex then
             for _, driver in pairs(aiState.drivers) do
                 if driver.ped ~= nil then
                     DeletePed(driver.ped)
@@ -1870,17 +1871,17 @@ AddEventHandler("races:lvehicles", function(vehicleList, vclass)
 end)
 
 RegisterNetEvent("races:start")
-AddEventHandler("races:start", function(index, delay)
-    -- event is triggered for:
-    -- 1. players who joined race
-    -- 2. player who joined the race that they registered
-    -- 3. AI drivers that were spawned by the player who registered the race
-    -- player who registered race may not have joined race and would not get start event triggered for their self
-    --      would need event triggered for AI that player spawned so AI can start race
-    if delay ~= nil then
+AddEventHandler("races:start", function(rIndex, delay)
+    if rIndex ~= nil and delay ~= nil then
         if delay >= 5 then
             local currentTime = GetGameTimer()
-            if index == raceIndex then
+            -- SCENARIO:
+            -- 1. player registers ai race
+            -- 2. player adds ai
+            -- 3. player does not join race they registered
+            -- 4. player starts registered race -- receives start event
+            -- player should not start in race they registered since they did not join
+            if rIndex == raceIndex then
                 if STATE_JOINING == raceState then
                     raceStart = currentTime
                     raceDelay = delay
@@ -1917,6 +1918,11 @@ AddEventHandler("races:start", function(index, delay)
                     SetBlipRoute(waypointCoord, true)
                     SetBlipRouteColour(waypointCoord, blipRouteColor)
 
+                    for _, blip in pairs(racerBlips) do
+                        RemoveBlip(blip)
+                    end
+                    racerBlips = {}
+
                     raceState = STATE_RACING
 
                     notifyPlayer("Race started.\n")
@@ -1929,13 +1935,18 @@ AddEventHandler("races:start", function(index, delay)
                 end
             end
 
-            if aiState ~= nil then
-                if -1 == aiState.raceStart then
-                    aiState.raceStart = currentTime
-                    aiState.raceDelay = delay
-                    for _, driver in pairs(aiState.drivers) do
-                        driver.raceState = STATE_RACING
-                    end
+            -- SCENARIO:
+            -- 1. player registers ai race
+            -- 2. player adds ai
+            -- 3. player joins another race
+            -- 4. joined race starts -- receives start event from joined race
+            -- do not trigger start event for ai's in player's registered race
+            -- only trigger start event for ai's if player started their registered race
+            if aiState ~= nil and GetPlayerServerId(PlayerId()) == rIndex then
+                aiState.raceStart = currentTime
+                aiState.raceDelay = delay
+                for _, driver in pairs(aiState.drivers) do
+                    driver.raceState = STATE_RACING
                 end
             end
         else
@@ -1947,10 +1958,10 @@ AddEventHandler("races:start", function(index, delay)
 end)
 
 RegisterNetEvent("races:hide")
-AddEventHandler("races:hide", function(index)
-    if index ~= nil then
-        if starts[index] ~= nil then
-            removeRegistrationPoint(index)
+AddEventHandler("races:hide", function(rIndex)
+    if rIndex ~= nil then
+        if starts[rIndex] ~= nil then
+            removeRegistrationPoint(rIndex)
         else
             notifyPlayer("Ignoring hide event.  Race does not exist.\n")
         end
@@ -1960,35 +1971,35 @@ AddEventHandler("races:hide", function(index)
 end)
 
 RegisterNetEvent("races:join")
-AddEventHandler("races:join", function(index, aiName, waypointCoords)
-    if index ~= nil and waypointCoords ~= nil then
-        if starts[index] ~= nil then
+AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
+    if rIndex ~= nil and waypointCoords ~= nil then
+        if starts[rIndex] ~= nil then
             if nil == aiName then
                 if STATE_IDLE == raceState then
                     raceState = STATE_JOINING
-                    raceIndex = index
-                    numLaps = starts[index].laps
-                    DNFTimeout = starts[index].timeout * 1000
+                    raceIndex = rIndex
+                    numLaps = starts[rIndex].laps
+                    DNFTimeout = starts[rIndex].timeout * 1000
                     loadWaypointBlips(waypointCoords)
                     restrictedHash = nil
-                    restrictedClass = starts[index].vclass
+                    restrictedClass = starts[rIndex].vclass
                     customClassVehicleList = {}
-                    startVehicle = starts[index].svehicle
+                    startVehicle = starts[rIndex].svehicle
                     randVehicles = {}
                     local msg = "Joined race using "
-                    if nil == starts[index].trackName then
+                    if nil == starts[rIndex].trackName then
                         msg = msg .. "unsaved track "
                     else
-                        msg = msg .. (true == starts[index].isPublic and "publicly" or "privately") .. " saved track '" .. starts[index].trackName .. "' "
+                        msg = msg .. (true == starts[rIndex].isPublic and "publicly" or "privately") .. " saved track '" .. starts[rIndex].trackName .. "' "
                     end
-                    msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[index].owner, starts[index].buyin, starts[index].laps)
-                    if "rest" == starts[index].rtype then
-                        msg = msg .. " : using '" .. starts[index].restrict .. "' vehicle"
-                        restrictedHash = GetHashKey(starts[index].restrict)
-                    elseif "class" == starts[index].rtype then
+                    msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[rIndex].owner, starts[rIndex].buyin, starts[rIndex].laps)
+                    if "rest" == starts[rIndex].rtype then
+                        msg = msg .. " : using '" .. starts[rIndex].restrict .. "' vehicle"
+                        restrictedHash = GetHashKey(starts[rIndex].restrict)
+                    elseif "class" == starts[rIndex].rtype then
                         msg = msg .. " : using " .. getClassName(restrictedClass) .. " vehicle class"
-                        customClassVehicleList = starts[index].vehicleList
-                    elseif "rand" == starts[index].rtype then
+                        customClassVehicleList = starts[rIndex].vehicleList
+                    elseif "rand" == starts[rIndex].rtype then
                         msg = msg .. " : using random "
                         if restrictedClass ~= nil then
                             msg = msg .. getClassName(restrictedClass) .. " vehicle class"
@@ -1998,7 +2009,7 @@ AddEventHandler("races:join", function(index, aiName, waypointCoords)
                         if startVehicle ~= nil then
                             msg = msg .. " : '" .. startVehicle .. "'"
                         end
-                        for _, vehName in pairs(starts[index].vehicleList) do
+                        for _, vehName in pairs(starts[rIndex].vehicleList) do
                             if nil == restrictedClass or GetVehicleClassFromName(vehName) == restrictedClass then
                                 randVehicles[#randVehicles + 1] = vehName
                             end
@@ -2006,7 +2017,7 @@ AddEventHandler("races:join", function(index, aiName, waypointCoords)
                         if #randVehicles == 0 then
                             msg = msg .. " : No random vehicles loaded"
                         end
-                    elseif "ai" == starts[index].rtype then
+                    elseif "ai" == starts[rIndex].rtype then
                         msg = msg .. " : AI allowed"
                     end
                     msg = msg .. ".\n"
@@ -2046,52 +2057,94 @@ AddEventHandler("races:join", function(index, aiName, waypointCoords)
     end
 end)
 
+-- SCENARIO:
+-- 1. player finishes a race
+-- 2. receives finish events from previous race because other players/AI finished
+-- 3. player joins another race
+-- 4. joined race starts
+-- 5. receives finish event from previous race before current race
+-- if accepting finish events from previous race, DNF timeout for current race may be started
+-- only accept finish events from current race
+-- do not accept finish events from previous race
 RegisterNetEvent("races:finish")
-AddEventHandler("races:finish", function(playerName, raceFinishTime, raceBestLapTime, raceVehicleName)
-    if playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil and raceVehicleName ~= nil then
-        if -1 == raceFinishTime then
-            if -1 == raceBestLapTime then
-                notifyPlayer(playerName .. " did not finish.\n")
+AddEventHandler("races:finish", function(rIndex, playerName, raceFinishTime, raceBestLapTime, raceVehicleName)
+    if rIndex ~= nil and playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil and raceVehicleName ~= nil then
+        if rIndex == raceIndex then
+            if -1 == raceFinishTime then
+                if -1 == raceBestLapTime then
+                    notifyPlayer(playerName .. " did not finish.\n")
+                else
+                    local minutes, seconds = minutesSeconds(raceBestLapTime)
+                    notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, minutes, seconds, raceVehicleName))
+                end
             else
-                local minutes, seconds = minutesSeconds(raceBestLapTime)
-                notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, minutes, seconds, raceVehicleName))
-            end
-        else
-            local currentTime = GetGameTimer()
-            if false == beginDNFTimeout then
-                beginDNFTimeout = true
-                timeoutStart = currentTime
-            end
-            if aiState ~= nil and false == aiState.beginDNFTimeout then
-                aiState.beginDNFTimeout = true
-                aiState.timeoutStart = currentTime
-            end
+                local currentTime = GetGameTimer()
+                if false == beginDNFTimeout then
+                    beginDNFTimeout = true
+                    timeoutStart = currentTime
+                end
+                if aiState ~= nil and false == aiState.beginDNFTimeout then
+                    aiState.beginDNFTimeout = true
+                    aiState.timeoutStart = currentTime
+                end
 
-            local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
-            local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
-            notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds, raceVehicleName))
+                local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
+                local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
+                notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds, raceVehicleName))
+            end
         end
     else
         notifyPlayer("Ignoring finish event.  Invalid parameters.\n")
     end
 end)
 
+-- SCENARIO:
+-- 1. player finishes a race
+-- 2. doesn't receive results event because other players/AI have not finished
+-- 3. player joins another race
+-- 4. joined race starts
+-- 5. receives results event from previous race before current race
+-- only accept results event from current race
+-- do not accept results event from previous race
 RegisterNetEvent("races:results")
-AddEventHandler("races:results", function(raceResults)
+AddEventHandler("races:results", function(rIndex, raceResults)
     if raceResults ~= nil then
-        results = raceResults
-        viewResults(true)
+        if rIndex == raceIndex then
+            results = raceResults
+            viewResults(true)
+        end
     else
         notifyPlayer("Ignoring results event.  Invalid parameters.\n")
     end
 end)
 
+-- SCENARIO:
+-- 1. player finishes previous race
+-- 2. still receiving position events from previous race because other players/AI have not finished
+-- 3. player joins another race
+-- 4. joined race started
+-- receiving position events from previous race and joined race
+-- only accept position events from joined race
+-- do not accept position events from previous race
 RegisterNetEvent("races:position")
-AddEventHandler("races:position", function(pos, numR)
-    if pos ~= nil and numR ~= nil then
-        if STATE_RACING == raceState then
+AddEventHandler("races:position", function(rIndex, pos, numR, coords)
+    if rIndex ~= nil and pos ~= nil and numR ~= nil and coords ~= nil then
+        if rIndex == raceIndex then
             position = pos
             numRacers = numR
+            local pIndex = GetPlayerServerId(PlayerId())
+            for i, coord in pairs(coords) do
+                if i ~= pIndex then
+                    if nil == racerBlips[i] then
+                        local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
+                        SetBlipSprite(blip, racerSprite)
+                        SetBlipColour(blip, racerBlipColor)
+                        racerBlips[i] = blip
+                    else
+                        SetBlipCoords(racerBlips[i], coord.x, coord.y, coord.z)
+                    end
+                end
+            end
         end
     else
         notifyPlayer("Ignoring position event.  Invalid parameters.\n")
@@ -2102,15 +2155,18 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(500)
         if STATE_RACING == raceState then
-            local distance = #(GetEntityCoords(PlayerPedId()) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z))
-            TriggerServerEvent("races:report", raceIndex, nil, numWaypointsPassed, distance)
+            local coord = GetEntityCoords(PlayerPedId())
+            local distance = #(coord - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z))
+            TriggerServerEvent("races:report", raceIndex, nil, numWaypointsPassed, distance, coord)
         end
 
         if aiState ~= nil then
+            local pIndex = GetPlayerServerId(PlayerId())
             for aiName, driver in pairs(aiState.drivers) do
                 if STATE_RACING == driver.raceState then
-                    local distance = #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z))
-                    TriggerServerEvent("races:report", GetPlayerServerId(PlayerId()), aiName, driver.numWaypointsPassed, distance)
+                    local coord = GetEntityCoords(driver.ped)
+                    local distance = #(coord - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z))
+                    TriggerServerEvent("races:report", pIndex, aiName, driver.numWaypointsPassed, distance, coord)
                 end
             end
         end
@@ -2399,11 +2455,11 @@ Citizen.CreateThread(function()
         elseif STATE_IDLE == raceState then
             local closestIndex = -1
             local minDist = defaultRadius
-            for index, start in pairs(starts) do
+            for rIndex, start in pairs(starts) do
                 local dist = #(playerCoord - GetBlipCoords(start.blip))
                 if dist < minDist then
                     minDist = dist
-                    closestIndex = index
+                    closestIndex = rIndex
                 end
             end
             if closestIndex ~= -1 then
@@ -2413,7 +2469,7 @@ Citizen.CreateThread(function()
                 else
                     msg = msg .. (true == starts[closestIndex].isPublic and "publicly" or "privately") .. " saved track '" .. starts[closestIndex].trackName .. "' "
                 end
-                msg = msg .. ("registered by %s :"):format(starts[closestIndex].owner)
+                msg = msg .. "registered by " .. starts[closestIndex].owner
                 drawMsg(0.50, 0.50, msg, 0.7, 0)
                 msg = ("%d buy-in : %d lap(s)"):format(starts[closestIndex].buyin, starts[closestIndex].laps)
                 if "rest" == starts[closestIndex].rtype then
@@ -2518,64 +2574,64 @@ Citizen.CreateThread(function()
         end
 
         if aiState ~= nil then
-            local index = GetPlayerServerId(PlayerId())
+            local pIndex = GetPlayerServerId(PlayerId())
             local currentTime = GetGameTimer()
             for aiName, driver in pairs(aiState.drivers) do
-                if false == driver.finished then
-                    if STATE_RACING == driver.raceState then
-                        local elapsedTime = currentTime - aiState.raceStart - aiState.raceDelay * 1000
-                        if elapsedTime >= 0 then
-                            if false == driver.started then
-                                driver.started = true
-                                driver.lapTimeStart = currentTime
+                if STATE_RACING == driver.raceState then
+                    local elapsedTime = currentTime - aiState.raceStart - aiState.raceDelay * 1000
+                    if elapsedTime >= 0 then
+                        if false == driver.started then
+                            driver.started = true
+                            driver.lapTimeStart = currentTime
+                        end
+                        if true == aiState.beginDNFTimeout then
+                            if aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
+                                driver.raceState = STATE_IDLE
+                                SetEntityAsNoLongerNeeded(driver.ped)
+                                SetEntityAsNoLongerNeeded(driver.vehicle)
+                                TriggerServerEvent("races:finish", pIndex, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                RemoveBlip(racerBlips[pIndex .. aiName])
                             end
-                            if true == aiState.beginDNFTimeout then
-                                if aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
-                                    driver.finished = true
-                                    driver.raceState = STATE_IDLE
-                                    SetEntityAsNoLongerNeeded(driver.ped)
-                                    TriggerServerEvent("races:finish", index, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
-                                end
-                            end
-                            if STATE_RACING == driver.raceState then
-                                if true == driver.destSet then
-                                    driver.destSet = false
-                                    --TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
-                                    --driveMode: https://vespura.com/fivem/drivingstyle/
-                                    --actual speed is around speed * 2 mph
-                                    TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.5)
-                                else
-                                    if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
-                                        driver.numWaypointsPassed = driver.numWaypointsPassed + 1
-                                        if driver.currentWP < #aiState.waypointCoords then
-                                            driver.currentWP = driver.currentWP + 1
+                        end
+                        if STATE_RACING == driver.raceState then
+                            if true == driver.destSet then
+                                driver.destSet = false
+                                -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
+                                -- driveMode: https://vespura.com/fivem/drivingstyle/
+                                -- actual speed is around speed * 2 mph
+                                TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.75)
+                            else
+                                if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
+                                    driver.numWaypointsPassed = driver.numWaypointsPassed + 1
+                                    if driver.currentWP < #aiState.waypointCoords then
+                                        driver.currentWP = driver.currentWP + 1
+                                    else
+                                        driver.currentWP = 1
+                                        local lapTime = currentTime - driver.lapTimeStart
+                                        if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
+                                            driver.bestLapTime = lapTime
+                                        end
+                                        driver.lapTimeStart = currentTime
+                                        if driver.currentLap < aiState.numLaps then
+                                            driver.currentLap = driver.currentLap + 1
                                         else
-                                            driver.currentWP = 1
-                                            local lapTime = currentTime - driver.lapTimeStart
-                                            if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
-                                                driver.bestLapTime = lapTime
-                                            end
-                                            driver.lapTimeStart = currentTime
-                                            if driver.currentLap < aiState.numLaps then
-                                                driver.currentLap = driver.currentLap + 1
-                                            else
-                                                driver.finished = true
-                                                driver.raceState = STATE_IDLE
-                                                SetEntityAsNoLongerNeeded(driver.ped)
-                                                TriggerServerEvent("races:finish", index, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
-                                            end
+                                            driver.raceState = STATE_IDLE
+                                            SetEntityAsNoLongerNeeded(driver.ped)
+                                            SetEntityAsNoLongerNeeded(driver.vehicle)
+                                            TriggerServerEvent("races:finish", pIndex, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                            RemoveBlip(racerBlips[pIndex .. aiName])
                                         end
-                                        if STATE_RACING == driver.raceState then
-                                            local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
-                                            driver.destWP = aiState.waypointCoords[curr]
-                                            driver.destSet = true
-                                        end
+                                    end
+                                    if STATE_RACING == driver.raceState then
+                                        local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
+                                        driver.destWP = aiState.waypointCoords[curr]
+                                        driver.destSet = true
                                     end
                                 end
                             end
                         end
                     end
-                else
+                elseif STATE_IDLE == driver.raceState then
                     aiState.drivers[aiName] = nil
                     aiState.numRacing = aiState.numRacing - 1
                     if 0 == aiState.numRacing then
