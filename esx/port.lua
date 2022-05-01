@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2021, Neil J. Tan
+Copyright (c) 2022, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

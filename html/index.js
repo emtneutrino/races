@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021, Neil J. Tan
+Copyright (c) 2022, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -54,10 +54,7 @@ $(function() {
             $("#timeout").val(data.defaultTimeout)
             $("#delay").val(data.defaultDelay)
             $("#ai_vehicle").val(data.defaultVehicle)
-            $("#rest").hide()
-            $("#file").hide()
-            $("#vclass").hide()
-            $("#sveh").hide()
+            $("#rtype").change()
             $("#registerPanel").show();
             openPanel = "register"
         } else if ("reply" == data.panel) {
@@ -149,6 +146,20 @@ $(function() {
 
     $("#funds").click(function() {
         $.post("https://races/funds");
+    });
+
+    $("#mEdit").click(function() {
+        $("#mainPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "edit"
+        }));
+    });
+
+    $("#mRegister").click(function() {
+        $("#mainPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "register"
+        }));
     });
 
     $("#main_close").click(function() {
@@ -248,6 +259,20 @@ $(function() {
     $("#edit_listPublic").click(function() {
         $.post("https://races/list", JSON.stringify({
             isPublic: true
+        }));
+    });
+
+    $("#eMain").click(function() {
+        $("#editPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "main"
+        }));
+    });
+
+    $("#eRegister").click(function() {
+        $("#editPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "register"
         }));
     });
 
@@ -384,6 +409,20 @@ $(function() {
 
     $("#list_ai").click(function() {
         $.post("https://races/list_ai");
+    });
+
+    $("#rMain").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "main"
+        }));
+    });
+
+    $("#rEdit").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "edit"
+        }));
     });
 
     $("#register_close").click(function() {

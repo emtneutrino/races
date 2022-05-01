@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2021, Neil J. Tan
+Copyright (c) 2022, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -157,6 +157,8 @@ local roleBits = 0 -- bit flag indicating if player is permitted to create track
 
 local aiState = nil -- table containing race info and AI driver info table
 
+local inVehicle = false -- flag indicating if player is in a vehicle
+
 math.randomseed(GetCloudTimeAsInt())
 
 TriggerServerEvent("races:init")
@@ -171,10 +173,9 @@ end
 
 local function sendMessage(msg)
     if true == panelShown then
-        local html = string.gsub(msg, "\n", "<br>")
         SendNUIMessage({
             panel = "reply",
-            message = html
+            message = string.gsub(msg, "\n", "<br>")
         })
     end
     notifyPlayer(msg)
@@ -903,10 +904,11 @@ local function addAIDriver(aiName)
                     }
                 end
                 if nil == aiState.drivers[aiName] then
+                    local player = PlayerPedId()
                     aiState.drivers[aiName] = {
                         raceState = STATE_JOINING,
-                        startWP = GetEntityCoords(PlayerPedId()),
-                        heading = GetEntityHeading(PlayerPedId()),
+                        startWP = GetEntityCoords(player),
+                        heading = GetEntityHeading(player),
                         vehicle = nil,
                         ped = nil,
                         started = false,
@@ -1413,6 +1415,14 @@ end)
 
 RegisterNUICallback("funds", function()
     viewFunds()
+end)
+
+RegisterNUICallback("show", function(data)
+    local panel = data.panel
+    if "main" == panel then
+        panel = nil
+    end
+    showPanel(panel)
 end)
 
 RegisterNUICallback("close", function()
@@ -2587,10 +2597,7 @@ Citizen.CreateThread(function()
                         if true == aiState.beginDNFTimeout then
                             if aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
                                 driver.raceState = STATE_IDLE
-                                SetEntityAsNoLongerNeeded(driver.ped)
-                                SetEntityAsNoLongerNeeded(driver.vehicle)
                                 TriggerServerEvent("races:finish", pIndex, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
-                                RemoveBlip(racerBlips[pIndex .. aiName])
                             end
                         end
                         if STATE_RACING == driver.raceState then
@@ -2599,7 +2606,11 @@ Citizen.CreateThread(function()
                                 -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
                                 -- driveMode: https://vespura.com/fivem/drivingstyle/
                                 -- actual speed is around speed * 2 mph
-                                TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.75)
+                                -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.5)
+                                -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange 
+                                -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
+                                -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
+                                TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destWP.r * 0.5, true)
                             else
                                 if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
                                     driver.numWaypointsPassed = driver.numWaypointsPassed + 1
@@ -2616,10 +2627,7 @@ Citizen.CreateThread(function()
                                             driver.currentLap = driver.currentLap + 1
                                         else
                                             driver.raceState = STATE_IDLE
-                                            SetEntityAsNoLongerNeeded(driver.ped)
-                                            SetEntityAsNoLongerNeeded(driver.vehicle)
                                             TriggerServerEvent("races:finish", pIndex, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
-                                            RemoveBlip(racerBlips[pIndex .. aiName])
                                         end
                                     end
                                     if STATE_RACING == driver.raceState then
@@ -2632,6 +2640,18 @@ Citizen.CreateThread(function()
                         end
                     end
                 elseif STATE_IDLE == driver.raceState then
+                    Citizen.CreateThread(function()
+                        while true do
+                            if GetVehicleNumberOfPassengers(driver.vehicle) == 0 then
+                                Citizen.Wait(1000)
+                                SetEntityAsNoLongerNeeded(driver.ped)
+                                break
+                            end
+                            Citizen.Wait(1000)
+                        end
+                    end)
+                    SetEntityAsNoLongerNeeded(driver.vehicle)
+                    RemoveBlip(racerBlips[pIndex .. aiName])
                     aiState.drivers[aiName] = nil
                     aiState.numRacing = aiState.numRacing - 1
                     if 0 == aiState.numRacing then
@@ -2639,6 +2659,22 @@ Citizen.CreateThread(function()
                     end
                 end
             end
+        end
+
+        if false == inVehicle then
+            local vehicle = GetVehiclePedIsTryingToEnter(player)
+            if DoesEntityExist(vehicle) == 1 then
+                if IsVehicleSeatFree(vehicle, -1) == false then
+                    SetPedIntoVehicle(player, vehicle, 0)
+                end
+                if IsPedInAnyVehicle(player, true) == 1 then
+                    inVehicle = true
+                end
+            end
+        elseif IsPedInAnyVehicle(player, true) == false then
+            inVehicle = false
+        else
+            inVehicle = true
         end
 
         if true == speedo then

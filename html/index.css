@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2021, Neil J. Tan
+Copyright (c) 2022, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -141,6 +141,14 @@ body {
     width: 25%;
 }
 
+#mEdit {
+    width: 25%;
+}
+
+#mRegister {
+    width: 25%;
+}
+
 #editPanel {
     text-align: center;
     font-size: 25px;
@@ -221,6 +229,14 @@ body {
 
 #edit_listPublic {
     width: 15%;
+}
+
+#eMain {
+    width: 25%;
+}
+
+#eRegister {
+    width: 25%;
 }
 
 #registerPanel {
@@ -327,6 +343,14 @@ body {
 
 #list_ai {
     width: 10%;
+}
+
+#rMain {
+    width: 25%;
+}
+
+#rEdit {
+    width: 25%;
 }
 
 #replyPanel {
