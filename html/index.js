@@ -335,7 +335,7 @@ $(function() {
             $("#sveh").hide()
         } else if ($("#rtype").val() == "class") {
             $("#rest").hide()
-            if ($("#register_vclass").val() == "22") {
+            if ($("#register_vclass").val() == "-1") {
                 $("#file").show()
             } else {
                 $("#file").hide()
@@ -357,7 +357,7 @@ $(function() {
 
     $("#register_vclass").change(function() {
         if ($("#rtype").val() == "class") {
-            if ($("#register_vclass").val() == "22") {
+            if ($("#register_vclass").val() == "-1") {
                 $("#file").show()
             } else {
                 $("#file").hide()

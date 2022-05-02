@@ -126,7 +126,7 @@ local timeoutStart = -1 -- start time of DNF timeout
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
 local restrictedClass = nil -- restricted vehicle class
 
-local customClassVehicleList = {} -- list of vehicles in class 22 (Custom)
+local customClassVehicleList = {} -- list of vehicles in class -1 (Custom)
 
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in random vehicle races
 local colorPri = -1 -- primary color of original vehicle
@@ -393,7 +393,9 @@ local function switchVehicle(vehicleHash)
 end
 
 local function getClassName(vclass)
-    if 0 == vclass then
+    if -1 == vclass then
+        return "'Custom'(-1)"
+    elseif 0 == vclass then
         return "'Compacts'(0)"
     elseif 1 == vclass then
         return "'Sedans'(1)"
@@ -437,8 +439,6 @@ local function getClassName(vclass)
         return "'Commercial'(20)"
     elseif 21 == vclass then
         return "'Trains'(21)"
-    elseif 22 == vclass then
-        return "'Custom'(22)"
     else
         return "'Unknown'(" .. vclass .. ")"
     end
@@ -789,10 +789,10 @@ local function register(buyin, laps, timeout, rtype, arg6, arg7, arg8)
                 elseif "class" == rtype then
                     vclass = math.tointeger(tonumber(arg6))
                     filename = arg7
-                    if nil == vclass or vclass < 0 or vclass > 22 then
+                    if nil == vclass or vclass < -1 or vclass > 21 then
                         registerRace = false
                         sendMessage("Cannot register.  Invalid vehicle class.\n")
-                    elseif 22 == vclass and nil == filename then
+                    elseif -1 == vclass and nil == filename then
                         registerRace = false
                         sendMessage("Cannot register.  Invalid file name.\n")
                     end
@@ -1309,7 +1309,7 @@ RegisterNUICallback("register", function(data)
         filename = nil
     end
     local vclass = data.vclass
-    if "-1" == vclass then
+    if "-2" == vclass then
         vclass = nil
     end
     local svehicle = data.svehicle
@@ -1488,6 +1488,7 @@ end)
 RegisterNetEvent("vehicles")
 AddEventHandler("vehicles", function(vehicleList)
     local unknown = {}
+    local classes = {}
     local maxName = nil
     local maxLen = 0
     local minName = nil
@@ -1496,6 +1497,12 @@ AddEventHandler("vehicles", function(vehicleList)
         if IsModelInCdimage(vehicle) ~= 1 or IsModelAVehicle(vehicle) ~= 1 then
             unknown[#unknown + 1] = vehicle
         else
+            local class = GetVehicleClassFromName(vehicle)
+            if nil == classes[class] then
+                classes[class] = 1
+            else
+                classes[class] = classes[class] + 1
+            end
             local name = GetLabelText(GetDisplayNameFromVehicleModel(vehicle))
             local len = string.len(name)
             if len > maxLen then
@@ -1506,6 +1513,14 @@ AddEventHandler("vehicles", function(vehicleList)
                 minLen = len
             end
         end
+    end
+    local classNum = {}
+    for class in pairs(classes) do
+        classNum[#classNum + 1] = class
+    end
+    table.sort(classNum)
+    for _, class in pairs(classNum) do
+        print(class .. ":" .. classes[class])
     end
     TriggerServerEvent("unk", unknown)
     print(maxLen .. ":" .. maxName)
@@ -1550,7 +1565,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) - register your race with no vehicle restrictions\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) rest [vehicle] - register your race restricted to [vehicle]\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) class [class] (filename) - register your race restricted to vehicles of type [class]; if [class] is '22' then use vehicles in (filename) file\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) class [class] (filename) - register your race restricted to vehicles of type [class]; if [class] is '-1' then use vehicles in (filename) file\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle) - register your race changing vehicles randomly every lap; (filename) defaults to 'random.txt'; (class) defaults to any; (vehicle) defaults to any\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) ai - register your race allowing AI drivers to join\n"
         msg = msg .. "\n"
@@ -2376,7 +2391,7 @@ Citizen.CreateThread(function()
                             end
                         elseif restrictedClass ~= nil then
                             if vehicle ~= nil then
-                                if 22 == restrictedClass then
+                                if -1 == restrictedClass then
                                     if vehicleInList(vehicle, customClassVehicleList) == false then
                                         waypointPassed = false
                                     end
@@ -2517,7 +2532,7 @@ Citizen.CreateThread(function()
                             notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
                         end
                     elseif "class" == starts[closestIndex].rtype then
-                        if starts[closestIndex].vclass ~= 22 then
+                        if starts[closestIndex].vclass ~= -1 then
                             if vehicle ~= nil then
                                 if GetVehicleClass(vehicle) ~= starts[closestIndex].vclass then
                                     joinRace = false

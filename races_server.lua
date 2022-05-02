@@ -607,7 +607,9 @@ local function loadVehicleFile(source, vehicleFile)
 end
 
 local function getClassName(vclass)
-    if 0 == vclass then
+    if -1 == vclass then
+        return "'Custom'(-1)"
+    elseif 0 == vclass then
         return "'Compacts'(0)"
     elseif 1 == vclass then
         return "'Sedans'(1)"
@@ -651,8 +653,6 @@ local function getClassName(vclass)
         return "'Commercial'(20)"
     elseif 21 == vclass then
         return "'Trains'(21)"
-    elseif 22 == vclass then
-        return "'Custom'(22)"
     else
         return "'Unknown'(" .. vclass .. ")"
     end
@@ -914,7 +914,7 @@ end)
 RegisterNetEvent("vehicles")
 AddEventHandler("vehicles", function()
     local source = source
-    local filePath = "./resources/races/vehicles/vehicles.txt"
+    local filePath = "./resources/races/vehicles.txt"
     local file, errMsg, errCode = io.open(filePath, "r")
     if file ~= nil then
         local vehicleList = {}
@@ -1200,12 +1200,12 @@ AddEventHandler("races:register", function(waypointCoords, isPublic, trackName, 
                                 umsg = " : using '" .. rdata.restrict .. "' vehicle"
                             end
                         elseif "class" == rdata.rtype then
-                            if nil == rdata.vclass or rdata.vclass < 0 or rdata.vclass > 22 then
+                            if nil == rdata.vclass or rdata.vclass < -1 or rdata.vclass > 21 then
                                 registerRace = false
                                 sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
                             else
                                 umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
-                                if 22 == rdata.vclass then
+                                if -1 == rdata.vclass then
                                     if nil == rdata.filename then
                                         registerRace = false
                                         sendMessage(source, "Cannot register.  Invalid file name.\n")

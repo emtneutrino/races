@@ -28,7 +28,7 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\
 **`/races register (buy-in) (laps) (DNF timeout)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`** - register your race restricted to [vehicle]\
-**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '22' then use vehicles in (filename) file\
+**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use vehicles in (filename) file\
 **`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any\
 **`/races register (buy-in) (laps) (DNF timeout) ai`** - register your race allowing AI drivers to join
 
@@ -94,7 +94,7 @@ Look for purple circled star blips on the waypoint map.  There will be correspon
 
 If the race is restricted to a specific vehicle, the label will include **'using [vehicle]'** where [vehicle] is the name of the restricted vehicle.  You must be in that vehicle when prompted to join the race.  If permission to spawn vehicles is given or not required, you can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle.  For example, if the label shows **using 'adder'**, you can spawn the vehicle by typing **`/races spawn adder`**.
 
-If the race is restricted to a specific vehicle class, the label will include **'using [class] vehicle class'** where [class] is the vehicle class.  The class number will be in parentheses.  You must be in a vehicle of that class when prompted to join the race.  If the class is 22 (Custom), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration waypoint on foot and trying to join the race.  The chat window will list which vehicles you can use in the class 22 (Custom) race.  If the class is not 22 (Custom), you can list vehicles in the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
+If the race is restricted to a specific vehicle class, the label will include **'using [class] vehicle class'** where [class] is the vehicle class.  The class number will be in parentheses.  You must be in a vehicle of that class when prompted to join the race.  If the class is Custom (-1), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration waypoint on foot and trying to join the race.  The chat window will list which vehicles you can use in the class Custom (-1) race.  If the class is not Custom (-1), you can list vehicles in the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
 
 If the race changes vehicles randomly every lap, the label will include **'using random vehicles'**.  If a vehicle is specified after the **'using random vehicles'** message, racers will be placed in the specified vehicle when the race starts.
 
@@ -195,7 +195,7 @@ If you want to restrict the vehicle used in a race, type **`/races register 100 
 
 If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 class 0`** to restrict vehicles to class 0 (Compacts).
 
-If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 class 22 myvehicles.txt`** to restrict vehicles to class 22 (Custom) which are listed in a file named **`resources/races/myvehicles.txt`**.  If you specify class 22 (Custom), you must provide a file containing the vehicles you allow in the race.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
+If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 class -1 myvehicles.txt`** to restrict vehicles to class Custom (-1) which are listed in a file named **`resources/races/myvehicles.txt`**.  If you specify class Custom (-1), you must provide a file containing the vehicles you allow in the race.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
 
 If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`resources/races/random.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/random.txt`** or remove vehicles from **`resources/races/random.txt`**.
 
@@ -211,6 +211,7 @@ If you want a race where vehicles change randomly every lap to one selected from
 
 The different classes of vehicle you can specify are listed here:
 
+-1: Custom\
 0: Compacts\
 1: Sedans\
 2: SUVs\
@@ -232,10 +233,9 @@ The different classes of vehicle you can specify are listed here:
 18: Emergency\
 19: Military\
 20: Commercial\
-21: Trains\
-22: Custom
+21: Trains
 
-As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class 0 have been placed in **`00.txt`**.  Vehicles of class 1 have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files except for class 22 (Custom).  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
+As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class 0 have been placed in **`00.txt`**.  Vehicles of class 1 have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files except for class Custom (-1).  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
 
 If you want a race where AI drivers are allowed, type **`/races register 100 2 180 ai`**.  Only the person who registered the race can add AI drivers.  Buy-in amounts will be set to 0 and there will be no payouts.
 
@@ -255,7 +255,7 @@ Players who want to join the race will need to have enough funds to pay for the 
 
 If the race is restricted to specific vehicle, its name is shown at the registration waypoint.  Players will need to be in the restricted vehicle at the registration waypoint in order to join the race.  Players can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle name.
 
-If the race is restricted to a specific vehicle class, the class name and number is shown at the registration waypoint.  You must be in a vehicle of the restricted class to join the race.  If the class is 22 (Custom), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration waypoint on foot and trying to join the race.  The chat window will list which vehicles you can use in the class 22 (Custom) race.  If the class is not 22 (Custom), you can list vehicles of the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
+If the race is restricted to a specific vehicle class, the class name and number is shown at the registration waypoint.  You must be in a vehicle of the restricted class to join the race.  If the class is Custom (-1), you can view which vehicles are allowed in the race by getting out of any vehicle you are in, walking into the registration waypoint on foot and trying to join the race.  The chat window will list which vehicles you can use in the class Custom (-1) race.  If the class is not Custom (-1), you can list vehicles of the class by typing **`/races lvehicles [class]`** where [class] is the vehicle class number.
 
 To join the race, type 'E' or press right DPAD.  Joining the race will clear any waypoints you previously set and load the track waypoints.  **NOTE THAT YOU CANNOT JOIN A RACE IF YOU ARE EDITING WAYPOINTS.  STOP EDITING FIRST.**  You can only join one race at a time.  If you want to join another race, leave your current one first.  **IF YOU DO NOT JOIN THE RACE YOU REGISTERED, YOU WILL NOT SEE THE RESULTS OF THE RACE.**
 
