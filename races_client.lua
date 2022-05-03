@@ -1006,6 +1006,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                         SetModelAsNoLongerNeeded(pedHash)
                         SetDriverAbility(aiState.drivers[aiName].ped, 1.0)
                         SetDriverAggressiveness(aiState.drivers[aiName].ped, 0.0)
+                        SetBlockingOfNonTemporaryEvents(aiState.drivers[aiName].ped, true)
 
                         aiState.drivers[aiName].bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
 
@@ -1455,6 +1456,21 @@ local function getEngineHealth()
     end
 end
 
+local function giveWeapon()
+    local player = PlayerPedId()
+    local weaponHash = "WEAPON_PISTOL"
+    GiveWeaponToPed(player, weaponHash, 0, false, false)
+    SetPedInfiniteAmmo(player, true, weaponHash)
+end
+
+local function removeWeapons()
+    RemoveAllPedWeapons(PlayerPedId(), false)
+end
+
+local function clearWantedLevel()
+    ClearPlayerWantedLevel(PlayerId())
+end
+
 RegisterNetEvent("sounds")
 AddEventHandler("sounds", function(sounds)
     print("start")
@@ -1656,7 +1672,7 @@ RegisterCommand("races", function(_, args)
 --[[
     elseif "test" == args[1] then
         if "0" == args[2] then
-            TriggerEvent("races:finish", "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
+            TriggerEvent("races:finish", GetPlayerServerId(PlayerId()), "John Doe", (5 * 60 + 24) * 1000, (1 * 60 + 32) * 1000, "Duck")
         elseif "1" == args[2] then
             testCheckpoint(args[3])
         elseif "2" == args[2] then
@@ -1671,6 +1687,12 @@ RegisterCommand("races", function(_, args)
             setEngineHealth(args[3])
         elseif "7" == args[2] then
             getEngineHealth()
+        elseif "8" == args[2] then
+            giveWeapon()
+        elseif "9" == args[2] then
+            removeWeapons()
+        elseif "a" == args[2] then
+            clearWantedLevel()
         end
 --]]
     else
