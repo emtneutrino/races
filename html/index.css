@@ -301,6 +301,10 @@ body {
     width: 10%;
 }
 
+#allowAI {
+    height: 44px;
+}
+
 #rtype {
     height: 44px;
 }

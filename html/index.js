@@ -370,6 +370,7 @@ $(function() {
             buyin: $("#buyin").val(),
             laps: $("#laps").val(),
             timeout: $("#timeout").val(),
+            allowAI: $("#allowAI").val(),
             rtype: $("#rtype").val(),
             restrict: $("#restrict").val(),
             filename: $("#filename").val(),

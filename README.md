@@ -25,12 +25,11 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`/races bltPublic [name]`** - list 10 best lap times of public track saved as [name]\
 **`/races listPublic`** - list public saved tracks
 
-For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap and (DNF timeout) defaults to 120 seconds\
-**`/races register (buy-in) (laps) (DNF timeout)`** - register your race with no vehicle restrictions\
-**`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`** - register your race restricted to [vehicle]\
-**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use vehicles in (filename) file\
-**`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any\
-**`/races register (buy-in) (laps) (DNF timeout) ai`** - register your race allowing AI drivers to join
+For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI)`** - register your race with no vehicle restrictions\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle]`** - register your race restricted to [vehicle]\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use vehicles in (filename) file\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any
 
 **`/races unregister`** - unregister your race\
 **`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
@@ -88,9 +87,11 @@ If permission to edit tracks and register races is given or is not required, all
 
 QUICK GUIDE FOR RACING
 ----------------------
-There are eight possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle, 8. AI drivers can be added to the race.  For race types 4, 5, 6, 7 and 8, buy-in amounts will be set to 0 and there will be no payouts.
+There are seven possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.  For race types 4, 5, 6 and 7, buy-in amounts will be set to 0 and there will be no payouts.
 
-Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race, the buy-in amount and the type of race.
+Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race, the buy-in amount, if AI drivers are allowed and the type of race.
+
+If the race allows AI drivers to be added, the label will include **'AI allowed'**.  The person who registered the race can add as many AI drivers as they like.
 
 If the race is restricted to a specific vehicle, the label will include **'using [vehicle]'** where [vehicle] is the name of the restricted vehicle.  You must be in that vehicle when prompted to join the race.  If permission to spawn vehicles is given or not required, you can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle.  For example, if the label shows **using 'adder'**, you can spawn the vehicle by typing **`/races spawn adder`**.
 
@@ -99,8 +100,6 @@ If the race is restricted to a specific vehicle class, the label will include **
 If the race changes vehicles randomly every lap, the label will include **'using random vehicles'**.  If a vehicle is specified after the **'using random vehicles'** message, racers will be placed in the specified vehicle when the race starts.
 
 If the race changes vehicles randomly every lap to one of a specific class, the label will include **'using random [class] vehicle class'** where [class] is the vehicle class.  The class number will be in parentheses.  If a vehicle is specified after the **'using random [class] vehicle class'** message, racers will be placed in the specified vehicle when the race starts.
-
-If the race allows AI drivers to be added, the label will include **'AI allowed'**.  The person who registered the race can add as many AI drivers as they like.
 
 To join a race, you must have enough funds to pay for the buy-in amount.  You can check how much funds you have by typing **`/races funds`**.
 
@@ -127,11 +126,10 @@ If permission is required to edit tracks, the following commands will be restric
 
 If permission is required to register races, the following commands will be restricted to players who have permission:
 
-**`/races register (buy-in) (laps) (DNF timeout)`**\
-**`/races register (buy-in) (laps) (DNF timeout) rest [vehicle]`**\
-**`/races register (buy-in) (laps) (DNF timeout) class [class] (filename)`**\
-**`/races register (buy-in) (laps) (DNF timeout) rand (filename) (class) (vehicle)`**\
-**`/races register (buy-in) (laps) (DNF timeout) ai`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI)`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle]`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] (filename)`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (filename) (class) (vehicle)`**\
 **`/races unregister`**\
 **`/races start (delay)`**\
 **`/races ai add [name]`**\
@@ -187,27 +185,27 @@ You can clear all waypoints, except registration waypoints, by typing **`/races 
 
 After you have set your track waypoints, you can register your race using the track.  This will advertise your race to all players.  Your track must have two or more waypoints.  At the starting waypoint of the track, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This will be the registration waypoint.  It will be visible to all players.
 
-The registration waypoint on the waypoint map will be labeled with some information about the race.  The player who registered the race and the buy-in amount will be shown.  If **'using [vehicle]'** is shown, the race is restricted to that vehicle.  If **'using [class] vehicle class'** is shown, the race is restricted to vehicles of type [class].  If **'using random vehicles'** is shown, the race will change vehicles randomly every lap.  If **'using random vehicles : [vehicle]'** is shown, the race will change vehicles randomly every lap and racers will start in the specified [vehicle].  If **'using random [class] vehicle class'** is shown, the race will change vehicles randomly every lap to one from that [class].  If **'using random [class] vehicle class : [vehicle]'** is shown, the race will change vehicles randomly every lap to one from that [class] and start in the specified [vehicle].  If **'AI allowed'** is shown, AI drivers may be added by the person who registered the race.  This allows racers to determine whether or not they can join the race without having to drive all the way to the registration waypoint.
+The registration waypoint on the waypoint map will be labeled with some information about the race.  The player who registered the race, the buy-in amount and if AI drivers are allowed will be shown.  If **'AI allowed'** is shown, AI drivers may be added by the person who registered the race.  If **'using [vehicle]'** is shown, the race is restricted to that vehicle.  If **'using [class] vehicle class'** is shown, the race is restricted to vehicles of type [class].  If **'using random vehicles'** is shown, the race will change vehicles randomly every lap.  If **'using random vehicles : [vehicle]'** is shown, the race will change vehicles randomly every lap and racers will start in the specified [vehicle].  If **'using random [class] vehicle class'** is shown, the race will change vehicles randomly every lap to one from that [class].  If **'using random [class] vehicle class : [vehicle]'** is shown, the race will change vehicles randomly every lap to one from that [class] and start in the specified [vehicle].  This allows racers to determine whether or not they can join the race without having to drive all the way to the registration waypoint.
 
-Type **`/races register 100 2 180`** to register your race with a buy-in amount of 100, 2 laps, a DNF timeout of 180 seconds and no restrictions on the vehicle used.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.
+Type **`/races register 100 2 180 no`** to register your race with a buy-in amount of 100, 2 laps, a DNF timeout of 180 seconds, do not allow AI drivers in the race and no restrictions on the vehicle used.  If you do not indicate the buy-in amount, the default is 500.  If you do not indicate the number of laps, the default is 1 lap.  If you do not indicate the DNF timeout, the default is 120 seconds.  If you do not indicate if AI are allowed, the default is no.
 
-If you want to restrict the vehicle used in a race, type **`/races register 100 2 180 rest elegy2`** to restrict vehicles to **`elegy2`**.
+If you want to restrict the vehicle used in a race, type **`/races register 100 2 180 no rest elegy2`** to restrict vehicles to **`elegy2`**.
 
-If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 class 0`** to restrict vehicles to class 0 (Compacts).
+If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 no class 0`** to restrict vehicles to class Compacts (0).
 
-If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 class -1 myvehicles.txt`** to restrict vehicles to class Custom (-1) which are listed in a file named **`resources/races/myvehicles.txt`**.  If you specify class Custom (-1), you must provide a file containing the vehicles you allow in the race.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
+If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 no class -1 myvehicles.txt`** to restrict vehicles to class Custom (-1) which are listed in a file named **`resources/races/myvehicles.txt`**.  If you specify class Custom (-1), you must provide a file containing the vehicles you allow in the race.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
 
-If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`resources/races/random.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/random.txt`** or remove vehicles from **`resources/races/random.txt`**.
+If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 no rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`resources/races/random.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/random.txt`** or remove vehicles from **`resources/races/random.txt`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** that you created, type **`/races register 100 2 180 rand myvehicles.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
+If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** that you created, type **`/races register 100 2 180 no rand myvehicles.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
 
 If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in **`resources/races/random.txt`** or the file that you specified.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`resources/races/myvehicles.txt`**, type **`/races register 100 2 180 rand myvehicles.txt 0`**.
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class Compacts (0) in **`resources/races/myvehicles.txt`**, type **`/races register 100 2 180 no rand myvehicles.txt 0`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt . adder`**.  The period between **`myvehicles.txt`** and **`adder`** indicates that vehicles can come from any class in **`resources/races/myvehicles.txt`**.
+If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 no rand myvehicles.txt . adder`**.  The period between **`myvehicles.txt`** and **`adder`** indicates that vehicles can come from any class in **`resources/races/myvehicles.txt`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class 0 (Compacts) in **`resources/races/myvehicles.txt`** and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 rand myvehicles.txt 0 blista`**.  When you specify a class like 0 (Compacts), the start vehicle must be of class 0 (Compacts).
+If you want a race where vehicles change randomly every lap to one selected from vehicles of class Compacts (0) in **`resources/races/myvehicles.txt`** and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 no rand myvehicles.txt 0 blista`**.  When you specify a class like Compacts (0), the start vehicle must be of class Compacts (0).
 
 The different classes of vehicle you can specify are listed here:
 
@@ -235,13 +233,13 @@ The different classes of vehicle you can specify are listed here:
 20: Commercial\
 21: Trains
 
-As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class 0 have been placed in **`00.txt`**.  Vehicles of class 1 have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files except for class Custom (-1).  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
+As a convenience, each class of vehicle has been separated into different files in the **`vehicles/`** folder.  Vehicles of class Compacts (0) have been placed in **`00.txt`**.  Vehicles of class Sedans (1) have been placed in **`01.txt`**.  Vehicles of other classes have been placed in similarly named files except for class Custom (-1).  Each of these files contain vehicles taken from **`vehicles.txt`**.  Vehicles that don't seem to be in my version of GTA 5 are in the **`uknown.txt`** file.
 
-If you want a race where AI drivers are allowed, type **`/races register 100 2 180 ai`**.  Only the person who registered the race can add AI drivers.  Buy-in amounts will be set to 0 and there will be no payouts.
+If you want a race where AI drivers are allowed, type **`/races register 100 2 180 yes`**.  Only the person who registered the race can add AI drivers.  Buy-in amounts will be set to 0 and there will be no payouts.
 
 To add an AI driver named **`adam`** at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  To delete an AI driver you added named **`adam`**, type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To list the names of the AI drivers you added, type **`/races ai list`**.  If you want to ride as a passenger in the AI's vehicle, move close to the vehicle and press 'F' on a keyboard, 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller. 
 
-If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), the default file of vehicles to randomly select from (**`resources/races/random.txt`**) and vehicles of class 9 (Off-road).  This is the equivalent of **`/races register 500 4 120 rand random.txt 9`**.
+If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), no AI drivers allowed, the default file of vehicles to randomly select from (**`resources/races/random.txt`**) and vehicles of class Off-road (9).  This is the equivalent of **`/races register 500 4 120 no rand random.txt 9`**.
 
 If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
@@ -249,7 +247,7 @@ You can unregister your race by typing **`/races unregister`**.  This will remov
 
 To join a race, players will need to be close enough to the registration waypoint to be prompted to join.  The registration waypoint will tell the player if it is an unsaved track or if it is a publicly or privately saved track along with its saved name, who registered the race, how much the buy-in amount is, how many laps there are and the type of race.
 
-There are eight possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle, 8. AI drivers can be added to the race.  For race types 4, 5, 6, 7 and 8, buy-in amounts will be set to 0 and there will be no payouts.
+There are seven possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.  For race types 4, 5, 6 and 7, buy-in amounts will be set to 0 and there will be no payouts.
 
 Players who want to join the race will need to have enough funds to pay for the buy-in amount.  All players begin with at least 5000 in their funds.
 
@@ -283,7 +281,7 @@ If you want to look at the race results again, type **`/races results`**.  If yo
 
 To spawn a vehicle, type **`/races spawn elegy2`** to spawn an **`elegy2`** vehicle.  If you do not indicate a vehicle name, the default is **`adder`**.  A list of vehicles you can spawn are listed in **`vehicles.txt`**.  This list has not been verified to work for all vehicles listed and there may be some missing.
 
-To list vehicles that can be used for any race, type **`/races lvehicles`**.  To list vehicles of a specific class, type **`/races lvehicles 0`** to list class 0 (Compacts) vehicles.  The vehicles displayed come from the **`vehicles.txt`** file which should contain every vehicle.
+To list vehicles that can be used for any race, type **`/races lvehicles`**.  To list vehicles of a specific class, type **`/races lvehicles 0`** to list class Compacts (0) vehicles.  The vehicles displayed come from the **`vehicles.txt`** file which should contain every vehicle.
 
 To toggle the display of the speedometer at any time, type **`/races speedo`**.  The speedometer automatically displays when you are in a race and disappears when you finish or leave the race.  The default unit of measurement is imperial.  If you wish to change the unit of measurement type **`/races speedo (unit)`** where (unit) is either **`imp`** for imperial or **`met`** for metric.
 

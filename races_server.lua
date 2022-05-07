@@ -702,6 +702,9 @@ local function saveResults(race)
         msg = msg .. (true == race.isPublic and "publicly" or "privately") .. " saved track '" .. race.trackName .. "' "
     end
     msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(race.owner, race.buyin, race.laps)
+    if "yes" == race.allowAI then
+        msg = msg .. " : AI allowed"
+    end
     if "rest" == race.rtype then
         msg = msg .. " : using '" .. race.restrict .. "' vehicle"
     elseif "class" == race.rtype then
@@ -716,8 +719,6 @@ local function saveResults(race)
         if race.svehicle ~= nil then
             msg = msg .. " : '" .. race.svehicle .. "'"
         end
-    elseif "ai" == race.rtype then
-        msg = msg .. " : AI allowed"
     end
     msg = msg .. "\n"
     if #race.results > 0 then
@@ -1178,117 +1179,123 @@ AddEventHandler("races:list", function(isPublic)
 end)
 
 RegisterNetEvent("races:register")
-AddEventHandler("races:register", function(waypointCoords, isPublic, trackName, buyin, laps, timeout, rdata)
+AddEventHandler("races:register", function(waypointCoords, isPublic, trackName, buyin, laps, timeout, allowAI, rdata)
     local source = source
     if 0 == getRoleBits(source) & ROLE_REGISTER then
         sendMessage(source, "Permission required.\n")
         return
     end
-    if waypointCoords ~= nil and isPublic ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and rdata ~= nil then
+    if waypointCoords ~= nil and isPublic ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and allowAI ~= nil and rdata ~= nil then
         if buyin >= 0 then
             if laps > 0 then
                 if timeout >= 0 then
-                    if nil == races[source] then
-                        local registerRace = true
-                        local umsg = ""
-                        local vehicleList = {}
-                        if "rest" == rdata.rtype then
-                            if nil == rdata.restrict then
-                                registerRace = false
-                                sendMessage(source, "Cannot register.  Invalid restricted vehicle.\n")
-                            else
-                                umsg = " : using '" .. rdata.restrict .. "' vehicle"
-                            end
-                        elseif "class" == rdata.rtype then
-                            if nil == rdata.vclass or rdata.vclass < -1 or rdata.vclass > 21 then
-                                registerRace = false
-                                sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
-                            else
-                                umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
-                                if -1 == rdata.vclass then
-                                    if nil == rdata.filename then
-                                        registerRace = false
-                                        sendMessage(source, "Cannot register.  Invalid file name.\n")
-                                    else
-                                        vehicleList = loadVehicleFile(source, rdata.filename)
-                                        if #vehicleList == 0 then
+                    if "yes" == allowAI or "no" == allowAI then
+                        if nil == races[source] then
+                            local registerRace = true
+                            local umsg = ""
+                            local vehicleList = {}
+                            if "rest" == rdata.rtype then
+                                if nil == rdata.restrict then
+                                    registerRace = false
+                                    sendMessage(source, "Cannot register.  Invalid restricted vehicle.\n")
+                                else
+                                    umsg = " : using '" .. rdata.restrict .. "' vehicle"
+                                end
+                            elseif "class" == rdata.rtype then
+                                if nil == rdata.vclass or rdata.vclass < -1 or rdata.vclass > 21 then
+                                    registerRace = false
+                                    sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
+                                else
+                                    umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
+                                    if -1 == rdata.vclass then
+                                        if nil == rdata.filename then
                                             registerRace = false
-                                            sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
+                                            sendMessage(source, "Cannot register.  Invalid file name.\n")
+                                        else
+                                            vehicleList = loadVehicleFile(source, rdata.filename)
+                                            if #vehicleList == 0 then
+                                                registerRace = false
+                                                sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
+                                            end
                                         end
                                     end
                                 end
-                            end
-                        elseif "rand" == rdata.rtype then
-                            buyin = 0
-                            if nil == rdata.filename then
-                                rdata.filename = randomVehicleFile
-                            end
-                            vehicleList = loadVehicleFile(source, rdata.filename)
-                            if #vehicleList == 0 then
-                                registerRace = false
-                                sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
-                            else
-                                umsg = " : using random "
-                                if rdata.vclass ~= nil then
-                                    if (rdata.vclass < 0 or rdata.vclass > 21) then
-                                        registerRace = false
-                                        sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
-                                    else
-                                        umsg = umsg .. getClassName(rdata.vclass) .. " vehicle class"
-                                    end
+                            elseif "rand" == rdata.rtype then
+                                buyin = 0
+                                if nil == rdata.filename then
+                                    rdata.filename = randomVehicleFile
+                                end
+                                vehicleList = loadVehicleFile(source, rdata.filename)
+                                if #vehicleList == 0 then
+                                    registerRace = false
+                                    sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
                                 else
-                                    umsg = umsg .. "vehicles"
+                                    umsg = " : using random "
+                                    if rdata.vclass ~= nil then
+                                        if (rdata.vclass < 0 or rdata.vclass > 21) then
+                                            registerRace = false
+                                            sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
+                                        else
+                                            umsg = umsg .. getClassName(rdata.vclass) .. " vehicle class"
+                                        end
+                                    else
+                                        umsg = umsg .. "vehicles"
+                                    end
+                                    if true == registerRace and rdata.svehicle ~= nil then
+                                        umsg = umsg .. " : '" .. rdata.svehicle .. "'"
+                                    end
                                 end
-                                if true == registerRace and rdata.svehicle ~= nil then
-                                    umsg = umsg .. " : '" .. rdata.svehicle .. "'"
-                                end
+                            elseif rdata.rtype ~= nil then
+                                registerRace = false
+                                sendMessage(source, "Cannot register.  Unknown race type.\n")
                             end
-                        elseif "ai" == rdata.rtype then
-                            umsg = umsg .. " : AI allowed"
-                        elseif rdata.rtype ~= nil then
-                            registerRace = false
-                            sendMessage(source, "Cannot register.  Unknown race type.\n")
-                        end
-                        if true == registerRace then
-                            local owner = GetPlayerName(source)
-                            local msg = "Registered race using "
-                            if nil == trackName then
-                                msg = msg .. "unsaved track "
+                            if true == registerRace then
+                                local owner = GetPlayerName(source)
+                                local msg = "Registered race using "
+                                if nil == trackName then
+                                    msg = msg .. "unsaved track "
+                                else
+                                    msg = msg .. (true == isPublic and "publicly" or "privately") .. " saved track '" .. trackName .. "' "
+                                end
+                                msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
+                                if "yes" == allowAI then
+                                    msg = msg .. " : AI allowed"
+                                end
+                                msg = msg .. umsg .. ".\n"
+                                if false == distValid then
+                                    msg = msg .. "Prize distribution table is invalid.\n"
+                                end
+                                sendMessage(source, msg)
+                                races[source] = {
+                                    state = STATE_REGISTERING,
+                                    waypointCoords = waypointCoords,
+                                    isPublic = isPublic,
+                                    trackName = trackName,
+                                    owner = owner,
+                                    buyin = buyin,
+                                    laps = laps,
+                                    timeout = timeout,
+                                    allowAI = allowAI,
+                                    rtype = rdata.rtype,
+                                    restrict = rdata.restrict,
+                                    vclass = rdata.vclass,
+                                    svehicle = rdata.svehicle,
+                                    vehicleList = vehicleList,
+                                    numRacing = 0,
+                                    players = {},
+                                    results = {}
+                                }
+                                TriggerClientEvent("races:register", -1, source, waypointCoords[1], isPublic, trackName, owner, buyin, laps, timeout, allowAI, vehicleList, rdata)
+                            end
+                        else
+                            if STATE_RACING == races[source].state then
+                                sendMessage(source, "Cannot register.  Previous race in progress.\n")
                             else
-                                msg = msg .. (true == isPublic and "publicly" or "privately") .. " saved track '" .. trackName .. "' "
+                                sendMessage(source, "Cannot register.  Previous race registered.  Unregister first.\n")
                             end
-                            msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
-                            msg = msg .. umsg .. ".\n"
-                            if false == distValid then
-                                msg = msg .. "Prize distribution table is invalid.\n"
-                            end
-                            sendMessage(source, msg)
-                            races[source] = {
-                                state = STATE_REGISTERING,
-                                waypointCoords = waypointCoords,
-                                isPublic = isPublic,
-                                trackName = trackName,
-                                owner = owner,
-                                buyin = buyin,
-                                laps = laps,
-                                timeout = timeout,
-                                rtype = rdata.rtype,
-                                restrict = rdata.restrict,
-                                vclass = rdata.vclass,
-                                svehicle = rdata.svehicle,
-                                vehicleList = vehicleList,
-                                numRacing = 0,
-                                players = {},
-                                results = {}
-                            }
-                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], isPublic, trackName, owner, buyin, laps, timeout, vehicleList, rdata)
                         end
                     else
-                        if STATE_RACING == races[source].state then
-                            sendMessage(source, "Cannot register.  Previous race in progress.\n")
-                        else
-                            sendMessage(source, "Cannot register.  Previous race registered.  Unregister first.\n")
-                        end
+                        sendMessage(source, "Invalid AI allowed value.\n")
                     end
                 else
                     sendMessage(source, "Invalid DNF timeout.\n")
@@ -1511,7 +1518,7 @@ AddEventHandler("races:finish", function(rIndex, aiName, numWaypointsPassed, fin
                                 (-1 == p0.finishTime and -1 == p1.finishTime and (p0.bestLapTime >= 0 and (-1 == p1.bestLapTime or p0.bestLapTime < p1.bestLapTime)))
                         end)
 
-                        if true == distValid and races[rIndex].rtype ~= "rand" and races[rIndex].rtype ~= "ai" then
+                        if true == distValid and races[rIndex].rtype ~= "rand" and "no" == races[rIndex].allowAI then
                             local numRacers = #races[rIndex].results
                             local numFinished = 0
                             local totalPool = numRacers * races[rIndex].buyin
