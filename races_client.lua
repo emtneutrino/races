@@ -158,6 +158,7 @@ local roleBits = 0 -- bit flag indicating if player is permitted to create track
 local aiState = nil -- table containing race info and AI driver info table
 
 local inVehicle = false -- flag indicating if player is in a vehicle
+local enteringVehicle = false
 
 math.randomseed(GetCloudTimeAsInt())
 
@@ -994,8 +995,8 @@ local function spawnAIDriver(aiName, vehicleHash)
                             Citizen.Wait(0)
                         end
                         aiState.drivers[aiName].vehicle = CreateVehicle(vehicleHash, aiState.drivers[aiName].startWP, aiState.drivers[aiName].heading, true, false)
-                        SetVehicleEngineOn(aiState.drivers[aiName].vehicle, true, true, false)
                         SetModelAsNoLongerNeeded(vehicleHash)
+                        SetVehicleEngineOn(aiState.drivers[aiName].vehicle, true, true, false)
 
                         local pedHash = "a_m_y_skater_01"
                         RequestModel(pedHash)
@@ -1007,6 +1008,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                         SetDriverAbility(aiState.drivers[aiName].ped, 1.0)
                         SetDriverAggressiveness(aiState.drivers[aiName].ped, 0.0)
                         SetBlockingOfNonTemporaryEvents(aiState.drivers[aiName].ped, true)
+                        SetPedCanBeDraggedOut(aiState.drivers[aiName].ped, false)
 
                         aiState.drivers[aiName].bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
 
@@ -1513,6 +1515,7 @@ AddEventHandler("vehicles", function(vehicleList)
         if IsModelInCdimage(vehicle) ~= 1 or IsModelAVehicle(vehicle) ~= 1 then
             unknown[#unknown + 1] = vehicle
         else
+            print(vehicle .. ":" .. GetVehicleModelNumberOfSeats(vehicle))
             local class = GetVehicleClassFromName(vehicle)
             if nil == classes[class] then
                 classes[class] = 1
@@ -2701,17 +2704,32 @@ Citizen.CreateThread(function()
         if false == inVehicle then
             local vehicle = GetVehiclePedIsTryingToEnter(player)
             if DoesEntityExist(vehicle) == 1 then
-                if IsVehicleSeatFree(vehicle, -1) == false then
-                    SetPedIntoVehicle(player, vehicle, 0)
+                if false == enteringVehicle then
+                    enteringVehicle = true
+                    local numSeats = GetVehicleModelNumberOfSeats(GetEntityModel(vehicle))
+                    if numSeats > 0 then
+                        if IsVehicleSeatFree(vehicle, -1) == false then
+                            for seat = 0, numSeats - 2 do
+                                if IsVehicleSeatFree(vehicle, seat) == 1 then
+                                    SetPedIntoVehicle(player, vehicle, seat)
+                                    break
+                                end
+                            end
+                        end
+                    end
                 end
                 if IsPedInAnyVehicle(player, true) == 1 then
                     inVehicle = true
+                    enteringVehicle = false
                 end
             end
-        elseif IsPedInAnyVehicle(player, true) == false then
-            inVehicle = false
         else
-            inVehicle = true
+            enteringVehicle = false
+            if IsPedInAnyVehicle(player, true) == false then
+                inVehicle = false
+            else
+                inVehicle = true
+            end
         end
 
         if true == speedo then
