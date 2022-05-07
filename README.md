@@ -376,7 +376,7 @@ VIDEOS
 
 [Multi-lap random vehicle race](https://www.youtube.com/watch?v=Cwtz6t8Q82E)
 
-[Multi-lap race with AI drivers](https://www.youtube.com/watch?v=ia5fhfzyEgM)
+[Multi-lap race with AI drivers](https://www.youtube.com/watch?v=ADkaNMvSFeM)
 
 LICENSE
 -------
