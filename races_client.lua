@@ -2042,11 +2042,7 @@ AddEventHandler("races:start", function(rIndex, delay)
                     speedo = true
 
                     if startVehicle ~= nil then
-                        RequestModel(startVehicle)
-                        while HasModelLoaded(startVehicle) == false do
-                            Citizen.Wait(0)
-                        end
-                        local vehicle = putPedInVehicle(PlayerPedId(), startVehicle, nil)
+                        local vehicle = switchVehicle(PlayerPedId(), startVehicle)
                         SetEntityAsNoLongerNeeded(vehicle)
                     end
 
@@ -2091,6 +2087,9 @@ AddEventHandler("races:start", function(rIndex, delay)
                 aiState.raceStart = currentTime
                 aiState.raceDelay = delay
                 for _, driver in pairs(aiState.drivers) do
+                    if aiState.svehicle ~= nil then
+                        driver.vehicle = switchVehicle(driver.ped, aiState.svehicle)
+                    end
                     driver.raceState = STATE_RACING
                 end
             end
