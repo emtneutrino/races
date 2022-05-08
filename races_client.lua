@@ -1686,7 +1686,7 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
         msg = msg .. "/races respawn - respawn at last waypoint\n"
         msg = msg .. "/races results - view latest race results\n"
-        msg = msg .. "/races spawn (name) - spawn a vehicle; (name) defaults to 'adder'\n"
+        msg = msg .. "/races spawn (vehicle) - spawn a vehicle; (vehicle) defaults to 'adder'\n"
         msg = msg .. "/races lvehicles (class) - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\n"
         msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit) = {imp, met}; otherwise toggle display of speedometer if (unit) is not specified\n"
         msg = msg .. "/races funds - view available funds\n"

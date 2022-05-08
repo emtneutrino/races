@@ -41,7 +41,7 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races rivals`** - list competitors in a race that you joined\
 **`/races respawn`** - respawn at last waypoint\
 **`/races results`** - view latest race results\
-**`/races spawn (name)`** - spawn a vehicle; (name) defaults to 'adder'\
+**`/races spawn (vehicle)`** - spawn a vehicle; (vehicle) defaults to 'adder'\
 **`/races lvehicles (class)`** - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\
 **`/races speedo (unit)`** - change unit of speed measurement to (unit) = {imp, met}; otherwise toggle display of speedometer if (unit) is not specified\
 **`/races funds`** - view available funds\
@@ -139,7 +139,7 @@ If permission is required to register races, the following commands will be rest
 
 If permission is required to spawn vehicles, the following command will be restricted to players who have permission:
 
-**`/races spawn (name)`**
+**`/races spawn (vehicle)`**
 
 If permission is required to edit tracks, register races and spawn vehicles, players who wish to do these tasks will need to request permission.  Type **`/races request edit`** to request permission to edit tracks.  Type **`/races request register`** to request permission to register races.  Type **`/races request spawn`** to request permission to spawn vehicles.  The server administrator will then approve or deny the request and the player will be notified.
 
