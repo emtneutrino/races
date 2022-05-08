@@ -2817,12 +2817,10 @@ Citizen.CreateThread(function()
                     enteringVehicle = true
                     local numSeats = GetVehicleModelNumberOfSeats(GetEntityModel(vehicle))
                     if numSeats > 0 then
-                        if IsVehicleSeatFree(vehicle, -1) == false then
-                            for seat = 0, numSeats - 2 do
-                                if IsVehicleSeatFree(vehicle, seat) == 1 then
-                                    SetPedIntoVehicle(player, vehicle, seat)
-                                    break
-                                end
+                        for seat = -1, numSeats - 2 do
+                            if IsVehicleSeatFree(vehicle, seat) == 1 then
+                                TaskEnterVehicle(player, vehicle, 10.0, seat, 1.0, 1, 0)
+                                break
                             end
                         end
                     end

@@ -973,7 +973,7 @@ AddEventHandler("races:init", function()
     for rIndex, race in pairs(races) do
         if STATE_REGISTERING == race.state then
             local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
-            TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.vehicleList, rdata)
+            TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.allowAI, race.vehicleList, rdata)
         end
     end
 end)
