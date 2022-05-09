@@ -79,11 +79,14 @@ local rolesDataFile <const> = "./resources/races/roles.json"
 local roles = {} -- roles[license] = {name, roleBits} - list of players approved to edit tracks, register races and/or spawn vehicles
 if requirePermissionBits ~= 0 then
     local file = io.open(rolesDataFile, "r")
-    if file ~= nil then
+    if file ~= fail then
         roles = json.decode(file:read("a"))
         file:close()
     end
 end
+
+local saveLog <const> = false
+local logFile <const> = "./resources/races/log.txt"
 
 local requests = {} -- requests[playerID] = {name, roleBit} - list of requests to edit tracks, register races and/or spawn vehicles
 
@@ -101,10 +104,22 @@ local function sendMessage(source, msg)
     TriggerClientEvent("races:message", source, msg)
 end
 
+local function logMessage(msg)
+    if true == saveLog then
+        local file, errMsg, errCode = io.open(logFile, "a")
+        if file ~= fail then
+            file:write(os.date() .. " : " .. msg .. "\n")
+            file:close()
+        else
+            print("logMessage: Error opening file '" .. logFile .. "' for append : '" .. errMsg .. "' : " .. errCode)
+        end
+    end
+end
+
 local function getTrack(trackName)
     local trackFile = "./resources/races/" .. trackName .. ".json"
     local file, errMsg, errCode = io.open(trackFile, "r")
-    if nil == file then
+    if fail == file then
         print("getTrack: Error opening file '" .. trackFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         return nil
     end
@@ -142,7 +157,7 @@ end
 local function export(trackName, withBLT)
     if trackName ~= nil then
         local file, errMsg, errCode = io.open(raceDataFile, "r")
-        if file ~= nil then
+        if file ~= fail then
             local raceData = json.decode(file:read("a"))
             file:close()
             if raceData ~= nil then
@@ -151,15 +166,17 @@ local function export(trackName, withBLT)
                     if publicTracks[trackName] ~= nil then
                         local trackFile = "./resources/races/" .. trackName .. ".json"
                         file = io.open(trackFile, "r")
-                        if nil == file then
+                        if fail == file then
                             file, errMsg, errCode = io.open(trackFile, "w+")
-                            if file ~= nil then
+                            if file ~= fail then
                                 if false == withBLT then
                                     publicTracks[trackName].bestLaps = {}
                                 end
                                 file:write(json.encode(publicTracks[trackName]))
                                 file:close()
-                                print("Exported '" .. trackName .. "'.")
+                                local msg = "Exported '" .. trackName .. "'."
+                                print(msg)
+                                logMessage(msg)
                             else
                                 print("export: Error opening file '" .. trackFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
@@ -187,7 +204,7 @@ end
 local function import(trackName, withBLT)
     if trackName ~= nil then
         local file, errMsg, errCode = io.open(raceDataFile, "r")
-        if file ~= nil then
+        if file ~= fail then
             local raceData = json.decode(file:read("a"))
             file:close()
             if raceData ~= nil then
@@ -197,7 +214,7 @@ local function import(trackName, withBLT)
                         local track = getTrack(trackName)
                         if track ~= nil then
                             file, errMsg, errCode = io.open(raceDataFile, "w+")
-                            if file ~= nil then
+                            if file ~= fail then
                                 if false == withBLT then
                                     track.bestLaps = {}
                                 end
@@ -205,7 +222,9 @@ local function import(trackName, withBLT)
                                 raceData["PUBLIC"] = publicTracks
                                 file:write(json.encode(raceData))
                                 file:close()
-                                print("Imported '" .. trackName .. "'.")
+                                local msg = "Imported '" .. trackName .. "'."
+                                print(msg)
+                                logMessage(msg)
                             else
                                 print("import: Error opening file '" .. raceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                             end
@@ -258,14 +277,22 @@ local function approve(playerID)
                     else
                         roles[license] = {name = name, roleBits = requests[tonumber(playerID)].roleBit}
                     end
-                    requests[tonumber(playerID)] = nil
-                    print("approve: Request approved.")
-                    notifyPlayer(playerID, "Request approved.\n")
-                    TriggerClientEvent("races:roles", playerID, roles[license].roleBits)
                     local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-                    if file ~= nil then
+                    if file ~= fail then
                         file:write(json.encode(roles))
                         file:close()
+                        local roleType = "SPAWN"
+                        if ROLE_EDIT == requests[tonumber(playerID)].roleBit then
+                            roleType = "EDIT"
+                        elseif ROLE_REGISTER == requests[tonumber(playerID)].roleBit then
+                            roleType = "REGISTER"
+                        end
+                        local msg = "approve: Request by '" .. name .. "' for " .. roleType .. " role approved."
+                        print(msg)
+                        logMessage(msg)
+                        TriggerClientEvent("races:roles", playerID, roles[license].roleBits)
+                        notifyPlayer(playerID, "Request for " .. roleType .. " role approved.\n")
+                        requests[tonumber(playerID)] = nil
                     else
                         print("approve: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                     end
@@ -285,11 +312,20 @@ end
 
 local function deny(playerID)
     if playerID ~= nil then
-        if GetPlayerName(playerID) ~= nil then
+        local name = GetPlayerName(playerID)
+        if name ~= nil then
             if requests[tonumber(playerID)] ~= nil then
+                local roleType = "SPAWN"
+                if ROLE_EDIT == requests[tonumber(playerID)].roleBit then
+                    roleType = "EDIT"
+                elseif ROLE_REGISTER == requests[tonumber(playerID)].roleBit then
+                    roleType = "REGISTER"
+                end
+                local msg = "deny: Request by '" .. name .. "' for " .. roleType .. " role denied."
+                print(msg)
+                logMessage(msg)
+                notifyPlayer(playerID, "Request for " .. roleType .. " role denied.\n")
                 requests[tonumber(playerID)] = nil
-                print("deny: Request denied.")
-                notifyPlayer(playerID, "Request denied.\n")
             else
                 print("deny: Player did not request approval.")
             end
@@ -328,12 +364,16 @@ end
 local function removeRole(playerName, roleName)
     if playerName ~= nil then
         local roleBits = (ROLE_EDIT | ROLE_REGISTER | ROLE_SPAWN)
+        local roleType = ""
         if "edit" == roleName then
             roleBits = ROLE_EDIT
+            roleType = "EDIT"
         elseif "register" == roleName then
             roleBits = ROLE_REGISTER
+            roleType = "REGISTER"
         elseif "spawn" == roleName then
             roleBits = ROLE_SPAWN
+            roleType = "SPAWN"
         elseif roleName ~= nil then
             print("removeRole: Invalid role.")
             return
@@ -375,16 +415,19 @@ local function removeRole(playerName, roleName)
                     end
                 end
             end
-            if 0 == roles[lic].roleBits then
-                roles[lic] = nil
-                print("removeRole: All '" .. playerName .. "' roles removed.")
-            else
-                print("removeRole: '" .. playerName .. "' role removed.")
-            end
             local file, errMsg, errCode = io.open(rolesDataFile, "w+")
-            if file ~= nil then
+            if file ~= fail then
                 file:write(json.encode(roles))
                 file:close()
+                local msg = ""
+                if 0 == roles[lic].roleBits then
+                    roles[lic] = nil
+                    msg = "removeRole: All '" .. playerName .. "' roles removed."
+                else
+                    msg = "removeRole: '" .. playerName .. "' role " .. roleType .. " removed."
+                end
+                print(msg)
+                logMessage(msg)
             else
                 print("removeRole: Error opening file '" .. rolesDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
             end
@@ -398,7 +441,7 @@ end
 
 local function updateRaceData()
     local file, errMsg, errCode = io.open(raceDataFile, "r")
-    if file ~= nil then
+    if file ~= fail then
         local raceData = json.decode(file:read("a"))
         file:close()
         if raceData ~= nil then
@@ -425,10 +468,12 @@ local function updateRaceData()
             if true == update then
                 local updatedRaceDataFile = "./resources/races/raceData_updated.json"
                 file, errMsg, errCode = io.open(updatedRaceDataFile, "w+")
-                if file ~= nil then
+                if file ~= fail then
                     file:write(json.encode(newRaceData))
                     file:close()
-                    print("updateRaceData: raceData.json updated to new format in '" .. updatedRaceDataFile .. "'.")
+                    local msg = "updateRaceData: raceData.json updated to current format in '" .. updatedRaceDataFile .. "'."
+                    print(msg)
+                    logMessage(msg)
                 else
                     print("updateRaceData: Error opening file '" .. updatedRaceDataFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
                 end
@@ -452,7 +497,7 @@ local function updateTrack(trackName)
     local update = false
     local trackFile = "./resources/races/" .. trackName .. ".json"
     local file, errMsg, errCode = io.open(trackFile, "r")
-    if nil == file then
+    if fail == file then
         print("updateTrack: Error opening file '" .. trackFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
         return
     end
@@ -497,10 +542,12 @@ local function updateTrack(trackName)
 
         trackFile = "./resources/races/" .. trackName .. "_updated.json"
         file, errMsg, errCode = io.open(trackFile, "w+")
-        if file ~= nil then
+        if file ~= fail then
             file:write(json.encode({waypointCoords = newWaypointCoords, bestLaps = track.bestLaps}))
             file:close()
-            print("updateTrack: '" .. trackName .. ".json' updated to new format in '" .. trackFile .. "'.")
+            local msg = "updateTrack: '" .. trackName .. ".json' updated to current format in '" .. trackFile .. "'."
+            print(msg)
+            logMessage(msg)
         else
             print("updateTrack: Error opening file '" .. trackFile .. "' for write : '" .. errMsg .. "' : " .. errCode)
         end
@@ -522,7 +569,7 @@ local function loadTracks(isPublic, source)
         local raceData = nil
 
         local file, errMsg, errCode = io.open(raceDataFile, "r")
-        if file ~= nil then
+        if file ~= fail then
             raceData = json.decode(file:read("a"))
             file:close()
         else
@@ -559,7 +606,7 @@ local function saveTracks(isPublic, source, tracks)
         local raceData = nil
 
         local file, errMsg, errCode = io.open(raceDataFile, "r")
-        if file ~= nil then
+        if file ~= fail then
             raceData = json.decode(file:read("a"))
             file:close()
         else
@@ -575,7 +622,7 @@ local function saveTracks(isPublic, source, tracks)
         raceData[license] = tracks
 
         file, errMsg, errCode = io.open(raceDataFile, "w+")
-        if file ~= nil then
+        if file ~= fail then
             file:write(json.encode(raceData))
             file:close()
         else
@@ -594,7 +641,7 @@ local function loadVehicleFile(source, vehicleFile)
     vehicleFile = "./resources/races/" .. vehicleFile
     local vehicles = {}
     local file, errMsg, errCode = io.open(vehicleFile, "r")
-    if nil == file then
+    if fail == file then
         notifyPlayer(source, "Error opening file '" .. vehicleFile .. "' for read : '" .. errMsg .. "' : " .. errCode)
     else
         for vehicle in file:lines() do
@@ -743,7 +790,7 @@ local function saveResults(race)
     end
     local resultsFile = "./resources/races/results_" .. race.owner .. ".txt"
     local file, errMsg, errCode = io.open(resultsFile, "w+")
-    if file ~= nil then
+    if file ~= fail then
         file:write(msg)
         file:close()
     else
@@ -869,7 +916,7 @@ AddEventHandler("sounds0", function()
     local source = source
     local filePath = "./resources/races/sounds/sounds.csv"
     local file, errMsg, errCode = io.open(filePath, "r")
-    if file ~= nil then
+    if file ~= fail then
         local sounds = {}
         for line in file:lines() do
             local i = string.find(line, ",")
@@ -894,7 +941,7 @@ AddEventHandler("sounds1", function()
     local source = source
     local filePath = "./resources/races/sounds/altv.stuyk.com.txt"
     local file, errMsg, errCode = io.open(filePath, "r")
-    if file ~= nil then
+    if file ~= fail then
         local sounds = {}
         for line in file:lines() do
             local name, ref = string.match(line, "(\t.*)(\t.*)")
@@ -917,7 +964,7 @@ AddEventHandler("vehicles", function()
     local source = source
     local filePath = "./resources/races/vehicles.txt"
     local file, errMsg, errCode = io.open(filePath, "r")
-    if file ~= nil then
+    if file ~= fail then
         local vehicleList = {}
         for line in file:lines() do
             vehicleList[#vehicleList + 1] = line
@@ -933,7 +980,7 @@ RegisterNetEvent("unk")
 AddEventHandler("unk", function(unknown)
     local filePath = "./resources/races/vehicles/unknown.txt"
     local file, errMsg, errCode = io.open(filePath, "w+")
-    if file ~= nil then
+    if file ~= fail then
         for _, vehicle in ipairs(unknown) do
             file:write(vehicle .. "\n")
         end
@@ -947,7 +994,7 @@ RegisterNetEvent("veh")
 AddEventHandler("veh", function(vclass, vehicles)
     local filePath = ("./resources/races/vehicles/%02d.txt"):format(vclass)
     local file, errMsg, errCode = io.open(filePath, "w+")
-    if file ~= nil then
+    if file ~= fail then
         for _, vehicle in ipairs(vehicles) do
             file:write(vehicle .. "\n")
         end
@@ -988,15 +1035,21 @@ AddEventHandler("races:request", function(roleBit)
                     local license = GetPlayerIdentifier(source, 0)
                     if license ~= nil then
                         license = string.sub(license, 9)
+                        local roleType = "SPAWN"
+                        if ROLE_EDIT == roleBit then
+                            roleType = "EDIT"
+                        elseif ROLE_REGISTER == roleBit then
+                            roleType = "REGISTER"
+                        end
                         if nil == roles[license] then
                             requests[source] = {name = GetPlayerName(source), roleBit = roleBit}
-                            sendMessage(source, "Request submitted.")
+                            sendMessage(source, "Request for " .. roleType .. " role submitted.")
                         else
                             if 0 == roles[license].roleBits & roleBit then
                                 requests[source] = {name = GetPlayerName(source), roleBit = roleBit}
-                                sendMessage(source, "Request submitted.")
+                                sendMessage(source, "Request for " .. roleType .. " role submitted.")
                             else
-                                sendMessage(source, "Request already approved.\n")
+                                sendMessage(source, "Request for " .. roleType .. " role already approved.\n")
                             end
                         end
                     else
@@ -1053,6 +1106,7 @@ AddEventHandler("races:save", function(isPublic, trackName, waypointCoords)
                 tracks[trackName] = {waypointCoords = waypointCoords, bestLaps = {}}
                 if true == saveTracks(isPublic, source, tracks) then
                     TriggerClientEvent("races:save", source, isPublic, trackName)
+                    logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
                 else
                     sendMessage(source, "Error saving '" .. trackName .. "'.\n")
                 end
@@ -1085,6 +1139,7 @@ AddEventHandler("races:overwrite", function(isPublic, trackName, waypointCoords)
                 tracks[trackName] = {waypointCoords = waypointCoords, bestLaps = {}}
                 if true == saveTracks(isPublic, source, tracks) then
                     TriggerClientEvent("races:overwrite", source, isPublic, trackName)
+                    logMessage("'" .. GetPlayerName(source) .. "' overwrote " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
                 else
                     sendMessage(source, "Error overwriting '" .. trackName .. "'.\n")
                 end
@@ -1117,6 +1172,7 @@ AddEventHandler("races:delete", function(isPublic, trackName)
                 tracks[trackName] = nil
                 if true == saveTracks(isPublic, source, tracks) then
                     sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
+                    logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
                 else
                     sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
                 end
