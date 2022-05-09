@@ -331,15 +331,15 @@ EVENT LOGGING
 -------------
 If you want to save a log of certain events, change the line **`local saveLog <const> = false`** to **`local saveLog <const> = true`** in **`races_server.lua`**.  The following events will be saved to **`resources/races/log.txt`**:
 
-1. Exporting a track\
-2. Importing a track\
-3. Approving a request for a role\
-4. Denying a request for a role\
-5. Removing one or all roles of a player\
-6. Updating raceData.json from an old format to the current format\
-7. Updating a track from an old format to the current format\
-8. Saving a track\
-9. Overwriting a track\
+1. Exporting a track
+2. Importing a track
+3. Approving a request for a role
+4. Denying a request for a role
+5. Removing one or all roles of a player
+6. Updating raceData.json from an old format to the current format
+7. Updating a track from an old format to the current format
+8. Saving a track
+9. Overwriting a track
 10. Deleting a track
 
 PORTING
