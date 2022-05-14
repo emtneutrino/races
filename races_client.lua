@@ -998,7 +998,8 @@ local function addAIDriver(aiName, coord, heading)
                         currentLap = 1,
                         lapTimeStart = -1,
                         destWP = nil,
-                        destSet = false
+                        destSet = false,
+                        enteringVehicle = false
                     }
                     aiState.numRacing = aiState.numRacing + 1
                     sendMessage("AI driver '" .. aiName .. "' added.\n")
@@ -1120,7 +1121,7 @@ local function spawnAIDriver(aiName, vehicleHash)
 
                                 if true == joinRace then
                                     RequestModel(vehicleHash)
-                                    while not HasModelLoaded(vehicleHash) do
+                                    while HasModelLoaded(vehicleHash) == false do
                                         Citizen.Wait(0)
                                     end
                                     driver.vehicle = CreateVehicle(vehicleHash, driver.startWP.x, driver.startWP.y, driver.startWP.z, driver.heading, true, false)
@@ -1130,7 +1131,7 @@ local function spawnAIDriver(aiName, vehicleHash)
 
                                     local pedHash = "a_m_y_skater_01"
                                     RequestModel(pedHash)
-                                    while not HasModelLoaded(pedHash) do
+                                    while HasModelLoaded(pedHash) == false do
                                         Citizen.Wait(0)
                                     end
                                     driver.ped = CreatePedInsideVehicle(driver.vehicle, PED_TYPE_CIVMALE, pedHash, -1, true, false)
@@ -3006,42 +3007,51 @@ Citizen.CreateThread(function()
                             end
                         end
                         if STATE_RACING == driver.raceState then
-                            if true == driver.destSet then
-                                driver.destSet = false
-                                -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
-                                -- driveMode: https://vespura.com/fivem/drivingstyle/
-                                -- actual speed is around speed * 2 mph
-                                -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.5)
-                                -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange
-                                -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
-                                -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
-                                TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destWP.r * 0.5, true)
+                            if IsPedInAnyVehicle(driver.ped, true) == false then
+                                if false == driver.enteringVehicle then
+                                    driver.enteringVehicle = true
+                                    driver.destSet = true
+                                    TaskEnterVehicle(driver.ped, driver.vehicle, 10.0, -1, 2.0, 1, 0)
+                                end
                             else
-                                if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
-                                    driver.numWaypointsPassed = driver.numWaypointsPassed + 1
-                                    if driver.currentWP < #aiState.waypointCoords then
-                                        driver.currentWP = driver.currentWP + 1
-                                    else
-                                        driver.currentWP = 1
-                                        local lapTime = currentTime - driver.lapTimeStart
-                                        if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
-                                            driver.bestLapTime = lapTime
-                                        end
-                                        driver.lapTimeStart = currentTime
-                                        if driver.currentLap < aiState.numLaps then
-                                            driver.currentLap = driver.currentLap + 1
-                                            if #aiState.randVehicles > 0 then
-                                                driver.vehicle = switchVehicle(driver.ped, aiState.randVehicles[math.random(#aiState.randVehicles)])
-                                            end
+                                driver.enteringVehicle = false
+                                if true == driver.destSet then
+                                    driver.destSet = false
+                                    -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
+                                    -- driveMode: https://vespura.com/fivem/drivingstyle/
+                                    -- actual speed is around speed * 2 mph
+                                    -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.5)
+                                    -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange
+                                    -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
+                                    -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
+                                    TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destWP.r * 0.5, true)
+                                else
+                                    if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
+                                        driver.numWaypointsPassed = driver.numWaypointsPassed + 1
+                                        if driver.currentWP < #aiState.waypointCoords then
+                                            driver.currentWP = driver.currentWP + 1
                                         else
-                                            driver.raceState = STATE_IDLE
-                                            TriggerServerEvent("races:finish", pIndex, driver.netID, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                            driver.currentWP = 1
+                                            local lapTime = currentTime - driver.lapTimeStart
+                                            if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
+                                                driver.bestLapTime = lapTime
+                                            end
+                                            driver.lapTimeStart = currentTime
+                                            if driver.currentLap < aiState.numLaps then
+                                                driver.currentLap = driver.currentLap + 1
+                                                if #aiState.randVehicles > 0 then
+                                                    driver.vehicle = switchVehicle(driver.ped, aiState.randVehicles[math.random(#aiState.randVehicles)])
+                                                end
+                                            else
+                                                driver.raceState = STATE_IDLE
+                                                TriggerServerEvent("races:finish", pIndex, driver.netID, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                            end
                                         end
-                                    end
-                                    if STATE_RACING == driver.raceState then
-                                        local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
-                                        driver.destWP = aiState.waypointCoords[curr]
-                                        driver.destSet = true
+                                        if STATE_RACING == driver.raceState then
+                                            local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
+                                            driver.destWP = aiState.waypointCoords[curr]
+                                            driver.destSet = true
+                                        end
                                     end
                                 end
                             end
