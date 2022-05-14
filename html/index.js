@@ -78,6 +78,13 @@ $(function() {
         $.post("https://races/clear");
     });
 
+    $("#main_load").click(function() {
+        $.post("https://races/load", JSON.stringify({
+            isPublic: false,
+            trackName: $("#main_name").val()
+        }));
+    });
+
     $("#main_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
             isPublic: false,
@@ -91,14 +98,21 @@ $(function() {
         }));
     });
 
-    $("#main_bltPublic").click(function() {
-        $.post("https://races/blt", JSON.stringify({
+    $("#main_load_pub").click(function() {
+        $.post("https://races/load", JSON.stringify({
             isPublic: true,
-            trackName: $("#main_namePublic").val()
+            trackName: $("#main_name").val()
         }));
     });
 
-    $("#main_listPublic").click(function() {
+    $("#main_blt_pub").click(function() {
+        $.post("https://races/blt", JSON.stringify({
+            isPublic: true,
+            trackName: $("#main_name_pub").val()
+        }));
+    });
+
+    $("#main_list_pub").click(function() {
         $.post("https://races/list", JSON.stringify({
             isPublic: true
         }));
@@ -148,14 +162,14 @@ $(function() {
         $.post("https://races/funds");
     });
 
-    $("#mEdit").click(function() {
+    $("#main_edit").click(function() {
         $("#mainPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "edit"
         }));
     });
 
-    $("#mRegister").click(function() {
+    $("#main_register").click(function() {
         $("#mainPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "register"
@@ -176,7 +190,7 @@ $(function() {
         $.post("https://races/clear");
     });
 
-    $("#reverse").click(function() {
+    $("#edit_reverse").click(function() {
         $.post("https://races/reverse");
     });
 
@@ -187,21 +201,21 @@ $(function() {
         }));
     });
 
-    $("#save").click(function() {
+    $("#edit_save").click(function() {
         $.post("https://races/save", JSON.stringify({
             isPublic: false,
             trackName: $("#edit_name").val()
         }));
     });
 
-    $("#overwrite").click(function() {
+    $("#edit_overwrite").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
             isPublic: false,
             trackName: $("#edit_name").val()
         }));
     });
 
-    $("#delete").click(function() {
+    $("#edit_delete").click(function() {
         $.post("https://races/delete", JSON.stringify({
             isPublic: false,
             trackName: $("#edit_name").val()
@@ -221,55 +235,55 @@ $(function() {
         }));
     });
 
-    $("#edit_loadPublic").click(function() {
+    $("#edit_load_pub").click(function() {
         $.post("https://races/load", JSON.stringify({
             isPublic: true,
-            trackName: $("#edit_namePublic").val()
+            trackName: $("#edit_name_pub").val()
         }));
     });
 
-    $("#savePublic").click(function() {
+    $("#edit_save_pub").click(function() {
         $.post("https://races/save", JSON.stringify({
             isPublic: true,
-            trackName: $("#edit_namePublic").val()
+            trackName: $("#edit_name_pub").val()
         }));
     });
 
-    $("#overwritePublic").click(function() {
+    $("#edit_overwrite_pub").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
             isPublic: true,
-            trackName: $("#edit_namePublic").val()
+            trackName: $("#edit_name_pub").val()
         }));
     });
 
-    $("#deletePublic").click(function() {
+    $("#edit_delete_pub").click(function() {
         $.post("https://races/delete", JSON.stringify({
             isPublic: true,
-            trackName: $("#edit_namePublic").val()
+            trackName: $("#edit_name_pub").val()
         }));
     });
 
-    $("#edit_bltPublic").click(function() {
+    $("#edit_blt_pub").click(function() {
         $.post("https://races/blt", JSON.stringify({
             isPublic: true,
-            trackName: $("#edit_namePublic").val()
+            trackName: $("#edit_name_pub").val()
         }));
     });
 
-    $("#edit_listPublic").click(function() {
+    $("#edit_list_pub").click(function() {
         $.post("https://races/list", JSON.stringify({
             isPublic: true
         }));
     });
 
-    $("#eMain").click(function() {
+    $("#edit_main").click(function() {
         $("#editPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "main"
         }));
     });
 
-    $("#eRegister").click(function() {
+    $("#edit_register").click(function() {
         $("#editPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "register"
@@ -302,21 +316,21 @@ $(function() {
         }));
     });
 
-    $("#register_loadPublic").click(function() {
+    $("#register_load_pub").click(function() {
         $.post("https://races/load", JSON.stringify({
             isPublic: true,
-            trackName: $("#register_namePublic").val()
+            trackName: $("#register_name_pub").val()
         }));
     });
 
-    $("#register_bltPublic").click(function() {
+    $("#register_blt_pub").click(function() {
         $.post("https://races/blt", JSON.stringify({
             isPublic: true,
-            trackName: $("#register_namePublic").val()
+            trackName: $("#register_name_pub").val()
         }));
     });
 
-    $("#register_listPublic").click(function() {
+    $("#register_list_pub").click(function() {
         $.post("https://races/list", JSON.stringify({
             isPublic: true
         }));
@@ -347,11 +361,6 @@ $(function() {
             $("#file").show()
             $("#vclass").show()
             $("#sveh").show()
-        } else if ($("#rtype").val() == "ai") {
-            $("#rest").hide()
-            $("#file").hide()
-            $("#vclass").hide()
-            $("#sveh").hide()
         }
     })
 
@@ -412,14 +421,82 @@ $(function() {
         $.post("https://races/list_ai");
     });
 
-    $("#rMain").click(function() {
+    $("#load_grp").click(function() {
+        $.post("https://races/load_grp", JSON.stringify({
+            isPublic: false,
+            name: $("#ai_grp_name").val()
+        }));
+    });
+
+    $("#save_grp").click(function() {
+        $.post("https://races/save_grp", JSON.stringify({
+            isPublic: false,
+            name: $("#ai_grp_name").val()
+        }));
+    });
+
+    $("#overwrite_grp").click(function() {
+        $.post("https://races/overwrite_grp", JSON.stringify({
+            isPublic: false,
+            name: $("#ai_grp_name").val()
+        }));
+    });
+
+    $("#delete_grp").click(function() {
+        $.post("https://races/delete_grp", JSON.stringify({
+            isPublic: false,
+            name: $("#ai_grp_name").val()
+        }));
+    });
+
+    $("#list_grp").click(function() {
+        $.post("https://races/list_grp", JSON.stringify({
+            isPublic: false
+        }));
+    });
+
+    $("#load_grp_pub").click(function() {
+        $.post("https://races/load_grp", JSON.stringify({
+            isPublic: true,
+            name: $("#ai_grp_name_pub").val()
+        }));
+    });
+
+    $("#save_grp_pub").click(function() {
+        $.post("https://races/save_grp", JSON.stringify({
+            isPublic: true,
+            name: $("#ai_grp_name_pub").val()
+        }));
+    });
+
+    $("#overwrite_grp_pub").click(function() {
+        $.post("https://races/overwrite_grp", JSON.stringify({
+            isPublic: true,
+            name: $("#ai_grp_name_pub").val()
+        }));
+    });
+
+    $("#delete_grp_pub").click(function() {
+        $.post("https://races/delete_grp", JSON.stringify({
+            isPublic: true,
+            name: $("#ai_grp_name_pub").val()
+        }));
+    });
+
+    $("#list_grp_pub").click(function() {
+        $.post("https://races/list_grp", JSON.stringify({
+            isPublic: true
+        }));
+    });
+
+    $("#register_main").click(function() {
         $("#registerPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "main"
         }));
     });
 
-    $("#rEdit").click(function() {
+    $("#register_edit").click(function() {
         $("#registerPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "edit"

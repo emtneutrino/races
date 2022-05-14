@@ -73,6 +73,10 @@ body {
     width: 80%;
 }
 
+#main_load {
+    width: 25%
+}
+
 #main_blt {
     width: 25%;
 }
@@ -81,15 +85,19 @@ body {
     width: 25%;
 }
 
-#main_namePublic {
+#main_name_pub {
     width: 80%;
 }
 
-#main_bltPublic {
+#main_load_pub {
+    width: 25%
+}
+
+#main_blt_pub {
     width: 25%;
 }
 
-#main_listPublic {
+#main_list_pub {
     width: 25%;
 }
 
@@ -141,11 +149,11 @@ body {
     width: 25%;
 }
 
-#mEdit {
+#main_edit {
     width: 25%;
 }
 
-#mRegister {
+#main_register {
     width: 25%;
 }
 
@@ -171,7 +179,7 @@ body {
     width: 25%;
 }
 
-#reverse {
+#edit_reverse {
     width: 25%;
 }
 
@@ -183,15 +191,15 @@ body {
     width: 15%;
 }
 
-#save {
+#edit_save {
     width: 15%;
 }
 
-#overwrite {
+#edit_overwrite {
     width: 15%;
 }
 
-#delete {
+#edit_delete {
     width: 15%;
 }
 
@@ -203,39 +211,39 @@ body {
     width: 15%;
 }
 
-#edit_namePublic {
+#edit_name_pub {
     width: 80%;
 }
 
-#edit_loadPublic {
+#edit_load_pub {
     width: 15%;
 }
 
-#savePublic {
+#edit_save_pub {
     width: 15%;
 }
 
-#overwritePublic {
+#edit_overwrite_pub {
     width: 15%;
 }
 
-#deletePublic {
+#edit_delete_pub {
     width: 15%;
 }
 
-#edit_bltPublic {
+#edit_blt_pub {
     width: 15%;
 }
 
-#edit_listPublic {
+#edit_list_pub {
     width: 15%;
 }
 
-#eMain {
+#edit_main {
     width: 25%;
 }
 
-#eRegister {
+#edit_register {
     width: 25%;
 }
 
@@ -269,19 +277,19 @@ body {
     width: 25%;
 }
 
-#register_namePublic {
+#register_name_pub {
     width: 80%;
 }
 
-#register_loadPublic {
+#register_load_pub {
     width: 25%;
 }
 
-#register_bltPublic {
+#register_blt_pub {
     width: 25%;
 }
 
-#register_listPublic {
+#register_list_pub {
     width: 25%;
 }
 
@@ -349,11 +357,59 @@ body {
     width: 10%;
 }
 
-#rMain {
+#ai_grp_name {
     width: 25%;
 }
 
-#rEdit {
+#load_grp {
+    width: 10%;
+}
+
+#save_grp {
+    width: 10%;
+}
+
+#overwrite_grp {
+    width: 10%;
+}
+
+#delete_grp {
+    width: 10%;
+}
+
+#list_grp {
+    width: 10%;
+}
+
+#ai_grp_name_pub {
+    width: 25%;
+}
+
+#load_grp_pub {
+    width: 10%;
+}
+
+#save_grp_pub {
+    width: 10%;
+}
+
+#overwrite_grp_pub {
+    width: 10%;
+}
+
+#delete_grp_pub {
+    width: 10%;
+}
+
+#list_grp_pub {
+    width: 10%;
+}
+
+#register_main {
+    width: 25%;
+}
+
+#register_edit {
     width: 25%;
 }
 

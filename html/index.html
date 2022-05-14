@@ -56,16 +56,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 Private Track:<input id = "main_name" placeholder = "Track name">
             </div>
             <div class = "row">
+                <button id = "main_load">Load</button>
                 <button id = "main_blt">Best Laps</button>
                 <button id = "main_list">List</button>
             </div>
             <br>
             <div class = "row">
-                Public Track:<input id = "main_namePublic" placeholder = "Track name">
+                Public Track:<input id = "main_name_pub" placeholder = "Track name">
             </div>
             <div class = "row">
-                <button id = "main_bltPublic">Best Laps</button>
-                <button id = "main_listPublic">List</button>
+                <button id = "main_load_pub">Load</button>
+                <button id = "main_blt_pub">Best Laps</button>
+                <button id = "main_list_pub">List</button>
             </div>
             <br>
             <div class = "row">
@@ -115,8 +117,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <button id = "change">Change Unit of Measurement</button>
                 <label for = "unit">Unit:</label>
                 <select id = "unit">
-                    <option value = "imp">Imperial</option>
-                    <option value = "met">Metric</option>
+                    <option value = "imperial">Imperial</option>
+                    <option value = "metric">Metric</option>
                 </select>
             </div>
             <br>
@@ -125,8 +127,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                <button id = "mEdit">Edit Panel</button>
-                <button id = "mRegister">Register Panel</button>
+                <button id = "main_edit">Edit Panel</button>
+                <button id = "main_register">Register Panel</button>
             </div>
             <br>
             <div class = "row">
@@ -138,7 +140,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <div class = "row">
                 <button id = "edit">Toggle Edit Waypoints</button>
                 <button id = "edit_clear">Clear Waypoints</button>
-                <button id = "reverse">Reverse Waypoints</button>
+                <button id = "edit_reverse">Reverse Waypoints</button>
             </div>
             <br>
             <div class = "row">
@@ -146,28 +148,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <div class = "row">
                 <button id = "edit_load">Load</button>
-                <button id = "save">Save</button>
-                <button id = "overwrite">Overwrite</button>
-                <button id = "delete">Delete</button>
+                <button id = "edit_save">Save</button>
+                <button id = "edit_overwrite">Overwrite</button>
+                <button id = "edit_delete">Delete</button>
                 <button id = "edit_blt">Best Laps</button>
                 <button id = "edit_list">List</button>
             </div>
             <br>
             <div class = "row">
-                Public Track:<input id = "edit_namePublic" placeholder = "Track name">
+                Public Track:<input id = "edit_name_pub" placeholder = "Track name">
             </div>
             <div class = "row">
-                <button id = "edit_loadPublic">Load</button>
-                <button id = "savePublic">Save</button>
-                <button id = "overwritePublic">Overwrite</button>
-                <button id = "deletePublic">Delete</button>
-                <button id = "edit_bltPublic">Best Laps</button>
-                <button id = "edit_listPublic">List</button>
+                <button id = "edit_load_pub">Load</button>
+                <button id = "edit_save_pub">Save</button>
+                <button id = "edit_overwrite_pub">Overwrite</button>
+                <button id = "edit_delete_pub">Delete</button>
+                <button id = "edit_blt_pub">Best Laps</button>
+                <button id = "edit_list_pub">List</button>
             </div>
             <br>
             <div class = "row">
-                <button id = "eMain">Main Panel</button>
-                <button id = "eRegister">Register Panel</button>
+                <button id = "edit_main">Main Panel</button>
+                <button id = "edit_register">Register Panel</button>
             </div>
             <br>
             <div class = "row">
@@ -186,12 +188,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                Public Track:<input id = "register_namePublic" placeholder = "Track name">
+                Public Track:<input id = "register_name_pub" placeholder = "Track name">
             </div>
             <div class = "row">
-                <button id = "register_loadPublic">Load</button>
-                <button id = "register_bltPublic">Best Laps</button>
-                <button id = "register_listPublic">List</button>
+                <button id = "register_load_pub">Load</button>
+                <button id = "register_blt_pub">Best Laps</button>
+                <button id = "register_list_pub">List</button>
             </div>
             <br>
             <div class = "row">
@@ -210,7 +212,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <option value = "rest">Restricted</option>
                     <option value = "class">Class</option>
                     <option value = "rand">Random</option>
-                    <option value = "ai">AI</option>
                 </select>
             </div>
             <div class = "row">
@@ -275,8 +276,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                <button id = "rMain">Main Panel</button>
-                <button id = "rEdit">Edit Panel</button>
+                Private AI Group:<input id = "ai_grp_name" placeholder = "AI group name">
+            </div>
+            <div class = "row">
+                <button id = "load_grp">Load AI Group</button>
+                <button id = "save_grp">Save AI Group</button>
+                <button id = "overwrite_grp">Overwrite AI Group</button>
+                <button id = "delete_grp">Delete AI Group</button>
+                <button id = "list_grp">List AI Groups</button>
+            </div>
+            <br>
+            <div class = "row">
+                Public AI Group:<input id = "ai_grp_name_pub" placeholder = "AI group name">
+            </div>
+            <div class = "row">
+                <button id = "load_grp_pub">Load AI Group</button>
+                <button id = "save_grp_pub">Save AI Group</button>
+                <button id = "overwrite_grp_pub">Overwrite AI Group</button>
+                <button id = "delete_grp_pub">Delete AI Group</button>
+                <button id = "list_grp_pub">List AI Groups</button>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "register_main">Main Panel</button>
+                <button id = "register_edit">Edit Panel</button>
             </div>
             <br>
             <div class = "row">
