@@ -57,7 +57,7 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races funds`** - view available funds\
 **`/races panel (panel)`** - display (panel) = {edit, register} panel; otherwise display main panel if (panel) is not specified
 
-**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `/races panel`, `/races panel edit` or `/races panel register`.**
+**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `'/races panel'`, `'/races panel edit'` OR `'/races panel register'`.**
 
 SERVER COMMANDS
 ---------------
@@ -68,11 +68,23 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`races exportwblt [name]`** - export public track saved as [name] with best lap times to file named **`[name].json`**\
 **`races importwblt [name]`** - import track file named **`[name].json`** into public tracks with best lap times
 
-**IF YOU WISH TO LIMIT WHO CAN EDIT TRACKS, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToEdit <const> = false` TO `local requirePermissionToEdit <const> = true` IN `races_server.lua`.**
+**IF YOU WISH TO LIMIT WHO CAN EDIT TRACKS, YOU WILL NEED TO CHANGE THE LINE**\
+**`local requirePermissionToEdit <const> = false`**\
+**TO**\
+**`local requirePermissionToEdit <const> = true`**\
+**IN `races_server.lua`.**
 
-**IF YOU WISH TO LIMIT WHO CAN REGISTER RACES, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToRegister <const> = false` TO `local requirePermissionToRegister <const> = true` IN `races_server.lua`.**
+**IF YOU WISH TO LIMIT WHO CAN REGISTER RACES, YOU WILL NEED TO CHANGE THE LINE**\
+**`local requirePermissionToRegister <const> = false`**\
+**TO**\
+**`local requirePermissionToRegister <const> = true`**\
+**IN `races_server.lua`.**
 
-**IF YOU WISH TO LIMIT WHO CAN SPAWN VEHICLES, YOU WILL NEED TO CHANGE THE LINE `local requirePermissionToSpawn <const> = false` TO `local requirePermissionToSpawn <const> = true` IN `races_server.lua`.**
+**IF YOU WISH TO LIMIT WHO CAN SPAWN VEHICLES, YOU WILL NEED TO CHANGE THE LINE**\
+**`local requirePermissionToSpawn <const> = false`**\
+**TO**\
+**`local requirePermissionToSpawn <const> = true`**\
+**IN `races_server.lua`.**
 
 **`races listReqs`** - list requests to edit tracks, register races and spawn vehicles\
 **`races approve [playerID]`** - approve request of [playerID] to edit tracks, register races or spawn vehicles\
@@ -305,7 +317,9 @@ As racers finish, their finishing time, best lap time and the vehicle name they 
 
 After all racers finish or DNF, the race results will be broadcast to players who joined the race.  Their position, name, finishing time, best lap time and name of the vehicle used for their best lap time will be displayed.  Best lap times will be recorded if the track was a saved track and waypoints were not modified.  Race results are saved to **`resources/races/results_[owner].txt`** where [owner] is the owner of the race.
 
-Racers are given prize money after all racers finish or DNF.  At the start of every game session, players start with at least 5000 in their funds.  If you are using the existing **`port.lua`** file, race earnings are not saved between different game sessions.  If you win prize money in one game session, it will not carry over to the next game session.  **`port.lua`** may be ported to a framework that does save funds between different game sessions.  The ESX framework may save race earnings from one game session to the next game session.  A port of the **`port.lua`** file to ESX is in the **`esx/`** folder.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the prize distribution, all racers who finished will receive any left over place percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named **`dist`** in **`races_server.lua`**.  The declaration and initialization of **`dist`** is **`local dist <const> = {60, 20, 10, 5, 3, 2}`**.  You can change the total number of values in the table.  For the distribution to be valid, the following conditions must be met:  All values in the table **`dist`** must add up to 100.  All values in the table must be 1 or greater.  First place distribution must be greater than or equal to second place distribution.  Second place distribution must be greater than or equal to 3rd place distribution and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded after all racers finish or DNF.
+Racers are given prize money after all racers finish or DNF.  At the start of every game session, players start with at least 5000 in their funds.  If you are using the existing **`port.lua`** file, race earnings are not saved between different game sessions.  If you win prize money in one game session, it will not carry over to the next game session.  **`port.lua`** may be ported to a framework that does save funds between different game sessions.  The ESX framework may save race earnings from one game session to the next game session.  A port of the **`port.lua`** file to ESX is in the **`esx/`** folder.  Total race prize money is the sum of all buy-in amounts that all racers paid.  The prize distribution is as follows: 1st 60%, 2nd 20%, 3rd 10%, 4th 5%, 5th 3% and lastly, 2% is spread evenly among racers who finished 6th and later.  Racers who DNF will not receive a payout unless all racers DNF.  If all racers DNF, all racers are refunded their buy-in amounts.  If fewer racers finish the race than there are places in the prize distribution, all racers who finished will receive any left over place percentages split evenly among the finishers.  If you wish to distribute the prize money differently, you will need to modify the values of the table named **`dist`** in **`races_server.lua`**.  The declaration and initialization of **`dist`** is\
+**`local dist <const> = {60, 20, 10, 5, 3, 2}`**\
+You can change the total number of values in the table.  For the distribution to be valid, the following conditions must be met:  All values in the table **`dist`** must add up to 100.  All values in the table must be 1 or greater.  First place distribution must be greater than or equal to second place distribution.  Second place distribution must be greater than or equal to 3rd place distribution and so on.  If these conditions are not met, a message will be displayed in the server console in red saying that the distribution is invalid.  If the distribution is invalid, players can still race.  Their buy-in amounts will be refunded after all racers finish or DNF.
 
 If you want to look at the race results again, type **`/races results`**.  If you cannot see all the results, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
@@ -359,7 +373,11 @@ Type **`races updateTrack mytrack`** to update the exported track **`resources/r
 
 EVENT LOGGING
 -------------
-If you want to save a log of certain events, change the line **`local saveLog <const> = false`** to **`local saveLog <const> = true`** in **`races_server.lua`**.  The following events will be saved to **`resources/races/log.txt`**:
+If you want to save a log of certain events, change the line\
+**`local saveLog <const> = false`**\
+to\
+**`local saveLog <const> = true`**\
+in **`races_server.lua`**.  The following events will be saved to **`resources/races/log.txt`**:
 
 1. Exporting a track
 2. Importing a track
