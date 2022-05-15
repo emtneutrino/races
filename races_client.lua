@@ -1141,6 +1141,10 @@ local function spawnAIDriver(aiName, vehicleHash)
                                     SetBlockingOfNonTemporaryEvents(driver.ped, true)
                                     SetPedCanBeDraggedOut(driver.ped, false)
 
+                                    while NetworkGetEntityIsNetworked(driver.ped) == false do
+                                        Citizen.Wait(0)
+                                        NetworkRegisterEntityAsNetworked(driver.ped)
+                                    end
                                     driver.netID = PedToNet(driver.ped)
 
                                     driver.gamerTag = CreateFakeMpGamerTag(driver.ped, aiName, false, false, nil, 0)
