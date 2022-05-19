@@ -112,7 +112,7 @@ local drawLights = false -- draw start lights
 
 local position = -1 -- position in race out of numRacers players
 local numRacers = -1 -- number of players in race - no DNF players included
-local racerBlips = {} -- blips for all racers participating in race
+local racerBlipGT = {} -- blips and gamer tags for all racers participating in race
 
 local lapTimeStart = -1 -- start time of current lap
 local bestLapTime = -1 -- best lap time
@@ -141,6 +141,7 @@ local randVehicles = {} -- list of random vehicles used in random vehicle races
 
 local respawnCtrlPressed = false -- flag indicating if respawn crontrol is pressed
 local respawnTime = -1 -- time when respawn control pressed
+local startCoord = nil -- coordinates of vehicle once race has started
 
 local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
 
@@ -157,8 +158,7 @@ local roleBits = 0 -- bit flag indicating if player is permitted to create track
 
 local aiState = nil -- table containing race info and AI driver info table
 
-local inVehicle = false -- flag indicating if player is in a vehicle
-local enteringVehicle = false
+local enteringVehicle = false -- flag indicating if player is entering a vehicle
 
 math.randomseed(GetCloudTimeAsInt())
 
@@ -361,7 +361,7 @@ local function minutesSeconds(milliseconds)
 end
 
 local function putPedInVehicle(ped, vehicleHash, coord)
-    coord = coord == nil and GetEntityCoords(ped) or coord
+    coord = coord or GetEntityCoords(ped)
     local vehicle = CreateVehicle(vehicleHash, coord.x, coord.y, coord.z, GetEntityHeading(ped), true, false)
     SetModelAsNoLongerNeeded(vehicleHash)
     SetPedIntoVehicle(ped, vehicle, -1)
@@ -372,31 +372,38 @@ end
 local function switchVehicle(ped, vehicleHash)
     local vehicle = nil
     if vehicleHash ~= nil then
-        local speed = GetEntitySpeed(ped)
-        local coord = nil
-        local passengers = {}
-        RequestModel(vehicleHash)
-        while HasModelLoaded(vehicleHash) == false do
-            Citizen.Wait(0)
-        end
-        if IsPedInAnyVehicle(ped, false) == 1 then
-            vehicle = GetVehiclePedIsIn(ped, false)
-            coord = GetEntityCoords(vehicle)
-            for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
-                local passenger = GetPedInVehicleSeat(vehicle, i)
-                if DoesEntityExist(passenger) == 1 then
-                    passengers[#passengers + 1] = {ped = passenger, seat = i}
+        local pedVehicle = GetVehiclePedIsIn(ped, false)
+        if pedVehicle ~= 0 then
+            if GetPedInVehicleSeat(pedVehicle, -1) == ped then
+                RequestModel(vehicleHash)
+                while HasModelLoaded(vehicleHash) == false do
+                    Citizen.Wait(0)
+                end
+                local passengers = {}
+                for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(pedVehicle)) - 2 do
+                    local passenger = GetPedInVehicleSeat(pedVehicle, i)
+                    if passenger ~= 0 then
+                        passengers[#passengers + 1] = {ped = passenger, seat = i}
+                    end
+                end
+                local coord = GetEntityCoords(pedVehicle)
+                local speed = GetEntitySpeed(ped)
+                SetEntityAsMissionEntity(pedVehicle, true, true)
+                DeleteVehicle(pedVehicle)
+                vehicle = putPedInVehicle(ped, vehicleHash, coord)
+                SetVehicleEngineOn(vehicle, true, true, false)
+                SetVehicleForwardSpeed(vehicle, speed)
+                for _, passenger in pairs(passengers) do
+                    SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
                 end
             end
-            SetEntityAsMissionEntity(vehicle, true, true)
-            DeleteVehicle(vehicle)
+        else
+            RequestModel(vehicleHash)
+            while HasModelLoaded(vehicleHash) == false do
+                Citizen.Wait(0)
+            end
+            vehicle = putPedInVehicle(ped, vehicleHash, nil)
         end
-        vehicle = putPedInVehicle(ped, vehicleHash, coord)
-        for _, passenger in pairs(passengers) do
-            SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
-        end
-        SetVehicleEngineOn(vehicle, true, true, false)
-        SetVehicleForwardSpeed(vehicle, speed)
     end
     return vehicle
 end
@@ -640,11 +647,44 @@ local function deleteDriver(aiName)
     return false
 end
 
-local function removeRacerBlips()
-    for _, blip in pairs(racerBlips) do
-        RemoveBlip(blip)
+local function removeRacerBlipGT()
+    for _, racer in pairs(racerBlipGT) do
+        RemoveBlip(racer.blip)
+        RemoveMpGamerTag(racer.gamerTag)
     end
-    racerBlips = {}
+    racerBlipGT = {}
+end
+
+local function respawnAI(driver)
+    local passengers = {}
+    for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(driver.vehicle)) - 2 do
+        local passenger = GetPedInVehicleSeat(driver.vehicle, i)
+        if passenger ~= 0 then
+            passengers[#passengers + 1] = {ped = passenger, seat = i}
+        end
+    end
+    local currentVehicleHash = GetEntityModel(driver.vehicle)
+    RequestModel(currentVehicleHash)
+    while HasModelLoaded(currentVehicleHash) == false do
+        Citizen.Wait(0)
+    end
+    SetEntityAsMissionEntity(driver.vehicle, true, true)
+    DeleteVehicle(driver.vehicle)
+    local coord = driver.startCoord
+    if true == aiState.startIsFinish then
+        if driver.currentWP > 0 then
+            coord = aiState.waypointCoords[driver.currentWP]
+        end
+    else
+        if driver.currentWP > 1 then
+            coord = aiState.waypointCoords[driver.currentWP - 1]
+        end
+    end
+    driver.vehicle = putPedInVehicle(driver.ped, currentVehicleHash, coord)
+    for _, passenger in pairs(passengers) do
+        SetPedIntoVehicle(passenger.ped, driver.vehicle, passenger.seat)
+    end
+    driver.destSet = true
 end
 
 local function request(role)
@@ -925,7 +965,7 @@ local function startRace(delay)
         sendMessage("Permission required.\n")
         return
     end
-    delay = nil == delay and defaultDelay or math.tointeger(tonumber(delay))
+    delay = math.tointeger(tonumber(delay)) or defaultDelay
     if delay ~= nil and delay >= 5 then
         if aiState ~= nil then
             local allSpawned = true
@@ -936,9 +976,6 @@ local function startRace(delay)
                 end
             end
             if true == allSpawned then
-                for _, driver in pairs(aiState.drivers) do
-                    RemoveMpGamerTag(driver.gamerTag)
-                end
                 TriggerServerEvent("races:start", delay)
             else
                 sendMessage("Cannot start.  Some AI drivers not spawned.\n")
@@ -984,10 +1021,11 @@ local function addAIDriver(aiName, coord, heading)
                     local player = PlayerPedId()
                     aiState.drivers[aiName] = {
                         netID = nil,
-                        gamerTag = nil,
                         raceState = STATE_JOINING,
-                        startWP = coord,
+                        startCoord = coord,
                         heading = heading,
+                        destCoord = nil,
+                        destSet = false,
                         vehicle = nil,
                         ped = nil,
                         started = false,
@@ -997,9 +1035,9 @@ local function addAIDriver(aiName, coord, heading)
                         bestLapTime = -1,
                         currentLap = 1,
                         lapTimeStart = -1,
-                        destWP = nil,
-                        destSet = false,
-                        enteringVehicle = false
+                        enteringVehicle = false,
+                        stuckCoord = vector3(coord.x, coord.y, coord.z),
+                        stuckStart = -1
                     }
                     aiState.numRacing = aiState.numRacing + 1
                     sendMessage("AI driver '" .. aiName .. "' added.\n")
@@ -1068,7 +1106,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                     local driver = aiState.drivers[aiName]
                     if driver ~= nil then
                         if nil == driver.vehicle and nil == driver.ped then
-                            vehicleHash = nil == vehicleHash and "adder" or vehicleHash
+                            vehicleHash = vehicleHash or "adder"
                             if IsModelInCdimage(vehicleHash) == 1 and IsModelAVehicle(vehicleHash) == 1 then
                                 local joinRace = true
                                 if "rest" == aiState.rtype then
@@ -1124,7 +1162,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                                     while HasModelLoaded(vehicleHash) == false do
                                         Citizen.Wait(0)
                                     end
-                                    driver.vehicle = CreateVehicle(vehicleHash, driver.startWP.x, driver.startWP.y, driver.startWP.z, driver.heading, true, false)
+                                    driver.vehicle = CreateVehicle(vehicleHash, driver.startCoord.x, driver.startCoord.y, driver.startCoord.z, driver.heading, true, false)
                                     SetModelAsNoLongerNeeded(vehicleHash)
                                     SetVehicleEngineOn(driver.vehicle, true, true, false)
                                     SetVehRadioStation(driver.vehicle, "OFF")
@@ -1146,9 +1184,6 @@ local function spawnAIDriver(aiName, vehicleHash)
                                         NetworkRegisterEntityAsNetworked(driver.ped)
                                     end
                                     driver.netID = PedToNet(driver.ped)
-
-                                    driver.gamerTag = CreateFakeMpGamerTag(driver.ped, aiName, false, false, nil, 0)
-                                    SetMpGamerTagVisibility(driver.gamerTag, 0, true)
 
                                     driver.bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
 
@@ -1230,7 +1265,7 @@ local function saveGrp(isPublic, name)
             local group = {}
             for aiName, driver in pairs(aiState.drivers) do
                 if driver.ped ~= nil and driver.vehicle ~= nil then
-                    group[aiName] = {startWP = driver.startWP, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+                    group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
                 else
                     allSpawned = false
                     break
@@ -1260,7 +1295,7 @@ local function overwriteGrp(isPublic, name)
             local group = {}
             for aiName, driver in pairs(aiState.drivers) do
                 if driver.ped ~= nil and driver.vehicle ~= nil then
-                    group[aiName] = {startWP = driver.startWP, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+                    group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
                 else
                     allSpawned = false
                     break
@@ -1304,7 +1339,7 @@ local function leave()
     if STATE_JOINING == raceState then
         raceState = STATE_IDLE
         TriggerServerEvent("races:leave", raceIndex, PedToNet(player), nil)
-        removeRacerBlips()
+        removeRacerBlipGT()
         sendMessage("Left race.\n")
     elseif STATE_RACING == raceState then
         if IsPedInAnyVehicle(player, false) == 1 then
@@ -1312,7 +1347,7 @@ local function leave()
         end
         DeleteCheckpoint(raceCheckpoint)
         finishRace(-1)
-        removeRacerBlips()
+        removeRacerBlipGT()
         sendMessage("Left race.\n")
     else
         sendMessage("Cannot leave.  Not joined to any race.\n")
@@ -1329,32 +1364,48 @@ end
 
 local function respawn()
     if STATE_RACING == raceState then
-        local prev = currentWaypoint - 1
+        local coord = startCoord
         if true == startIsFinish then
             if currentWaypoint > 0 then
-                prev = currentWaypoint
-            else
-                return
+                coord = waypoints[currentWaypoint].coord
             end
         else
-            if 1 == currentWaypoint then
-                return
+            if currentWaypoint > 1 then
+                coord = waypoints[currentWaypoint - 1].coord
             end
         end
-        local vehicle = GetPlayersLastVehicle()
-        if vehicle ~= 0 then
-            SetEntityAsMissionEntity(vehicle, true, true)
-            DeleteVehicle(vehicle)
-        end
         local player = PlayerPedId()
-        SetEntityCoords(player, waypoints[prev].coord.x, waypoints[prev].coord.y, waypoints[prev].coord.z, false, false, false, true)
+        local passengers = {}
+        local vehicle = GetVehiclePedIsIn(player, false)
+        if vehicle ~= 0 then
+            if GetPedInVehicleSeat(vehicle, -1) == player then
+                for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
+                    local passenger = GetPedInVehicleSeat(vehicle, i)
+                    if DoesEntityExist(passenger) then
+                        print("passenger exists in seat " .. i)
+                    end
+                    if passenger ~= 0 then
+                        passengers[#passengers + 1] = {ped = passenger, seat = i}
+                    end
+                end
+                SetEntityAsMissionEntity(vehicle, true, true)
+                DeleteVehicle(vehicle)
+            end
+        end
+        SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
         if currentVehicleHash ~= nil then
             RequestModel(currentVehicleHash)
             while HasModelLoaded(currentVehicleHash) == false do
                 Citizen.Wait(0)
             end
-            vehicle = putPedInVehicle(player, currentVehicleHash, nil)
+            vehicle = putPedInVehicle(player, currentVehicleHash, coord)
             SetEntityAsNoLongerNeeded(vehicle)
+            for _, passenger in pairs(passengers) do
+                if DoesEntityExist(passenger.ped) then
+                    print("passenger exists")
+                end
+                SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
+            end
         end
     else
         sendMessage("Cannot respawn.  Not in a race.\n")
@@ -1742,7 +1793,9 @@ end
 
 local function giveWeapon()
     local player = PlayerPedId()
-    local weaponHash = "WEAPON_PISTOL"
+    --local weaponHash = "WEAPON_PISTOL"
+    --local weaponHash = "WEAPON_REVOLVER"
+    local weaponHash = "WEAPON_COMBATMG"
     GiveWeaponToPed(player, weaponHash, 0, false, false)
     SetPedInfiniteAmmo(player, true, weaponHash)
 end
@@ -1757,6 +1810,92 @@ end
 
 local function getNetId()
     print(PedToNet(PlayerPedId()))
+end
+
+local function vehInfo()
+    local player = PlayerPedId()
+    local vehicle = GetPlayersLastVehicle()
+    print("on wheels: " .. tostring(IsVehicleOnAllWheels(vehicle)))
+    print("driveable: " .. tostring(IsVehicleDriveable(vehicle, false)))
+    print("upside down: " .. tostring(IsEntityUpsidedown(vehicle)))
+    print("is a car: " .. tostring(IsThisModelACar(GetEntityModel(vehicle))))
+    print("can be damaged: " .. tostring(GetEntityCanBeDamaged(vehicle)))
+    print("vehicle health %: " .. GetVehicleHealthPercentage(vehicle))
+    print("entity health: " .. GetEntityHealth(vehicle))
+    print("vehicle name: " .. GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))))
+end
+
+local pedpassengers = {}
+
+local function deletePeds()
+    for _, passenger in pairs(pedpassengers) do
+        DeletePed(passenger.ped)
+    end
+    pedpassengers = {}
+end
+
+local function putPedInSeat()
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), true)
+    for _, passenger in pairs(pedpassengers) do
+        --SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
+        TaskWarpPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
+        print("seat:" .. passenger.seat)
+    end
+end
+
+local function getPedInSeat()
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), true)
+    for seat = -1, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
+        local ped = GetPedInVehicleSeat(vehicle, seat)
+        if DoesEntityExist(ped) then
+            pedpassengers[#pedpassengers + 1] = {ped = ped, seat = seat}
+            print("seat:" .. seat)
+        end
+    end
+    print(#pedpassengers)
+end
+
+local function createPedInSeat()
+    print("createPedInSeat")
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), true)
+    local pedHash = "a_m_y_skater_01"
+    RequestModel(pedHash)
+    while HasModelLoaded(pedHash) == false do
+        Citizen.Wait(0)
+    end
+    for seat = -1, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
+        if IsVehicleSeatFree(vehicle, seat) == 1 then
+            CreatePedInsideVehicle(vehicle, PED_TYPE_CIVMALE, pedHash, seat, true, false)
+            print("seat:" .. seat)
+            break
+        end
+    end
+    SetModelAsNoLongerNeeded(pedHash)
+end
+
+local vehicle0
+local vehicle1
+local humanPed
+
+local function getVeh0()
+    vehicle0 = GetVehiclePedIsIn(PlayerPedId(), true)
+    print("get vehicle 0")
+end
+
+local function getPedInVeh0()
+    humanPed = GetPedInVehicleSeat(vehicle0, -1)
+    print("get ped in vehicle 0")
+end
+
+local function getVeh1()
+    vehicle1 = GetVehiclePedIsIn(PlayerPedId(), true)
+    print("get vehicle 1")
+end
+
+local function putPedInVeh1()
+    --SetPedIntoVehicle(humanPed, vehicle1, -1)
+    TaskWarpPedIntoVehicle(humanPed, vehicle1, -1)
+    print("put ped in vehicle 1")
 end
 
 RegisterNetEvent("sounds")
@@ -2014,6 +2153,24 @@ RegisterCommand("races", function(_, args)
             clearWantedLevel()
         elseif "b" == args[2] then
             getNetId()
+        elseif "c" == args[2] then
+            vehInfo()
+        elseif "dp" == args[2] then
+            deletePeds()
+        elseif "pp" == args[2] then
+            putPedInSeat()
+        elseif "gp" == args[2] then
+            getPedInSeat()
+        elseif "cp" == args[2] then
+            createPedInSeat()
+        elseif "gv0" == args[2] then
+            getVeh0()
+        elseif "gpiv0" == args[2] then
+            getPedInVeh0()
+        elseif "gv1" == args[2] then
+            getVeh1()
+        elseif "ppiv1" == args[2] then
+            putPedInVeh1()
         end
 --]]
     else
@@ -2179,7 +2336,7 @@ AddEventHandler("races:unregister", function(rIndex)
         if rIndex == raceIndex then
             if STATE_JOINING == raceState then
                 raceState = STATE_IDLE
-                removeRacerBlips()
+                removeRacerBlipGT()
                 notifyPlayer("Race canceled.\n")
             elseif STATE_RACING == raceState then
                 raceState = STATE_IDLE
@@ -2188,7 +2345,7 @@ AddEventHandler("races:unregister", function(rIndex)
                 SetBlipRoute(waypoints[1].blip, true)
                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                 speedo = false
-                removeRacerBlips()
+                removeRacerBlipGT()
                 notifyPlayer("Race canceled.\n")
             end
         end
@@ -2213,9 +2370,9 @@ AddEventHandler("races:loadGrp", function(isPublic, name, group)
     if isPublic ~= nil and name ~= nil and group ~= nil then
         local loaded = true
         if deleteAIDriver(nil) == true then
-            -- group[aiName] = {startWP = {X, Y, Z}, heading, vehicleHash}
+            -- group[aiName] = {startCoord = {x, y, z}, heading, vehicleHash}
             for aiName, driver in pairs(group) do
-                if addAIDriver(aiName, driver.startWP, driver.heading) == false then
+                if addAIDriver(aiName, driver.startCoord, driver.heading) == false then
                     loaded = false
                     break
                 end
@@ -2296,10 +2453,13 @@ AddEventHandler("races:start", function(rIndex, delay)
                     numRacers = -1
                     results = {}
                     speedo = true
+                    startCoord = GetEntityCoords(PlayerPedId())
 
                     if startVehicle ~= nil then
                         local vehicle = switchVehicle(PlayerPedId(), startVehicle)
-                        SetEntityAsNoLongerNeeded(vehicle)
+                        if vehicle ~= nil then
+                            SetEntityAsNoLongerNeeded(vehicle)
+                        end
                     end
 
                     numVisible = maxNumVisible < #waypoints and maxNumVisible or (#waypoints - 1)
@@ -2436,7 +2596,7 @@ AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
                             aiState.waypointCoords[#aiState.waypointCoords] = nil
                         end
                     end
-                    driver.destWP = aiState.waypointCoords[1]
+                    driver.destCoord = aiState.waypointCoords[1]
                     driver.destSet = true
                     driver.currentWP = true == aiState.startIsFinish and 0 or 1
                     if "rand" == aiState.rtype then
@@ -2542,24 +2702,29 @@ AddEventHandler("races:position", function(rIndex, pos, numR)
     end
 end)
 
-RegisterNetEvent("races:addRacerBlip")
-AddEventHandler("races:addRacerBlip", function(netID)
-    if racerBlips[netID] ~= nil then
-        RemoveBlip(racerBlips[netID])
+RegisterNetEvent("races:addRacer")
+AddEventHandler("races:addRacer", function(netID, name)
+    if racerBlipGT[netID] ~= nil then
+        RemoveBlip(racerBlipGT[netID].blip)
+        RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
     end
     local ped = NetToPed(netID)
     if DoesEntityExist(ped) == 1 then
-        racerBlips[netID] = AddBlipForEntity(ped)
-        SetBlipSprite(racerBlips[netID], racerSprite)
-        SetBlipColour(racerBlips[netID], racerBlipColor)
+        local blip = AddBlipForEntity(ped)
+        SetBlipSprite(blip, racerSprite)
+        SetBlipColour(blip, racerBlipColor)
+        local gamerTag = CreateFakeMpGamerTag(ped, name, false, false, nil, 0)
+        SetMpGamerTagVisibility(gamerTag, 0, true)
+        racerBlipGT[netID] = {blip = blip, gamerTag = gamerTag, netID = netID, name = name}
     end
 end)
 
-RegisterNetEvent("races:delRacerBlip")
-AddEventHandler("races:delRacerBlip", function(netID)
-    if racerBlips[netID] ~= nil then
-        RemoveBlip(racerBlips[netID])
-        racerBlips[netID] = nil
+RegisterNetEvent("races:delRacer")
+AddEventHandler("races:delRacer", function(netID)
+    if racerBlipGT[netID] ~= nil then
+        RemoveBlip(racerBlipGT[netID].blip)
+        RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
+        racerBlipGT[netID] = nil
     end
 end)
 
@@ -2575,7 +2740,7 @@ Citizen.CreateThread(function()
         if aiState ~= nil then
             for aiName, driver in pairs(aiState.drivers) do
                 if STATE_RACING == driver.raceState then
-                    local distance = #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z))
+                    local distance = #(GetEntityCoords(driver.ped) - vector3(driver.destCoord.x, driver.destCoord.y, driver.destCoord.z))
                     TriggerServerEvent("races:report", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, distance)
                 end
             end
@@ -2814,7 +2979,10 @@ Citizen.CreateThread(function()
                                 if currentLap < numLaps then
                                     currentLap = currentLap + 1
                                     if #randVehicles > 0 then
-                                        switchVehicle(player, randVehicles[math.random(#randVehicles)])
+                                        local randVehicle = switchVehicle(player, randVehicles[math.random(#randVehicles)])
+                                        if randVehicle ~= nil then
+                                            SetEntityAsNoLongerNeeded(randVehicle)
+                                        end
                                         PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
@@ -2986,15 +3154,57 @@ Citizen.CreateThread(function()
                         end
                     end
                     if true == joinRace then
-                        removeRacerBlips()
+                        removeRacerBlipGT()
                         TriggerServerEvent("races:join", closestIndex, PedToNet(player), nil)
                     end
                 end
             end
         end
 
+        if IsPedInAnyVehicle(player, true) == false then
+            local vehicle = GetVehiclePedIsTryingToEnter(player)
+            if DoesEntityExist(vehicle) == 1 then
+                if false == enteringVehicle then
+                    enteringVehicle = true
+                    local numSeats = GetVehicleModelNumberOfSeats(GetEntityModel(vehicle))
+                    if numSeats > 0 then
+                        for seat = -1, numSeats - 2 do
+                            if IsVehicleSeatFree(vehicle, seat) == 1 then
+                                TaskEnterVehicle(player, vehicle, 10.0, seat, 1.0, 1, 0)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            enteringVehicle = false
+        end
+
+        if true == speedo then
+            local speed = GetEntitySpeed(player)
+            if "metric" == unitom then
+                drawMsg(leftSide, topSide + 0.25, "Speed(kph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 3.6), 0.7, 1)
+            else
+                drawMsg(leftSide, topSide + 0.25, "Speed(mph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 2.2369363), 0.7, 1)
+            end
+        end
+
+        if true == panelShown then
+            DisableControlAction(0, 142, true)
+            DisableControlAction(0, 18, true)
+            DisableControlAction(0, 322, true)
+            DisableControlAction(0, 106, true)
+        end
+    end
+end)
+
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(0)
         if aiState ~= nil then
-            local pIndex = GetPlayerServerId(PlayerId())
             local currentTime = GetGameTimer()
             for aiName, driver in pairs(aiState.drivers) do
                 if STATE_RACING == driver.raceState then
@@ -3007,54 +3217,70 @@ Citizen.CreateThread(function()
                         if true == aiState.beginDNFTimeout then
                             if aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
                                 driver.raceState = STATE_IDLE
-                                TriggerServerEvent("races:finish", pIndex, driver.netID, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                TriggerServerEvent("races:finish", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
                             end
                         end
-                        if STATE_RACING == driver.raceState then
-                            if IsPedInAnyVehicle(driver.ped, true) == false then
-                                if false == driver.enteringVehicle then
-                                    driver.enteringVehicle = true
-                                    driver.destSet = true
-                                    TaskEnterVehicle(driver.ped, driver.vehicle, 10.0, -1, 2.0, 1, 0)
-                                end
+                        if IsEntityDead(driver.ped) == false and STATE_RACING == driver.raceState then
+                            if IsVehicleDriveable(driver.vehicle, false) == false then
+                                respawnAI(driver)
                             else
-                                driver.enteringVehicle = false
-                                if true == driver.destSet then
-                                    driver.destSet = false
-                                    -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
-                                    -- driveMode: https://vespura.com/fivem/drivingstyle/
-                                    -- actual speed is around speed * 2 mph
-                                    -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 60.0, 787004, driver.destWP.r * 0.5)
-                                    -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange
-                                    -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
-                                    -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
-                                    TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destWP.x, driver.destWP.y, driver.destWP.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destWP.r * 0.5, true)
+                                local coord = GetEntityCoords(driver.ped)
+                                if #(coord - driver.stuckCoord) < 5.0 then
+                                    if -1 == driver.stuckStart then
+                                        driver.stuckStart = currentTime
+                                    elseif currentTime - driver.stuckStart > 10000 then
+                                        respawnAI(driver)
+                                        driver.stuckStart = -1
+                                    end
                                 else
-                                    if #(GetEntityCoords(driver.ped) - vector3(driver.destWP.x, driver.destWP.y, driver.destWP.z)) < driver.destWP.r then
-                                        driver.numWaypointsPassed = driver.numWaypointsPassed + 1
-                                        if driver.currentWP < #aiState.waypointCoords then
-                                            driver.currentWP = driver.currentWP + 1
-                                        else
-                                            driver.currentWP = 1
-                                            local lapTime = currentTime - driver.lapTimeStart
-                                            if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
-                                                driver.bestLapTime = lapTime
-                                            end
-                                            driver.lapTimeStart = currentTime
-                                            if driver.currentLap < aiState.numLaps then
-                                                driver.currentLap = driver.currentLap + 1
-                                                if #aiState.randVehicles > 0 then
-                                                    driver.vehicle = switchVehicle(driver.ped, aiState.randVehicles[math.random(#aiState.randVehicles)])
-                                                end
+                                    driver.stuckCoord = coord
+                                    driver.stuckStart = -1
+                                end
+                                if IsPedInAnyVehicle(driver.ped, true) == false then
+                                    if false == driver.enteringVehicle then
+                                        driver.enteringVehicle = true
+                                        driver.destSet = true
+                                        TaskEnterVehicle(driver.ped, driver.vehicle, 10.0, -1, 2.0, 1, 0)
+                                    end
+                                else
+                                    driver.enteringVehicle = false
+                                    if true == driver.destSet then
+                                        driver.destSet = false
+                                        -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
+                                        -- driveMode: https://vespura.com/fivem/drivingstyle/
+                                        -- actual speed is around speed * 2 mph
+                                        -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, 60.0, 787004, driver.destCoord.r * 0.5)
+                                        -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange
+                                        -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
+                                        -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
+                                        TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destCoord.r * 0.5, true)
+                                    else
+                                        if #(GetEntityCoords(driver.ped) - vector3(driver.destCoord.x, driver.destCoord.y, driver.destCoord.z)) < driver.destCoord.r then
+                                            driver.numWaypointsPassed = driver.numWaypointsPassed + 1
+                                            if driver.currentWP < #aiState.waypointCoords then
+                                                driver.currentWP = driver.currentWP + 1
                                             else
-                                                driver.raceState = STATE_IDLE
-                                                TriggerServerEvent("races:finish", pIndex, driver.netID, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                                driver.currentWP = 1
+                                                local lapTime = currentTime - driver.lapTimeStart
+                                                if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
+                                                    driver.bestLapTime = lapTime
+                                                end
+                                                driver.lapTimeStart = currentTime
+                                                if driver.currentLap < aiState.numLaps then
+                                                    driver.currentLap = driver.currentLap + 1
+                                                    if #aiState.randVehicles > 0 then
+                                                        driver.vehicle = switchVehicle(driver.ped, aiState.randVehicles[math.random(#aiState.randVehicles)])
+                                                    end
+                                                else
+                                                    driver.raceState = STATE_IDLE
+                                                    TriggerServerEvent("races:finish", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, elapsedTime, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                                                end
                                             end
-                                        end
-                                        if STATE_RACING == driver.raceState then
-                                            local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
-                                            driver.destWP = aiState.waypointCoords[curr]
-                                            driver.destSet = true
+                                            if STATE_RACING == driver.raceState then
+                                                local curr = true == startIsFinish and driver.currentWP % #aiState.waypointCoords + 1 or driver.currentWP
+                                                driver.destCoord = aiState.waypointCoords[curr]
+                                                driver.destSet = true
+                                            end
                                         end
                                     end
                                 end
@@ -3081,58 +3307,26 @@ Citizen.CreateThread(function()
                 end
             end
         end
+    end
+end)
 
-        if false == inVehicle then
-            local vehicle = GetVehiclePedIsTryingToEnter(player)
-            if DoesEntityExist(vehicle) == 1 then
-                if false == enteringVehicle then
-                    enteringVehicle = true
-                    --[[
-                    local ped = GetPedInVehicleSeat(vehicle, -1)
-                    if DoesEntityExist(ped) then
-                        print(PedToNet(ped))
-                    end
-                    --]]
-                    local numSeats = GetVehicleModelNumberOfSeats(GetEntityModel(vehicle))
-                    if numSeats > 0 then
-                        for seat = -1, numSeats - 2 do
-                            if IsVehicleSeatFree(vehicle, seat) == 1 then
-                                TaskEnterVehicle(player, vehicle, 10.0, seat, 1.0, 1, 0)
-                                break
-                            end
-                        end
+Citizen.CreateThread(function()
+    local recreated = false
+    while true do
+        Citizen.Wait(0)
+        if IsPauseMenuActive() == false then
+            if false == recreated then
+                for _, racer in pairs(racerBlipGT) do
+                    ped = NetToPed(racer.netID)
+                    if DoesEntityExist(ped) == 1 then
+                        racer.gamerTag = CreateFakeMpGamerTag(ped, racer.name, false, false, nil, 0)
+                        SetMpGamerTagVisibility(racer.gamerTag, 0, true)
                     end
                 end
-                if IsPedInAnyVehicle(player, true) == 1 then
-                    inVehicle = true
-                    enteringVehicle = false
-                end
+                recreated = true
             end
         else
-            enteringVehicle = false
-            if IsPedInAnyVehicle(player, true) == false then
-                inVehicle = false
-            else
-                inVehicle = true
-            end
-        end
-
-        if true == speedo then
-            local speed = GetEntitySpeed(player)
-            if "metric" == unitom then
-                drawMsg(leftSide, topSide + 0.25, "Speed(kph)", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 3.6), 0.7, 1)
-            else
-                drawMsg(leftSide, topSide + 0.25, "Speed(mph)", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 2.2369363), 0.7, 1)
-            end
-        end
-
-        if true == panelShown then
-            DisableControlAction(0, 142, true)
-            DisableControlAction(0, 18, true)
-            DisableControlAction(0, 322, true)
-            DisableControlAction(0, 106, true)
+            recreated = false
         end
     end
 end)

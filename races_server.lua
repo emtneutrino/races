@@ -61,9 +61,9 @@ local ROLE_EDIT <const> = 1 -- edit tracks role
 local ROLE_REGISTER <const> = 2 -- register races role
 local ROLE_SPAWN <const> = 4 -- spawn vehicles role
 
-local requirePermissionToEdit <const> = true -- flag indicating if permission is required to edit tracks
-local requirePermissionToRegister <const> = true -- flag indicating if permission is required to register races
-local requirePermissionToSpawn <const> = true -- flag indicating if permission is required to spawn vehicles
+local requirePermissionToEdit <const> = false -- flag indicating if permission is required to edit tracks
+local requirePermissionToRegister <const> = false -- flag indicating if permission is required to register races
+local requirePermissionToSpawn <const> = false -- flag indicating if permission is required to spawn vehicles
 
 local requirePermissionBits <const> = -- bit flag indicating if permission is required to edit tracks, register races or spawn vehicles
     (true == requirePermissionToEdit and ROLE_EDIT or 0) |
@@ -1606,7 +1606,7 @@ AddEventHandler("races:leave", function(rIndex, netID, aiName)
                     end
                     for nID, player in pairs(races[rIndex].players) do
                         if player.aiName ~= nil then -- don't need to check nID == netID because player removed from table already
-                            TriggerClientEvent("races:delRacerBlip", player.source, netID)
+                            TriggerClientEvent("races:delRacer", player.source, netID)
                         end
                     end
                 else
@@ -1675,14 +1675,15 @@ AddEventHandler("races:join", function(rIndex, netID, aiName)
         if races[rIndex] ~= nil then
             if (nil == aiName and GetFunds(source) >= races[rIndex].buyin) or aiName ~= nil then
                 if STATE_REGISTERING == races[rIndex].state then
+                    local playerName = aiName ~= nil and ("(AI) " .. aiName) or GetPlayerName(source)
                     for nID, player in pairs(races[rIndex].players) do
                         if nil == player.aiName then
-                            TriggerClientEvent("races:addRacerBlip", player.source, netID)
+                            TriggerClientEvent("races:addRacer", player.source, netID, playerName)
                         end
                     end
                     if nil == aiName then
-                        for nID in pairs(races[rIndex].players) do
-                            TriggerClientEvent("races:addRacerBlip", source, nID)
+                        for nID, player in pairs(races[rIndex].players) do
+                            TriggerClientEvent("races:addRacer", source, nID, player.playerName)
                         end
                         if races[rIndex].buyin > 0 then
                             Withdraw(source, races[rIndex].buyin)
@@ -1692,7 +1693,7 @@ AddEventHandler("races:join", function(rIndex, netID, aiName)
                     races[rIndex].numRacing = races[rIndex].numRacing + 1
                     races[rIndex].players[netID] = {
                         source = source,
-                        playerName = aiName ~= nil and ("(AI) " .. aiName) or GetPlayerName(source),
+                        playerName = playerName,
                         aiName = aiName,
                         numWaypointsPassed = -1,
                         data = -1,
@@ -1726,9 +1727,9 @@ AddEventHandler("races:finish", function(rIndex, netID, aiName, numWaypointsPass
                     for nID, player in pairs(race.players) do
                         if nil == player.aiName then
                             TriggerClientEvent("races:finish", player.source, rIndex, race.players[netID].playerName, finishTime, bestLapTime, vehicleName)
-                            if nID ~= netID then
-                                TriggerClientEvent("races:delRacerBlip", player.source, netID)
-                            end
+                        end
+                        if nID ~= netID then
+                            TriggerClientEvent("races:delRacer", player.source, netID)
                         end
                     end
 
