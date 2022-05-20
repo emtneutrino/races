@@ -1381,9 +1381,6 @@ local function respawn()
             if GetPedInVehicleSeat(vehicle, -1) == player then
                 for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
                     local passenger = GetPedInVehicleSeat(vehicle, i)
-                    if DoesEntityExist(passenger) then
-                        print("passenger exists in seat " .. i)
-                    end
                     if passenger ~= 0 then
                         passengers[#passengers + 1] = {ped = passenger, seat = i}
                     end
@@ -1401,9 +1398,6 @@ local function respawn()
             vehicle = putPedInVehicle(player, currentVehicleHash, coord)
             SetEntityAsNoLongerNeeded(vehicle)
             for _, passenger in pairs(passengers) do
-                if DoesEntityExist(passenger.ped) then
-                    print("passenger exists")
-                end
                 SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
             end
         end
