@@ -402,37 +402,37 @@ An attempt to port the funds functions to ESX is available in the **`esx/`** fol
 SCREENSHOTS
 -----------
 Registration point\
-<img src="screenshots/Screenshot%20(1).png" width="800">
+<img src="./.github/assets/screenshot_01.png" width="800">
 
 Before race start\
-<img src="screenshots/Screenshot%20(2).png" width="800">
+<img src="./.github/assets/screenshot_02.png" width="800">
 
 In race\
-<img src="screenshots/Screenshot%20(3).png" width="800">
+<img src="./.github/assets/screenshot_03.png" width="800">
 
 In race\
-<img src="screenshots/Screenshot%20(4).png" width="800">
+<img src="./.github/assets/screenshot_04.png" width="800">
 
 Near finish\
-<img src="screenshots/Screenshot%20(5).png" width="800">
+<img src="./.github/assets/screenshot_05.png" width="800">
 
 Race results\
-<img src="screenshots/Screenshot%20(6).png" width="800">
+<img src="./.github/assets/screenshot_06.png" width="800">
 
 Editing waypoints in waypoint map\
-<img src="screenshots/Screenshot%20(7).png" width="800">
+<img src="./.github/assets/screenshot_07.png" width="800">
 
 Editing waypoints in world\
-<img src="screenshots/Screenshot%20(8).png" width="800">
+<img src="./.github/assets/screenshot_08.png" width="800">
 
 Main command button panel\
-<img src="screenshots/Screenshot%20(9).png" width="800">
+<img src="./.github/assets/screenshot_09.png" width="800">
 
 Edit tracks command button panel\
-<img src="screenshots/Screenshot%20(10).png" width="800">
+<img src="./.github/assets/screenshot_10.png" width="800">
 
 Register races command button panel\
-<img src="screenshots/Screenshot%20(11).png" width="800">
+<img src="./.github/assets/screenshot_11.png" width="800">
 
 VIDEOS
 ------
