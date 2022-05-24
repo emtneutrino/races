@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 $(function() {
     let replyOpen = false;
-    let openPanel = ""
+    let openPanel = "";
 
     $("#mainPanel").hide();
     $("#editPanel").hide();
@@ -42,21 +42,21 @@ $(function() {
     window.addEventListener("message", function(event) {
         let data = event.data;
         if ("main" == data.panel) {
-            $("#vehicle").val(data.defaultVehicle)
+            $("#vehicle").val(data.defaultVehicle);
             $("#mainPanel").show();
-            openPanel = "main"
+            openPanel = "main";
         } else if ("edit" == data.panel) {
             $("#editPanel").show();
-            openPanel = "edit"
+            openPanel = "edit";
         } else if ("register" == data.panel) {
-            $("#buyin").val(data.defaultBuyin)
-            $("#laps").val(data.defaultLaps)
-            $("#timeout").val(data.defaultTimeout)
-            $("#delay").val(data.defaultDelay)
-            $("#ai_vehicle").val(data.defaultVehicle)
-            $("#rtype").change()
+            $("#buyin").val(data.defaultBuyin);
+            $("#laps").val(data.defaultLaps);
+            $("#timeout").val(data.defaultTimeout);
+            $("#delay").val(data.defaultDelay);
+            $("#ai_vehicle").val(data.defaultVehicle);
+            $("#rtype").change();
             $("#registerPanel").show();
-            openPanel = "register"
+            openPanel = "register";
         } else if ("reply" == data.panel) {
             $("#mainPanel").hide();
             $("#editPanel").hide();
@@ -64,7 +64,7 @@ $(function() {
             document.getElementById("message").innerHTML = data.message;
             $("#replyPanel").show();
             replyOpen = true;
-        }
+        };
     });
 
     /* main panel */
@@ -338,41 +338,41 @@ $(function() {
 
     $("#rtype").change(function() {
         if ($("#rtype").val() == "norm") {
-            $("#rest").hide()
-            $("#file").hide()
-            $("#vclass").hide()
-            $("#sveh").hide()
+            $("#rest").hide();
+            $("#file").hide();
+            $("#vclass").hide();
+            $("#sveh").hide();
         } else if ($("#rtype").val() == "rest") {
-            $("#rest").show()
-            $("#file").hide()
-            $("#vclass").hide()
-            $("#sveh").hide()
+            $("#rest").show();
+            $("#file").hide();
+            $("#vclass").hide();
+            $("#sveh").hide();
         } else if ($("#rtype").val() == "class") {
-            $("#rest").hide()
+            $("#rest").hide();
             if ($("#register_vclass").val() == "-1") {
-                $("#file").show()
+                $("#file").show();
             } else {
-                $("#file").hide()
-            }
-            $("#vclass").show()
-            $("#sveh").hide()
+                $("#file").hide();
+            };
+            $("#vclass").show();
+            $("#sveh").hide();
         } else if ($("#rtype").val() == "rand") {
-            $("#rest").hide()
-            $("#file").show()
-            $("#vclass").show()
-            $("#sveh").show()
-        }
-    })
+            $("#rest").hide();
+            $("#file").show();
+            $("#vclass").show();
+            $("#sveh").show();
+        };
+    });
 
     $("#register_vclass").change(function() {
         if ($("#rtype").val() == "class") {
             if ($("#register_vclass").val() == "-1") {
-                $("#file").show()
+                $("#file").show();
             } else {
-                $("#file").hide()
-            }
-        }
-    })
+                $("#file").hide();
+            };
+        };
+    });
 
     $("#register").click(function() {
         $.post("https://races/register", JSON.stringify({
@@ -518,7 +518,7 @@ $(function() {
             $("#editPanel").show();
         } else if("register" == openPanel) {
             $("#registerPanel").show();
-        }
+        };
     });
 
     document.onkeyup = function(data) {
@@ -532,13 +532,13 @@ $(function() {
                     $("#editPanel").show();
                 } else if("register" == openPanel) {
                     $("#registerPanel").show();
-                }
+                };
             } else {
                 $("#mainPanel").hide();
                 $("#editPanel").hide();
                 $("#registerPanel").hide();
                 $.post("https://races/close");
-            }
-        }
-    }
+            };
+        };
+    };
 });
