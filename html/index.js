@@ -101,7 +101,7 @@ $(function() {
     $("#main_load_pub").click(function() {
         $.post("https://races/load", JSON.stringify({
             isPublic: true,
-            trackName: $("#main_name").val()
+            trackName: $("#main_name_pub").val()
         }));
     });
 
