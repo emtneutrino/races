@@ -34,9 +34,10 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 **`/races unregister`** - unregister your race\
 **`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
 **`/races ai add [name]`** - Add an AI driver named [name]\
-**`/races ai delete (name)`** - Delete an AI driver named (name); otherwise delete all AI drivers if (name) is not specified\
+**`/races ai delete [name]`** - Delete an AI driver named [name]\
 **`/races ai spawn [name] (vehicle)`** - Spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\
 **`/races ai list`** - List AI driver names\
+**`/races ai deleteAll`** - Delete all AI drivers\
 **`/races ai loadGrp [name]`** - Load AI group saved as [name]\
 **`/races ai saveGrp [name]`** - Save new AI group as [name]\
 **`/races ai overwriteGrp [name]`** - Overwrite existing AI group saved as [name]\
@@ -153,9 +154,10 @@ If permission is required to register races, the following commands will be rest
 **`/races unregister`**\
 **`/races start (delay)`**\
 **`/races ai add [name]`**\
-**`/races ai delete (name)`**\
+**`/races ai delete [name]`**\
 **`/races ai spawn [name] (vehicle)`**\
 **`/races ai list`**\
+**`/races ai deleteAll`**\
 **`/races ai loadGrp [name]`**\
 **`/races ai saveGrp [name]`**\
 **`/races ai overwriteGrp [name]`**\
@@ -267,7 +269,7 @@ As a convenience, each class of vehicle has been separated into different files 
 
 If you want a race where AI drivers are allowed, type **`/races register 100 2 180 yes`**.  Only the person who registered the race can add AI drivers.  Buy-in amounts will be set to 0 and there will be no payouts.
 
-To add an AI driver named **`adam`** at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  To delete an AI driver you added named **`adam`**, type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To delete all AI drivers, type **`/races ai delete`**.  To list the names of the AI drivers you added, type **`/races ai list`**.  If you want to ride as a passenger in the AI's vehicle, move close to the vehicle and press 'F' on a keyboard, 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller.
+To add an AI driver named **`adam`** at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  To delete an AI driver you added named **`adam`**, type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To delete all AI drivers, type **`/races ai deleteAll`**.  To list the names of the AI drivers you added, type **`/races ai list`**.  If you want to ride as a passenger in the AI's vehicle, move close to the vehicle and press 'F' on a keyboard, 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller.
 
 An AI group is a group of AI drivers that have been added and spawned for a race.  To save an AI group named **`mygroup`**, type **`/races ai saveGrp mygroup`**.  **`mygroup`** must not exist.  You cannot save unless all AI drivers that were added are also spawned.  If you want to overwrite an existing AI group named **`mygroup`**, type **`/races ai overwriteGrp mygroup`**.
 

@@ -421,6 +421,10 @@ $(function() {
         $.post("https://races/list_ai");
     });
 
+    $("#delete_all_ai").click(function() {
+        $.post("https://races/delete_all_ai");
+    });
+
     $("#load_grp").click(function() {
         $.post("https://races/load_grp", JSON.stringify({
             isPublic: false,

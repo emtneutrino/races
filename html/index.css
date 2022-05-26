@@ -357,6 +357,10 @@ body {
     width: 10%;
 }
 
+#delete_all_ai {
+    width: 10%;
+}
+
 #ai_grp_name {
     width: 25%;
 }
