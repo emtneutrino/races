@@ -69,8 +69,12 @@ body {
     width: 25%;
 }
 
+#main_track_access {
+    height: 44px;
+}
+
 #main_name {
-    width: 80%;
+    width: 500px;
 }
 
 #main_load {
@@ -82,22 +86,6 @@ body {
 }
 
 #main_list {
-    width: 25%;
-}
-
-#main_name_pub {
-    width: 80%;
-}
-
-#main_load_pub {
-    width: 25%
-}
-
-#main_blt_pub {
-    width: 25%;
-}
-
-#main_list_pub {
     width: 25%;
 }
 
@@ -183,8 +171,12 @@ body {
     width: 25%;
 }
 
+#edit_track_access {
+    height: 44px;
+}
+
 #edit_name {
-    width: 80%;
+    width: 500px;
 }
 
 #edit_load {
@@ -211,34 +203,6 @@ body {
     width: 15%;
 }
 
-#edit_name_pub {
-    width: 80%;
-}
-
-#edit_load_pub {
-    width: 15%;
-}
-
-#edit_save_pub {
-    width: 15%;
-}
-
-#edit_overwrite_pub {
-    width: 15%;
-}
-
-#edit_delete_pub {
-    width: 15%;
-}
-
-#edit_blt_pub {
-    width: 15%;
-}
-
-#edit_list_pub {
-    width: 15%;
-}
-
 #edit_main {
     width: 25%;
 }
@@ -261,8 +225,12 @@ body {
     border-radius: 7px;
 }
 
+#register_track_access {
+    height: 44px;
+}
+
 #register_name {
-    width: 80%;
+    width: 500px;
 }
 
 #register_load {
@@ -274,22 +242,6 @@ body {
 }
 
 #register_list {
-    width: 25%;
-}
-
-#register_name_pub {
-    width: 80%;
-}
-
-#register_load_pub {
-    width: 25%;
-}
-
-#register_blt_pub {
-    width: 25%;
-}
-
-#register_list_pub {
     width: 25%;
 }
 
@@ -361,8 +313,12 @@ body {
     width: 10%;
 }
 
-#ai_grp_name {
-    width: 25%;
+#grp_access {
+    height: 44px;
+}
+
+#grp_name {
+    width: 500px;
 }
 
 #load_grp {
@@ -382,30 +338,6 @@ body {
 }
 
 #list_grp {
-    width: 10%;
-}
-
-#ai_grp_name_pub {
-    width: 25%;
-}
-
-#load_grp_pub {
-    width: 10%;
-}
-
-#save_grp_pub {
-    width: 10%;
-}
-
-#overwrite_grp_pub {
-    width: 10%;
-}
-
-#delete_grp_pub {
-    width: 10%;
-}
-
-#list_grp_pub {
     width: 10%;
 }
 

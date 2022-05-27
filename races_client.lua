@@ -748,76 +748,100 @@ local function reverse()
     end
 end
 
-local function loadTrack(isPublic, trackName)
+local function loadTrack(access, trackName)
     if 0 == roleBits & (ROLE_EDIT | ROLE_REGISTER) then
         sendMessage("Permission required.\n")
         return
     end
-    if trackName ~= nil then
-        if STATE_IDLE == raceState or STATE_EDITING == raceState then
-            TriggerServerEvent("races:load", isPublic, trackName)
+    if "pvt" == access or "pub" == access then
+        if trackName ~= nil then
+            if STATE_IDLE == raceState or STATE_EDITING == raceState then
+                TriggerServerEvent("races:load", "pub" == access, trackName)
+            else
+                sendMessage("Cannot load.  Leave race first.\n")
+            end
         else
-            sendMessage("Cannot load.  Leave race first.\n")
+            sendMessage("Cannot load.  Name required.\n")
         end
     else
-        sendMessage("Cannot load.  Name required.\n")
+        sendMessage("Cannot load.  Invalid access type.\n")
     end
 end
 
-local function saveTrack(isPublic, trackName)
+local function saveTrack(access, trackName)
     if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
-    if trackName ~= nil then
-        if #waypoints > 1 then
-            TriggerServerEvent("races:save", isPublic, trackName, waypointsToCoords())
+    if "pvt" == access or "pub" == access then
+        if trackName ~= nil then
+            if #waypoints > 1 then
+                TriggerServerEvent("races:save", "pub" == access, trackName, waypointsToCoords())
+            else
+                sendMessage("Cannot save.  Track needs to have at least 2 waypoints.\n")
+            end
         else
-            sendMessage("Cannot save.  Track needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot save.  Name required.\n")
         end
     else
-        sendMessage("Cannot save.  Name required.\n")
+        sendMessage("Cannot save.  Invalid access type.\n")
     end
 end
 
-local function overwriteTrack(isPublic, trackName)
+local function overwriteTrack(access, trackName)
     if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
-    if trackName ~= nil then
-        if #waypoints > 1 then
-            TriggerServerEvent("races:overwrite", isPublic, trackName, waypointsToCoords())
+    if "pvt" == access or "pub" == access then
+        if trackName ~= nil then
+            if #waypoints > 1 then
+                TriggerServerEvent("races:overwrite", "pub" == access, trackName, waypointsToCoords())
+            else
+                sendMessage("Cannot overwrite.  Track needs to have at least 2 waypoints.\n")
+            end
         else
-            sendMessage("Cannot overwrite.  Track needs to have at least 2 waypoints.\n")
+            sendMessage("Cannot overwrite.  Name required.\n")
         end
     else
-        sendMessage("Cannot overwrite.  Name required.\n")
+        sendMessage("Cannot overwrite.  Invalid access type.\n")
     end
 end
 
-local function deleteTrack(isPublic, trackName)
+local function deleteTrack(access, trackName)
     if 0 == roleBits & ROLE_EDIT then
         sendMessage("Permission required.\n")
         return
     end
-    if trackName ~= nil then
-        TriggerServerEvent("races:delete", isPublic, trackName)
+    if "pvt" == access or "pub" == access then
+        if trackName ~= nil then
+            TriggerServerEvent("races:delete", "pub" == access, trackName)
+        else
+            sendMessage("Cannot delete.  Name required.\n")
+        end
     else
-        sendMessage("Cannot delete.  Name required.\n")
+        sendMessage("Cannot delete.  Invalid access type.\n")
     end
 end
 
-local function bestLapTimes(isPublic, trackName)
-    if trackName ~= nil then
-        TriggerServerEvent("races:blt", isPublic, trackName)
+local function bestLapTimes(access, trackName)
+    if "pvt" == access or "pub" == access then
+        if trackName ~= nil then
+            TriggerServerEvent("races:blt", "pub" == access, trackName)
+        else
+            sendMessage("Cannot list best lap times.  Name required.\n")
+        end
     else
-        sendMessage("Cannot list best lap times.  Name required.\n")
+        sendMessage("Cannot list best lap times.  Invalid access type.\n")
     end
 end
 
-local function list(isPublic)
-    TriggerServerEvent("races:list", isPublic)
+local function list(access)
+    if "pvt" == access or "pub" == access then
+        TriggerServerEvent("races:list", "pub" == access)
+    else
+        sendMessage("Cannot list tracks.  Invalid access type.\n")
+    end
 end
 
 local function register(buyin, laps, timeout, allowAI, rtype, arg6, arg7, arg8)
@@ -1281,96 +1305,116 @@ local function deleteAllAIDrivers()
     return false
 end
 
-local function loadGrp(isPublic, name)
+local function loadGrp(access, name)
     if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
-    if name ~= nil then
-        TriggerServerEvent("races:loadGrp", isPublic, name)
-    else
-        sendMessage("Cannot load.  Name required.\n")
-    end
-end
-
-local function saveGrp(isPublic, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    if name ~= nil then
-        if aiState ~= nil then
-            local allSpawned = true
-            local group = {}
-            for aiName, driver in pairs(aiState.drivers) do
-                if driver.ped ~= nil and driver.vehicle ~= nil then
-                    group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
-                else
-                    allSpawned = false
-                    break
-                end
-            end
-            if true == allSpawned then
-                TriggerServerEvent("races:saveGrp", isPublic, name, group)
-            else
-                sendMessage("Cannot save.  Some AI drivers not spawned.\n")
-            end
+    if "pvt" == access or "pub" == access then
+        if name ~= nil then
+            TriggerServerEvent("races:loadGrp", "pub" == access, name)
         else
-            sendMessage("Cannot save.  No AI drivers added.\n")
+            sendMessage("Cannot load AI group.  Name required.\n")
         end
     else
-        sendMessage("Cannot save.  Name required.\n")
+        sendMessage("Cannot load AI group.  Invalid access type.\n")
     end
 end
 
-local function overwriteGrp(isPublic, name)
+local function saveGrp(access, name)
     if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
-    if name ~= nil then
-        if aiState ~= nil then
-            local allSpawned = true
-            local group = {}
-            for aiName, driver in pairs(aiState.drivers) do
-                if driver.ped ~= nil and driver.vehicle ~= nil then
-                    group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
-                else
-                    allSpawned = false
-                    break
+    if "pvt" == access or "pub" == access then
+        if name ~= nil then
+            if aiState ~= nil then
+                local allSpawned = true
+                local group = {}
+                for aiName, driver in pairs(aiState.drivers) do
+                    if driver.ped ~= nil and driver.vehicle ~= nil then
+                        group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+                    else
+                        allSpawned = false
+                        break
+                    end
                 end
-            end
-            if true == allSpawned then
-                TriggerServerEvent("races:overwriteGrp", isPublic, name, group)
+                if true == allSpawned then
+                    TriggerServerEvent("races:saveGrp", "pub" == access, name, group)
+                else
+                    sendMessage("Cannot save AI group.  Some AI drivers not spawned.\n")
+                end
             else
-                sendMessage("Cannot overwrite.  Some AI drivers not spawned.\n")
+                sendMessage("Cannot save AI group.  No AI drivers added.\n")
             end
         else
-            sendMessage("Cannot overwrite.  No AI drivers added.\n")
+            sendMessage("Cannot save AI group.  Name required.\n")
         end
     else
-        sendMessage("Cannot overwrite.  Name required.\n")
+        sendMessage("Cannot save AI group.  Invalid access type.\n")
     end
 end
 
-local function deleteGrp(isPublic, name)
+local function overwriteGrp(access, name)
     if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
-    if name ~= nil then
-        TriggerServerEvent("races:deleteGrp", isPublic, name)
+    if "pvt" == access or "pub" == access then
+        if name ~= nil then
+            if aiState ~= nil then
+                local allSpawned = true
+                local group = {}
+                for aiName, driver in pairs(aiState.drivers) do
+                    if driver.ped ~= nil and driver.vehicle ~= nil then
+                        group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+                    else
+                        allSpawned = false
+                        break
+                    end
+                end
+                if true == allSpawned then
+                    TriggerServerEvent("races:overwriteGrp", "pub" == access, name, group)
+                else
+                    sendMessage("Cannot overwrite AI group.  Some AI drivers not spawned.\n")
+                end
+            else
+                sendMessage("Cannot overwrite AI group.  No AI drivers added.\n")
+            end
+        else
+            sendMessage("Cannot overwrite AI group.  Name required.\n")
+        end
     else
-        sendMessage("Cannot delete.  Name required.\n")
+        sendMessage("Cannot overwrite AI group.  Invalid access type.\n")
     end
 end
 
-local function listGrp(isPublic)
+local function deleteGrp(access, name)
     if 0 == roleBits & ROLE_REGISTER then
         sendMessage("Permission required.\n")
         return
     end
-    TriggerServerEvent("races:listGrp", isPublic)
+    if "pvt" == access or "pub" == access then
+        if name ~= nil then
+            TriggerServerEvent("races:deleteGrp", "pub" == access, name)
+        else
+            sendMessage("Cannot delete AI group.  Name required.\n")
+        end
+    else
+        sendMessage("Cannot delete AI group.  Invalid access type.\n")
+    end
+end
+
+local function listGrp(access)
+    if 0 == roleBits & ROLE_REGISTER then
+        sendMessage("Permission required.\n")
+        return
+    end
+    if "pvt" == access or "pub" == access then
+        TriggerServerEvent("races:listGrp", "pub" == access)
+    else
+        sendMessage("Cannot list AI groups.  Invalid access type.\n")
+    end
 end
 
 local function leave()
@@ -1548,7 +1592,8 @@ local function showPanel(panel)
             defaultBuyin = defaultBuyin,
             defaultLaps = defaultLaps,
             defaultTimeout = defaultTimeout,
-            defaultDelay = defaultDelay
+            defaultDelay = defaultDelay,
+            defaultVehicle = defaultVehicle
         })
     else
         notifyPlayer("Invalid panel.\n")
@@ -1577,7 +1622,7 @@ RegisterNUICallback("load", function(data)
     if "" == trackName then
         trackName = nil
     end
-    loadTrack(data.isPublic, trackName)
+    loadTrack(data.access, trackName)
 end)
 
 RegisterNUICallback("save", function(data)
@@ -1585,7 +1630,7 @@ RegisterNUICallback("save", function(data)
     if "" == trackName then
         trackName = nil
     end
-    saveTrack(data.isPublic, trackName)
+    saveTrack(data.access, trackName)
 end)
 
 RegisterNUICallback("overwrite", function(data)
@@ -1593,7 +1638,7 @@ RegisterNUICallback("overwrite", function(data)
     if "" == trackName then
         trackName = nil
     end
-    overwriteTrack(data.isPublic, trackName)
+    overwriteTrack(data.access, trackName)
 end)
 
 RegisterNUICallback("delete", function(data)
@@ -1601,7 +1646,7 @@ RegisterNUICallback("delete", function(data)
     if "" == trackName then
         trackName = nil
     end
-    deleteTrack(data.isPublic, trackName)
+    deleteTrack(data.access, trackName)
 end)
 
 RegisterNUICallback("blt", function(data)
@@ -1609,11 +1654,11 @@ RegisterNUICallback("blt", function(data)
     if "" == trackName then
         trackName = nil
     end
-    bestLapTimes(data.isPublic, trackName)
+    bestLapTimes(data.access, trackName)
 end)
 
 RegisterNUICallback("list", function(data)
-    list(data.isPublic)
+    list(data.access)
 end)
 
 RegisterNUICallback("register", function(data)
@@ -1715,7 +1760,7 @@ RegisterNUICallback("load_grp", function(data)
     if "" == name then
         name = nil
     end
-    loadGrp(data.isPublic, name)
+    loadGrp(data.access, name)
 end)
 
 RegisterNUICallback("save_grp", function(data)
@@ -1723,7 +1768,7 @@ RegisterNUICallback("save_grp", function(data)
     if "" == name then
         name = nil
     end
-    saveGrp(data.isPublic, name)
+    saveGrp(data.access, name)
 end)
 
 RegisterNUICallback("overwrite_grp", function(data)
@@ -1731,7 +1776,7 @@ RegisterNUICallback("overwrite_grp", function(data)
     if "" == name then
         name = nil
     end
-    overwriteGrp(data.isPublic, name)
+    overwriteGrp(data.access, name)
 end)
 
 RegisterNUICallback("delete_grp", function(data)
@@ -1739,11 +1784,11 @@ RegisterNUICallback("delete_grp", function(data)
     if "" == name then
         name = nil
     end
-    deleteGrp(data.isPublic, name)
+    deleteGrp(data.access, name)
 end)
 
 RegisterNUICallback("list_grp", function(data)
-    listGrp(data.isPublic)
+    listGrp(data.access)
 end)
 
 RegisterNUICallback("leave", function()
@@ -2034,18 +2079,14 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races edit - toggle editing track waypoints\n"
         msg = msg .. "/races clear - clear track waypoints\n"
         msg = msg .. "/races reverse - reverse order of track waypoints\n"
-        msg = msg .. "/races load [name] - load track saved as [name]\n"
-        msg = msg .. "/races save [name] - save new track as [name]\n"
-        msg = msg .. "/races overwrite [name] - overwrite existing track saved as [name]\n"
-        msg = msg .. "/races delete [name] - delete track saved as [name]\n"
-        msg = msg .. "/races blt [name] - list 10 best lap times of track saved as [name]\n"
-        msg = msg .. "/races list - list saved tracks\n"
-        msg = msg .. "/races loadPublic [name] - load public track saved as [name]\n"
-        msg = msg .. "/races savePublic [name] - save new public track as [name]\n"
-        msg = msg .. "/races overwritePublic [name] - overwrite existing public track saved as [name]\n"
-        msg = msg .. "/races deletePublic [name] - delete public track saved as [name]\n"
-        msg = msg .. "/races bltPublic [name] - list 10 best lap times of public track saved as [name]\n"
-        msg = msg .. "/races listPublic - list public saved tracks\n"
+        msg = msg .. "\n"
+        msg = msg .. "For the following **`/races`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\n"
+        msg = msg .. "/races load [access] [name] - load private or public track saved as [name]\n"
+        msg = msg .. "/races save [access] [name] - save new private or public track as [name]\n"
+        msg = msg .. "/races overwrite [access] [name] - overwrite existing private or public track saved as [name]\n"
+        msg = msg .. "/races delete [access] [name] - delete private or public track saved as [name]\n"
+        msg = msg .. "/races blt [access] [name] - list 10 best lap times of private or public track saved as [name]\n"
+        msg = msg .. "/races list [access] - list saved private or public tracks\n"
         msg = msg .. "\n"
         msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\n"
         msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) - register your race with no vehicle restrictions\n"
@@ -2055,21 +2096,19 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "\n"
         msg = msg .. "/races unregister - unregister your race\n"
         msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
-        msg = msg .. "/races ai add [name] - Add an AI driver named [name]\n"
-        msg = msg .. "/races ai delete [name] - Delete an AI driver named [name]\n"
-        msg = msg .. "/races ai spawn [name] (vehicle) - Spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\n"
-        msg = msg .. "/races ai list - List AI driver names\n"
-        msg = msg .. "/races ai deleteAll - Delete all AI drivers\n"
-        msg = msg .. "/races ai loadGrp [name] - Load AI group saved as [name]\n"
-        msg = msg .. "/races ai saveGrp [name] - Save new AI group as [name]\n"
-        msg = msg .. "/races ai overwriteGrp [name] - Overwrite existing AI group saved as [name]\n"
-        msg = msg .. "/races ai deleteGrp [name] - Delete AI group saved as [name]\n"
-        msg = msg .. "/races ai listGrp - List saved AI groups\n"
-        msg = msg .. "/races ai loadGrpPub [name] - Load public AI group saved as [name]\n"
-        msg = msg .. "/races ai saveGrpPub [name] - Save new public AI group as [name]\n"
-        msg = msg .. "/races ai overwriteGrpPub [name] - Overwrite existing public AI group saved as [name]\n"
-        msg = msg .. "/races ai deleteGrpPub [name] - Delete public AI group saved as [name]\n"
-        msg = msg .. "/races ai listGrpPub - List saved public AI groups\n"
+        msg = msg .. "/races ai add [name] - add an AI driver named [name]\n"
+        msg = msg .. "/races ai delete [name] - delete an AI driver named [name]\n"
+        msg = msg .. "/races ai spawn [name] (vehicle) - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\n"
+        msg = msg .. "/races ai list - list AI driver names\n"
+        msg = msg .. "/races ai deleteAll - delete all AI drivers\n"
+        msg = msg .. "\n"
+        msg = msg .. "For the following **`/races ai`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\n"
+        msg = msg .. "/races ai loadGrp [access] [name] - load private or public AI group saved as [name]\n"
+        msg = msg .. "/races ai saveGrp [access] [name] - save new private or public AI group as [name]\n"
+        msg = msg .. "/races ai overwriteGrp [access] [name] - overwrite existing private or public AI group saved as [name]\n"
+        msg = msg .. "/races ai deleteGrp [access] [name] - delete private or public AI group saved as [name]\n"
+        msg = msg .. "/races ai listGrp [access] - list saved private or public AI groups\n"
+        msg = msg .. "\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
         msg = msg .. "/races respawn - respawn at last waypoint\n"
@@ -2089,29 +2128,17 @@ RegisterCommand("races", function(_, args)
     elseif "reverse" == args[1] then
         reverse()
     elseif "load" == args[1] then
-        loadTrack(false, args[2])
+        loadTrack(args[2], args[3])
     elseif "save" == args[1] then
-        saveTrack(false, args[2])
+        saveTrack(args[2], args[3])
     elseif "overwrite" == args[1] then
-        overwriteTrack(false, args[2])
+        overwriteTrack(args[2], args[3])
     elseif "delete" == args[1] then
-        deleteTrack(false, args[2])
+        deleteTrack(args[2], args[3])
     elseif "blt" == args[1] then
-        bestLapTimes(false, args[2])
+        bestLapTimes(args[2], args[3])
     elseif "list" == args[1] then
-        list(false)
-    elseif "loadPublic" == args[1] then
-        loadTrack(true, args[2])
-    elseif "savePublic" == args[1] then
-        saveTrack(true, args[2])
-    elseif "overwritePublic" == args[1] then
-        overwriteTrack(true, args[2])
-    elseif "deletePublic" == args[1] then
-        deleteTrack(true, args[2])
-    elseif "bltPublic" == args[1] then
-        bestLapTimes(true, args[2])
-    elseif "listPublic" == args[1] then
-        list(true)
+        list(args[2])
     elseif "register" == args[1] then
         register(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9])
     elseif "unregister" == args[1] then
@@ -2131,25 +2158,15 @@ RegisterCommand("races", function(_, args)
         elseif "deleteAll" == args[2] then
             deleteAllAIDrivers()
         elseif "loadGrp" == args[2] then
-            loadGrp(false, args[3])
+            loadGrp(args[3], args[4])
         elseif "saveGrp" == args[2] then
-            saveGrp(false, args[3])
+            saveGrp(args[3], args[4])
         elseif "overwriteGrp" == args[2] then
-            overwriteGrp(false, args[3])
+            overwriteGrp(args[3], args[4])
         elseif "deleteGrp" == args[2] then
-            deleteGrp(false, args[3])
+            deleteGrp(args[3], args[4])
         elseif "listGrp" == args[2] then
-            listGrp(false)
-        elseif "loadGrpPub" == args[2] then
-            loadGrp(true, args[3])
-        elseif "saveGrpPub" == args[2] then
-            saveGrp(true, args[3])
-        elseif "overwriteGrpPub" == args[2] then
-            overwriteGrp(true, args[3])
-        elseif "deleteGrpPub" == args[2] then
-            deleteGrp(true, args[3])
-        elseif "listGrpPub" == args[2] then
-            listGrp(true)
+            listGrp(args[3])
         else
             notifyPlayer("Unknown AI command.\n")
         end

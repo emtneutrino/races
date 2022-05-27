@@ -11,19 +11,15 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`/races request [role]`** - request permission to have [role] = {edit, register, spawn} role\
 **`/races edit`** - toggle editing track waypoints\
 **`/races clear`** - clear track waypoints\
-**`/races reverse`** - reverse order of track waypoints\
-**`/races load [name]`** - load track saved as [name]\
-**`/races save [name]`** - save new track as [name]\
-**`/races overwrite [name]`** - overwrite existing track saved as [name]\
-**`/races delete [name]`** - delete track saved as [name]\
-**`/races blt [name]`** - list 10 best lap times of track saved as [name]\
-**`/races list`** - list saved tracks\
-**`/races loadPublic [name]`** - load public track saved as [name]\
-**`/races savePublic [name]`** - save new public track as [name]\
-**`/races overwritePublic [name]`** - overwrite existing public track saved as [name]\
-**`/races deletePublic [name]`** - delete public track saved as [name]\
-**`/races bltPublic [name]`** - list 10 best lap times of public track saved as [name]\
-**`/races listPublic`** - list public saved tracks
+**`/races reverse`** - reverse order of track waypoints
+
+For the following **`/races`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\
+**`/races load [access] [name]`** - load private or public track saved as [name]\
+**`/races save [access] [name]`** - save new private or public track as [name]\
+**`/races overwrite [access] [name]`** - overwrite existing private or public track saved as [name]\
+**`/races delete [access] [name]`** - delete private or public track saved as [name]\
+**`/races blt [access] [name]`** - list 10 best lap times of private or public track saved as [name]\
+**`/races list [access]`** - list saved private or public tracks
 
 For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI)`** - register your race with no vehicle restrictions\
@@ -33,21 +29,19 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 
 **`/races unregister`** - unregister your race\
 **`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
-**`/races ai add [name]`** - Add an AI driver named [name]\
-**`/races ai delete [name]`** - Delete an AI driver named [name]\
-**`/races ai spawn [name] (vehicle)`** - Spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\
-**`/races ai list`** - List AI driver names\
-**`/races ai deleteAll`** - Delete all AI drivers\
-**`/races ai loadGrp [name]`** - Load AI group saved as [name]\
-**`/races ai saveGrp [name]`** - Save new AI group as [name]\
-**`/races ai overwriteGrp [name]`** - Overwrite existing AI group saved as [name]\
-**`/races ai deleteGrp [name]`** - Delete AI group saved as [name]\
-**`/races ai listGrp`** - List saved AI groups\
-**`/races ai loadGrpPub [name]`** - Load public AI group saved as [name]\
-**`/races ai saveGrpPub [name]`** - Save new public AI group as [name]\
-**`/races ai overwriteGrpPub [name]`** - Overwrite existing public AI group saved as [name]\
-**`/races ai deleteGrpPub [name]`** - Delete public AI group saved as [name]\
-**`/races ai listGrpPub`** - List saved public AI groups\
+**`/races ai add [name]`** - add an AI driver named [name]\
+**`/races ai delete [name]`** - delete an AI driver named [name]\
+**`/races ai spawn [name] (vehicle)`** - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\
+**`/races ai list`** - list AI driver names\
+**`/races ai deleteAll`** - delete all AI drivers
+
+For the following **`/races ai`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\
+**`/races ai loadGrp [access] [name]`** - load private or public AI group saved as [name]\
+**`/races ai saveGrp [access] [name]`** - save new private or public AI group as [name]\
+**`/races ai overwriteGrp [access] [name]`** - overwrite existing private or public AI group saved as [name]\
+**`/races ai deleteGrp [access] [name]`** - delete private or public AI group saved as [name]\
+**`/races ai listGrp [access]`** - list saved private or public AI groups
+
 **`/races leave`** - leave a race that you joined\
 **`/races rivals`** - list competitors in a race that you joined\
 **`/races respawn`** - respawn at last waypoint\
@@ -100,13 +94,13 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 
 SAMPLE TRACKS
 -------------
-If permission to edit tracks and register races is given or is not required, the sample tracks will be available for you to load.  There are six sample tracks:  '00', '01', '02', '03', '04' and '05' saved in the public tracks list.  You can load sample track '00' by typing **`/races loadPublic 00`**.  To use the loaded track in a race, you need to register the race by typing **`/races register`**.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type **`/races start`**.
+If permission to edit tracks and register races is given or is not required, the sample tracks will be available for you to load.  There are six sample tracks:  '00', '01', '02', '03', '04' and '05' saved in the public tracks list.  You can load sample track '00' by typing **`/races load pub 00`**.  To use the loaded track in a race, you need to register the race by typing **`/races register`**.  Go to the registration waypoint of the race indicated by a purple circled star blip on the waypoint map and a purple cylinder checkpoint in the world.  When prompted to join, type 'E' or press right DPAD to join.  Wait for other people to join if you want, then type **`/races start`**.
 
 There are backups of the sample tracks in the **`sampletracks/`** folder with the extension '.json'.  Track '00' is backed up as **`sampletracks/00.json`**.  If any of the sample tracks were deleted from the public list of tracks, you can restore them.  Copy the deleted track from the **`sampletracks/`** folder to the **`resources/races/`** folder.  In the server console, type **`races import 00`** to import track '00' back into the public tracks list.
 
 QUICK GUIDE FOR RACE CREATORS
 -----------------------------
-If permission to edit tracks and register races is given or is not required, all the following **`/races`** commands are permitted.  Type **`/races edit`** until you see the message **`Editing started`**.  Add at least 2 waypoints on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type **`/races edit`** again until you see the message **`Editing stopped`**.  Save the track if you want by typing **`/races save mytrack`**.  Register your race by typing **`/races register`**.  At the starting waypoint of the track, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint which all players will see.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move towards the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once other people have joined, you can start the race by typing **`/races start`**.
+If permission to edit tracks and register races is given or is not required, all the following **`/races`** commands are permitted.  Type **`/races edit`** until you see the message **`Editing started`**.  Add at least 2 waypoints on the waypoint map or in the world by pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a DualShock controller.  Type **`/races edit`** again until you see the message **`Editing stopped`**.  Save the track if you want by typing **`/races save pvt mytrack`**.  Register your race by typing **`/races register`**.  At the starting waypoint of the track, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This is the registration waypoint which all players will see.  Players who want to join, maybe including yourself, need to have enough funds to pay for the buy-in and move towards the registration waypoint until prompted to join.  Once prompted to join, type 'E' or press right DPAD to join.  Once other people have joined, you can start the race by typing **`/races start`**.
 
 QUICK GUIDE FOR RACING
 ----------------------
@@ -138,12 +132,9 @@ If permission is required to edit tracks, the following commands will be restric
 
 **`/races edit`**\
 **`/races reverse`**\
-**`/races save [name]`**\
-**`/races overwrite [name]`**\
-**`/races delete [name]`**\
-**`/races savePublic [name]`**\
-**`/races overwritePublic [name]`**\
-**`/races deletePublic [name]`**
+**`/races save [access] [name]`**\
+**`/races overwrite [access] [name]`**\
+**`/races delete [access] [name]`**
 
 If permission is required to register races, the following commands will be restricted to players who have permission:
 
@@ -158,16 +149,11 @@ If permission is required to register races, the following commands will be rest
 **`/races ai spawn [name] (vehicle)`**\
 **`/races ai list`**\
 **`/races ai deleteAll`**\
-**`/races ai loadGrp [name]`**\
-**`/races ai saveGrp [name]`**\
-**`/races ai overwriteGrp [name]`**\
-**`/races ai deleteGrp [name]`**\
-**`/races ai listGrp`**\
-**`/races ai loadGrpPub [name]`**\
-**`/races ai saveGrpPub [name]`**\
-**`/races ai overwriteGrpPub [name]`**\
-**`/races ai deleteGrpPub [name]`**\
-**`/races ai listGrpPub`**
+**`/races ai loadGrp [access] [name]`**\
+**`/races ai saveGrp [access] [name]`**\
+**`/races ai overwriteGrp [access] [name]`**\
+**`/races ai deleteGrp [access] [name]`**\
+**`/races ai listGrp [access]`**
 
 If permission is required to spawn vehicles, the following command will be restricted to players who have permission:
 
@@ -201,17 +187,17 @@ To reverse the order of waypoints, type **`/races reverse`**.  You can reverse w
 
 If you are editing waypoints and have not saved them as a track or you have loaded a saved track and modified any of its waypoints, the best lap times will not be saved if you register and start a race using the unsaved or modified track.  A modification to a saved track means adding, deleting, moving, increasing/decreasing radii, combining start/finish, separating start/finish or reversing waypoints.  Changes can only be undone by reloading the saved track.  If you have not saved your waypoints as a track or you loaded a saved track and modified any waypoints, you must save or overwrite the track to allow best lap times to be saved.  **NOTE THAT OVERWRITING A TRACK WILL DELETE ITS EXISTING BEST LAP TIMES.**
 
-After you have set your waypoints, you can save them as a track.  Type **`/races save mytrack`** to save the waypoints as **`mytrack`**.  **`mytrack`** must not exist.  You cannot save unless there are two or more waypoints in the track.  The best lap times for this track will be empty.  If you want to overwrite an existing track named **`mytrack`**, type **`/races overwrite mytrack`**.  **NOTE THAT OVERWRITING A TRACK WILL DELETE ITS EXISTING BEST LAP TIMES.**
+The commands **`/races save`**, **`/races overwrite`**, **`/races list`**, **`/races delete`**, **`/races load`** and **`/races blt`** operate on your private list of tracks if you specify **`pvt`** after the command or on the public list of tracks if you specify **`pub`** after the command.  Only you have access to your private list of tracks and can view and modify them.  All players have access to the public list of tracks and can view and modify them.
 
-To list the tracks you have saved, type **`/races list`**.  If you cannot see all the track names, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+After you have set your waypoints, you can save them as a track.  Type **`/races save pvt mytrack`** to save the waypoints as **`mytrack`**.  **`mytrack`** must not exist.  You cannot save unless there are two or more waypoints in the track.  The best lap times for this track will be empty.  If you want to overwrite an existing track named **`mytrack`**, type **`/races overwrite pvt mytrack`**.  **NOTE THAT OVERWRITING A TRACK WILL DELETE ITS EXISTING BEST LAP TIMES.**
 
-If you want to delete a saved track named **`mytrack`**, type **`/races delete mytrack`**.
+To list the tracks you have saved, type **`/races list pvt`**.  If you cannot see all the track names, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-To load the waypoints of a saved track named **`mytrack`**, type **`/races load mytrack`**.  This will clear any current waypoints and load the waypoints from the saved track.  You cannot load a saved track if you have joined a race.  Leave the race or finish it first.
+If you want to delete a saved track named **`mytrack`**, type **`/races delete pvt mytrack`**.
 
-Type **`/races blt mytrack`** to see the 10 best lap times recorded for **`mytrack`**.  Best lap times are recorded after a race has finished if the track was loaded, saved or overwritten without changing any waypoints before the race.  If you cannot see all the best lap times, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+To load the waypoints of a saved track named **`mytrack`**, type **`/races load pvt mytrack`**.  This will clear any current waypoints and load the waypoints from the saved track.  You cannot load a saved track if you have joined a race.  Leave the race or finish it first.
 
-**`save`**, **`overwrite`**, **`list`**, **`delete`**, **`load`** and **`blt`** operate on your private list of tracks.  No one else will be able to view or modify your private list.  **`savePublic`**, **`overwritePublic`**, **`listPublic`**, **`deletePublic`**, **`loadPublic`** and **`bltPublic`** work like the private versions but operate on the public list of tracks.  All players have access to the public list of tracks.
+Type **`/races blt pvt mytrack`** to see the 10 best lap times recorded for **`mytrack`**.  Best lap times are recorded after a race has finished if the track was loaded, saved or overwritten without changing any waypoints before the race.  If you cannot see all the best lap times, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
 You can clear all waypoints, except registration waypoints, by typing **`/races clear`**.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
@@ -271,15 +257,15 @@ If you want a race where AI drivers are allowed, type **`/races register 100 2 1
 
 To add an AI driver named **`adam`** at your current location and heading, type **`/races ai add adam`**.  This only sets the location and heading of the driver.  Move away from the location where you added the driver, then type **`/races ai spawn adam elegy2`** to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  To delete an AI driver you added named **`adam`**, type **`/races ai delete adam`**.  You can delete the driver before or after you spawn the driver.  To delete all AI drivers, type **`/races ai deleteAll`**.  To list the names of the AI drivers you added, type **`/races ai list`**.  If you want to ride as a passenger in the AI's vehicle, move close to the vehicle and press 'F' on a keyboard, 'Y' button on an Xbox controller or 'Triangle' button on a DualShock controller.
 
-An AI group is a group of AI drivers that have been added and spawned for a race.  To save an AI group named **`mygroup`**, type **`/races ai saveGrp mygroup`**.  **`mygroup`** must not exist.  You cannot save unless all AI drivers that were added are also spawned.  If you want to overwrite an existing AI group named **`mygroup`**, type **`/races ai overwriteGrp mygroup`**.
+An AI group is a group of AI drivers that have been added and spawned for a race that allows AI drivers.  The commands **`/races ai saveGrp`**, **`/races ai overwriteGrp`**, **`/races ai listGrp`**, **`/races ai deleteGrp`** and **`/races ai loadGrp`** operate on your private list of AI groups if you specify **`pvt`** after the command or on the public list of AI groups if you specify **`pub`** after the command.  Only you have access to your private list of AI groups and can view and modify them.  All players have access to the public list of AI groups and can view and modify them.
 
-To list the AI groups you have saved, type **`/races ai listGrp`**.  If you cannot see all the AI group names, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+To save an AI group named **`mygroup`**, type **`/races ai saveGrp pvt mygroup`**.  **`mygroup`** must not exist.  You cannot save unless all AI drivers that were added are also spawned.  If you want to overwrite an existing AI group named **`mygroup`**, type **`/races ai overwriteGrp pvt mygroup`**.
 
-If you want to delete a saved AI group named **`mygroup`**, type **`/races ai deleteGrp mygroup`**.
+To list the AI groups you have saved, type **`/races ai listGrp pvt`**.  If you cannot see all the AI group names, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
-To load a saved AI group named **`mygroup`**, type **`/races ai loadGrp mygroup`**.  This will clear any current AI drivers and load the AI drivers from the saved group.  If the race type is restricted to a specific vehicle or a vehicle class, loading will fail if any AI vehicle does not match the specific vehicle or vehicle class.
+If you want to delete a saved AI group named **`mygroup`**, type **`/races ai deleteGrp pvt mygroup`**.
 
-**`saveGrp`**, **`overwriteGrp`**, **`listGrp`**, **`deleteGrp`** and **`loadGrp`** operate on your private list of AI groups.  No one else will be able to view or modify your private list.  **`saveGrpPub`**, **`overwriteGrpPub`**, **`listGrpPub`**, **`deleteGrpPub`** and **`loadGrpPub`** work like the private versions but operate on the public list of AI groups.  All players have access to the public list of AI groups.
+To load a saved AI group named **`mygroup`**, type **`/races ai loadGrp pvt mygroup`**.  This will clear any current AI drivers and load the AI drivers from the saved group.  If the race type is restricted to a specific vehicle or a vehicle class, loading will fail if any AI vehicle does not match the specific vehicle or vehicle class.
 
 AI group data is saved in the file **`resources/races/aiGroupData.json`**.
 
@@ -333,9 +319,9 @@ To toggle the display of the speedometer at any time, type **`/races speedo`**. 
 
 To view your available funds for race buy-ins, type **`/races funds`**.
 
-Type **`/races panel`** to show the main panel.  Type **`/races panel edit`** to show the edit tracks panel.  Type **`/races panel register`** to show the register races panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type **`/races panel`** to show the main panel.  Type **`/races panel edit`** to show the edit tracks panel.  Type **`/races panel register`** to show the register races panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  There are buttons near the bottom that will let you switch to another panel if you click them.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
-Leaving a race or finishing it does not clear its track waypoints.  If you like the track, you can save it to your private list by typing **`/races save nicetrack`**.
+Leaving a race or finishing it does not clear its track waypoints.  If you like the track, you can save it to your private list by typing **`/races save pvt nicetrack`**.
 
 Multiple races can be registered and started simultaneously by different players.
 

@@ -1098,7 +1098,7 @@ AddEventHandler("races:load", function(isPublic, trackName)
         if track ~= nil then
             TriggerClientEvent("races:load", source, isPublic, trackName, track.waypointCoords)
         else
-            sendMessage(source, "Cannot load.  '" .. trackName .. "' not found.\n")
+            sendMessage(source, "Cannot load.   " .. (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' not found.\n")
         end
     else
         sendMessage(source, "Ignoring load event.  Invalid parameters.\n")
@@ -1123,11 +1123,7 @@ AddEventHandler("races:save", function(isPublic, trackName, waypointCoords)
                 sendMessage(source, "Error saving '" .. trackName .. "'.\n")
             end
         else
-            if true == isPublic then
-                sendMessage(source, "Public track '" .. trackName .. "' exists.  Use 'overwritePublic' command instead.\n")
-            else
-                sendMessage(source, "Private track '" .. trackName .. "' exists.  Use 'overwrite' command instead.\n")
-            end
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' exists.  Use 'overwrite' command instead.\n")
         end
     else
         sendMessage(source, "Ignoring save event.  Invalid parameters.\n")
@@ -1152,11 +1148,7 @@ AddEventHandler("races:overwrite", function(isPublic, trackName, waypointCoords)
                 sendMessage(source, "Error overwriting '" .. trackName .. "'.\n")
             end
         else
-            if true == isPublic then
-                sendMessage(source, "Public track '" .. trackName .. "' does not exist.  Use 'savePublic' command instead.\n")
-            else
-                sendMessage(source, "Private track '" .. trackName .. "' does not exist.  Use 'save' command instead.\n")
-            end
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' does not exist.  Use 'save' command instead.\n")
         end
     else
         sendMessage(source, "Ignoring overwrite event.  Invalid parameters.\n")
@@ -1180,7 +1172,7 @@ AddEventHandler("races:delete", function(isPublic, trackName)
                 sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
             end
         else
-            sendMessage(source, "Cannot delete.  '" .. trackName .. "' not found.\n")
+            sendMessage(source, "Cannot delete.  " .. (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' not found.\n")
         end
     else
         sendMessage(source, "Ignoring delete event.  Invalid parameters.\n")
@@ -1195,7 +1187,7 @@ AddEventHandler("races:blt", function(isPublic, trackName)
         if track ~= nil then
             TriggerClientEvent("races:blt", source, isPublic, trackName, track.bestLaps)
         else
-            sendMessage(source, "Cannot list best lap times.  '" .. trackName .. "' not found.\n")
+            sendMessage(source, "Cannot list best lap times.   " .. (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' not found.\n")
         end
     else
         sendMessage(source, "Ignoring best lap times event.  Invalid parameters.\n")
@@ -1227,10 +1219,10 @@ AddEventHandler("races:list", function(isPublic)
                         end
                         sendMessage(source, msg)
                     else
-                        sendMessage(source, "No saved tracks.\n")
+                        sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " tracks.\n")
                     end
                 else
-                    sendMessage(source, "No saved tracks.\n")
+                    sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " tracks.\n")
                 end
             else
                 sendMessage(source, "Could not load race data.\n")
@@ -1461,7 +1453,7 @@ AddEventHandler("races:loadGrp", function(isPublic, name)
         if group ~= nil then
             TriggerClientEvent("races:loadGrp", source, isPublic, name, group)
         else
-            sendMessage(source, "Cannot load.  '" .. name .. "' not found.\n")
+            sendMessage(source, "Cannot load.   " .. (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' not found.\n")
         end
     else
         sendMessage(source, "Ignoring load AI group event.  Invalid parameters.\n")
@@ -1484,11 +1476,7 @@ AddEventHandler("races:saveGrp", function(isPublic, name, group)
                 sendMessage(source, "Error saving '" .. name .. "'.\n")
             end
         else
-            if true == isPublic then
-                sendMessage(source, "Public AI group '" .. name .. "' exists.  Use 'overwriteGrpPub' command instead.\n")
-            else
-                sendMessage(source, "Private AI group '" .. name .. "' exists.  Use 'overwriteGrp' command instead.\n")
-            end
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' exists.  Use 'overwriteGrp' command instead.\n")
         end
     else
         sendMessage(source, "Ignoring save AI group event.  Invalid parameters.\n")
@@ -1511,11 +1499,7 @@ AddEventHandler("races:overwriteGrp", function(isPublic, name, group)
                 sendMessage(source, "Error overwriting '" .. name .. "'.\n")
             end
         else
-            if true == isPublic then
-                sendMessage(source, "Public AI group '" .. name .. "' does not exist.  Use 'saveGrpPub' command instead.\n")
-            else
-                sendMessage(source, "Private AI group '" .. name .. "' does not exist.  Use 'saveGrp' command instead.\n")
-            end
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' does not exist.  Use 'saveGrp' command instead.\n")
         end
     else
         sendMessage(source, "Ignoring save AI group event.  Invalid parameters.\n")
@@ -1539,7 +1523,7 @@ AddEventHandler("races:deleteGrp", function(isPublic, name)
                 sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
             end
         else
-            sendMessage(source, "Cannot delete.  '" .. name .. "' not found.\n")
+            sendMessage(source, "Cannot delete.  " .. (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' not found.\n")
         end
     else
         sendMessage(source, "Ignoring delete AI group event.  Invalid parameters.\n")
@@ -1575,10 +1559,10 @@ AddEventHandler("races:listGrp", function(isPublic)
                         end
                         sendMessage(source, msg)
                     else
-                        sendMessage(source, "No saved AI groups.\n")
+                        sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " AI groups.\n")
                     end
                 else
-                    sendMessage(source, "No saved AI groups.\n")
+                    sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " AI groups.\n")
                 end
             else
                 sendMessage(source, "Could not load AI group data.\n")

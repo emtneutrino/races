@@ -80,41 +80,21 @@ $(function() {
 
     $("#main_load").click(function() {
         $.post("https://races/load", JSON.stringify({
-            isPublic: false,
+            access: $("#main_track_access").val(),
             trackName: $("#main_name").val()
         }));
     });
 
     $("#main_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            isPublic: false,
+            access: $("#main_track_access").val(),
             trackName: $("#main_name").val()
         }));
     });
 
     $("#main_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            isPublic: false
-        }));
-    });
-
-    $("#main_load_pub").click(function() {
-        $.post("https://races/load", JSON.stringify({
-            isPublic: true,
-            trackName: $("#main_name_pub").val()
-        }));
-    });
-
-    $("#main_blt_pub").click(function() {
-        $.post("https://races/blt", JSON.stringify({
-            isPublic: true,
-            trackName: $("#main_name_pub").val()
-        }));
-    });
-
-    $("#main_list_pub").click(function() {
-        $.post("https://races/list", JSON.stringify({
-            isPublic: true
+            access: $("#main_track_access").val()
         }));
     });
 
@@ -196,83 +176,42 @@ $(function() {
 
     $("#edit_load").click(function() {
         $.post("https://races/load", JSON.stringify({
-            isPublic: false,
+            access: $("#edit_track_access").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_save").click(function() {
         $.post("https://races/save", JSON.stringify({
-            isPublic: false,
+            access: $("#edit_track_access").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_overwrite").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
-            isPublic: false,
+            access: $("#edit_track_access").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_delete").click(function() {
         $.post("https://races/delete", JSON.stringify({
-            isPublic: false,
+            access: $("#edit_track_access").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            isPublic: false,
+            access: $("#edit_track_access").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            isPublic: false
-        }));
-    });
-
-    $("#edit_load_pub").click(function() {
-        $.post("https://races/load", JSON.stringify({
-            isPublic: true,
-            trackName: $("#edit_name_pub").val()
-        }));
-    });
-
-    $("#edit_save_pub").click(function() {
-        $.post("https://races/save", JSON.stringify({
-            isPublic: true,
-            trackName: $("#edit_name_pub").val()
-        }));
-    });
-
-    $("#edit_overwrite_pub").click(function() {
-        $.post("https://races/overwrite", JSON.stringify({
-            isPublic: true,
-            trackName: $("#edit_name_pub").val()
-        }));
-    });
-
-    $("#edit_delete_pub").click(function() {
-        $.post("https://races/delete", JSON.stringify({
-            isPublic: true,
-            trackName: $("#edit_name_pub").val()
-        }));
-    });
-
-    $("#edit_blt_pub").click(function() {
-        $.post("https://races/blt", JSON.stringify({
-            isPublic: true,
-            trackName: $("#edit_name_pub").val()
-        }));
-    });
-
-    $("#edit_list_pub").click(function() {
-        $.post("https://races/list", JSON.stringify({
-            isPublic: true
+            access: $("#edit_track_access").val()
         }));
     });
 
@@ -298,41 +237,21 @@ $(function() {
     /* register panel */
     $("#register_load").click(function() {
         $.post("https://races/load", JSON.stringify({
-            isPublic: false,
+            access: $("#register_track_access").val(),
             trackName: $("#register_name").val()
         }));
     });
 
     $("#register_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            isPublic: false,
+            access: $("#register_track_access").val(),
             trackName: $("#register_name").val()
         }));
     });
 
     $("#register_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            isPublic: false
-        }));
-    });
-
-    $("#register_load_pub").click(function() {
-        $.post("https://races/load", JSON.stringify({
-            isPublic: true,
-            trackName: $("#register_name_pub").val()
-        }));
-    });
-
-    $("#register_blt_pub").click(function() {
-        $.post("https://races/blt", JSON.stringify({
-            isPublic: true,
-            trackName: $("#register_name_pub").val()
-        }));
-    });
-
-    $("#register_list_pub").click(function() {
-        $.post("https://races/list", JSON.stringify({
-            isPublic: true
+            access: $("#register_track_access").val()
         }));
     });
 
@@ -457,69 +376,35 @@ $(function() {
 
     $("#load_grp").click(function() {
         $.post("https://races/load_grp", JSON.stringify({
-            isPublic: false,
-            name: $("#ai_grp_name").val()
+            access: $("#grp_access").val(),
+            name: $("#grp_name").val()
         }));
     });
 
     $("#save_grp").click(function() {
         $.post("https://races/save_grp", JSON.stringify({
-            isPublic: false,
-            name: $("#ai_grp_name").val()
+            access: $("#grp_access").val(),
+            name: $("#grp_name").val()
         }));
     });
 
     $("#overwrite_grp").click(function() {
         $.post("https://races/overwrite_grp", JSON.stringify({
-            isPublic: false,
-            name: $("#ai_grp_name").val()
+            access: $("#grp_access").val(),
+            name: $("#grp_name").val()
         }));
     });
 
     $("#delete_grp").click(function() {
         $.post("https://races/delete_grp", JSON.stringify({
-            isPublic: false,
-            name: $("#ai_grp_name").val()
+            access: $("#grp_access").val(),
+            name: $("#grp_name").val()
         }));
     });
 
     $("#list_grp").click(function() {
         $.post("https://races/list_grp", JSON.stringify({
-            isPublic: false
-        }));
-    });
-
-    $("#load_grp_pub").click(function() {
-        $.post("https://races/load_grp", JSON.stringify({
-            isPublic: true,
-            name: $("#ai_grp_name_pub").val()
-        }));
-    });
-
-    $("#save_grp_pub").click(function() {
-        $.post("https://races/save_grp", JSON.stringify({
-            isPublic: true,
-            name: $("#ai_grp_name_pub").val()
-        }));
-    });
-
-    $("#overwrite_grp_pub").click(function() {
-        $.post("https://races/overwrite_grp", JSON.stringify({
-            isPublic: true,
-            name: $("#ai_grp_name_pub").val()
-        }));
-    });
-
-    $("#delete_grp_pub").click(function() {
-        $.post("https://races/delete_grp", JSON.stringify({
-            isPublic: true,
-            name: $("#ai_grp_name_pub").val()
-        }));
-    });
-
-    $("#list_grp_pub").click(function() {
-        $.post("https://races/list_grp", JSON.stringify({
-            isPublic: true
+            access: $("#grp_access").val()
         }));
     });
 
