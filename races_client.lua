@@ -2409,6 +2409,12 @@ AddEventHandler("races:unregister", function(rIndex)
                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                 speedo = false
                 removeRacerBlipGT()
+                if #randVehicles > 0 then
+                    local vehicle = switchVehicle(PlayerPedId(), originalVehicleHash)
+                    if vehicle ~= nil then
+                        SetVehicleColours(vehicle, colorPri, colorSec)
+                    end
+                end
                 notifyPlayer("Race canceled.\n")
             end
         end
