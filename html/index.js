@@ -337,6 +337,29 @@ $(function() {
     });
 
     $("#rtype").change(function() {
+        let html =
+            "<option value = 0>0:Compacts</option>" +
+            "<option value = 1>1:Sedans</option>" +
+            "<option value = 2>2:SUVs</option>" +
+            "<option value = 3>3:Coupes</option>" +
+            "<option value = 4>4:Muscle</option>" +
+            "<option value = 5>5:Sports Classics</option>" +
+            "<option value = 6>6:Sports</option>" +
+            "<option value = 7>7:Super</option>" +
+            "<option value = 8>8:Motorcycles</option>" +
+            "<option value = 9>9:Off-road</option>" +
+            "<option value = 10>10:Industrial</option>" +
+            "<option value = 11>11:Utility</option>" +
+            "<option value = 12>12:Vans</option>" +
+            "<option value = 13>13:Cycles</option>" +
+            "<option value = 14>14:Boats</option>" +
+            "<option value = 15>15:Helicopters</option>" +
+            "<option value = 16>16:Planes</option>" +
+            "<option value = 17>17:Service</option>" +
+            "<option value = 18>18:Emergency</option>" +
+            "<option value = 19>19:Military</option>" +
+            "<option value = 20>20:Commercial</option>" +
+            "<option value = 21>21:Trains</option>";
         if ($("#rtype").val() == "norm") {
             $("#rest").hide();
             $("#file").hide();
@@ -354,11 +377,18 @@ $(function() {
             } else {
                 $("#file").hide();
             };
+            document.getElementById("register_vclass").innerHTML = 
+                "<option value = -2>Any</option>" +
+                "<option value = -1>-1:Custom</option>" +
+                html;
             $("#vclass").show();
             $("#sveh").hide();
         } else if ($("#rtype").val() == "rand") {
             $("#rest").hide();
             $("#file").show();
+            document.getElementById("register_vclass").innerHTML = 
+                "<option value = -2>Any</option>" +
+                html;
             $("#vclass").show();
             $("#sveh").show();
         };
