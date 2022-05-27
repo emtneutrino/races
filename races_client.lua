@@ -1093,7 +1093,7 @@ local function spawnAIDriver(aiName, vehicleHash)
                             vehicleHash = vehicleHash or "adder"
                             if IsModelInCdimage(vehicleHash) == 1 and IsModelAVehicle(vehicleHash) == 1 then
                                 if "rest" == aiState.rtype then
-                                    if vehicleHash ~= aiState.restrict then
+                                    if vehicleHash ~= GetHashKey(aiState.restrict) then
                                         sendMessage("Cannot join race.  AI needs to be in restricted vehicle.")
                                         return false
                                     end
@@ -1699,7 +1699,7 @@ RegisterNUICallback("spawn_ai", function(data)
     if "" == vehicle then
         vehicle = nil
     end
-    spawnAIDriver(aiName, vehicle)
+    spawnAIDriver(aiName, GetHashKey(vehicle))
 end)
 
 RegisterNUICallback("list_ai", function()
@@ -2125,7 +2125,7 @@ RegisterCommand("races", function(_, args)
         elseif "delete" == args[2] then
             deleteAIDriver(args[3])
         elseif "spawn" == args[2] then
-            spawnAIDriver(args[3], args[4])
+            spawnAIDriver(args[3], GetHashKey(args[4]))
         elseif "list" == args[2] then
             listAIDrivers()
         elseif "deleteAll" == args[2] then
