@@ -275,7 +275,7 @@ If you set the number of laps to 2 or more, the start and finish waypoints must 
 
 You can unregister your race by typing **`/races unregister`**.  This will remove your race advertisement from all players.  This can be done before or after you have started the race.  **IF YOU ALREADY STARTED THE RACE AND THEN UNREGISTER IT, THE RACE WILL BE CANCELED.**
 
-To join a race, players will need to be close enough to the registration waypoint to be prompted to join.  The registration waypoint will tell the player if it is an unsaved track or if it is a publicly or privately saved track along with its saved name, who registered the race, how much the buy-in amount is, how many laps there are and the type of race.
+To join a race, players will need to be close enough to the registration waypoint to be prompted to join.  The registration waypoint will tell the player if it is an unsaved track or if it is a publicly or privately saved track along with its saved name, who registered the race, the buy-in amount, the number of laps, if AI drivers are allowed and the type of race.
 
 There are seven possible types of race you can join:  1. Any vehicle can be used, 2. Restricted to a specific vehicle, 3. Restricted to a specific vehicle class, 4. Vehicles change randomly every lap, 5. Vehicles change randomly every lap and racers start in a specified vehicle, 6. Vehicles change randomly every lap to one in a specific class, 7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.  For race types 4, 5, 6 and 7, buy-in amounts will be set to 0 and there will be no payouts.
 
