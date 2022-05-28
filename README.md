@@ -108,7 +108,7 @@ There are seven possible types of race you can join:  1. Any vehicle can be used
 
 Look for purple circled star blips on the waypoint map.  There will be corresponding purple cylinder checkpoints in the world.  The label for the blip in the waypoint map will indicate the player who registered the race, the buy-in amount, if AI drivers are allowed and the type of race.
 
-If the race allows AI drivers to be added, the label will include **'AI allowed'**.  The person who registered the race can add as many AI drivers as they like.
+If the race allows AI drivers to be added, the label will include **'AI allowed'**.  The person who registered the race can add as many AI drivers as they like.  Buy-in amounts will be set to 0 and there will be no payouts.
 
 If the race is restricted to a specific vehicle, the label will include **'using [vehicle]'** where [vehicle] is the name of the restricted vehicle.  You must be in that vehicle when prompted to join the race.  If permission to spawn vehicles is given or not required, you can spawn the restricted vehicle by typing **`/races spawn [vehicle]`** where [vehicle] is the restricted vehicle.  For example, if the label shows **using 'adder'**, you can spawn the vehicle by typing **`/races spawn adder`**.
 
