@@ -160,6 +160,8 @@ local aiState = nil -- table containing race info and AI driver info table
 
 local enteringVehicle = false -- flag indicating if player is entering a vehicle
 
+local camTransStarted = false -- flag indicating if camera transition at start of race has started
+
 math.randomseed(GetCloudTimeAsInt())
 
 TriggerServerEvent("races:init")
@@ -1428,6 +1430,7 @@ local function leave()
         if IsPedInAnyVehicle(player, false) == 1 then
             FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
         end
+        RenderScriptCams(false, false, 0, true, true)
         DeleteCheckpoint(raceCheckpoint)
         finishRace(-1)
         removeRacerBlipGT()
@@ -2409,8 +2412,13 @@ AddEventHandler("races:unregister", function(rIndex)
                 SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                 speedo = false
                 removeRacerBlipGT()
+                RenderScriptCams(false, false, 0, true, true)
+                local player = PlayerPedId()
+                if IsPedInAnyVehicle(player, false) == 1 then
+                    FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
+                end
                 if #randVehicles > 0 then
-                    local vehicle = switchVehicle(PlayerPedId(), originalVehicleHash)
+                    local vehicle = switchVehicle(player, originalVehicleHash)
                     if vehicle ~= nil then
                         SetVehicleColours(vehicle, colorPri, colorSec)
                     end
@@ -2523,6 +2531,7 @@ AddEventHandler("races:start", function(rIndex, delay)
                     results = {}
                     speedo = true
                     startCoord = GetEntityCoords(PlayerPedId())
+                    camTransStarted = false
 
                     if startVehicle ~= nil then
                         local vehicle = switchVehicle(PlayerPedId(), startVehicle)
@@ -2910,6 +2919,37 @@ Citizen.CreateThread(function()
                 drawMsg(0.50, 0.46, "Race starting in", 0.7, 0)
                 drawMsg(0.50, 0.50, ("%05.2f"):format(-elapsedTime / 1000.0), 0.7, 0)
                 drawMsg(0.50, 0.54, "seconds", 0.7, 0)
+
+                if false == camTransStarted then
+                    camTransStarted = true
+                    Citizen.CreateThread(function()
+                        local entity = IsPedInAnyVehicle(player, false) == 1 and GetVehiclePedIsIn(player, false) or player
+
+                        local cam0 = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+                        SetCamCoord(cam0, GetOffsetFromEntityInWorldCoords(entity, 0.0, 5.0, 1.0))
+                        PointCamAtEntity(cam0, entity, 0.0, 0.0, 0.0, true)
+
+                        local cam1 = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+                        SetCamCoord(cam1, GetOffsetFromEntityInWorldCoords(entity, -5.0, 0.0, 1.0))
+                        PointCamAtEntity(cam1, entity, 0.0, 0.0, 0.0, true)
+
+                        local cam2 = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+                        SetCamCoord(cam2, GetOffsetFromEntityInWorldCoords(entity, 0.0, -5.0, 1.0))
+                        PointCamAtEntity(cam2, entity, 0.0, 0.0, 0.0, true)
+
+                        RenderScriptCams(true, false, 0, true, true)
+
+                        SetCamActiveWithInterp(cam1, cam0, 1000, 0, 0)
+                        Citizen.Wait(2000)
+
+                        SetCamActiveWithInterp(cam2, cam1, 1000, 0, 0)
+                        Citizen.Wait(2000)
+
+                        RenderScriptCams(false, true, 1000, true, true)
+
+                        SetGameplayCamRelativeRotation(GetEntityRotation(entity))
+                    end)
+                end
 
                 if elapsedTime > -countdown * 1000 then
                     drawLights = true
