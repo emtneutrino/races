@@ -75,6 +75,7 @@ body {
 
 #main_name {
     width: 500px;
+    height: 44px;
 }
 
 #main_load {
@@ -171,19 +172,16 @@ body {
     width: 25%;
 }
 
-#edit_track_access {
+#edit_track_access0 {
     height: 44px;
 }
 
 #edit_name {
     width: 500px;
+    height: 44px;
 }
 
 #edit_load {
-    width: 15%;
-}
-
-#edit_save {
     width: 15%;
 }
 
@@ -200,6 +198,19 @@ body {
 }
 
 #edit_list {
+    width: 15%;
+}
+
+#edit_track_access1 {
+    height: 44px;
+}
+
+#edit_unsaved {
+    width: 500px;
+    height: 44px;
+}
+
+#edit_save {
     width: 15%;
 }
 
@@ -231,6 +242,7 @@ body {
 
 #register_name {
     width: 500px;
+    height: 44px;
 }
 
 #register_load {
@@ -313,19 +325,16 @@ body {
     width: 10%;
 }
 
-#grp_access {
+#grp_access0 {
     height: 44px;
 }
 
 #grp_name {
     width: 500px;
+    height: 44px;
 }
 
 #load_grp {
-    width: 10%;
-}
-
-#save_grp {
     width: 10%;
 }
 
@@ -338,6 +347,19 @@ body {
 }
 
 #list_grp {
+    width: 10%;
+}
+
+#grp_access1 {
+    height: 44px;
+}
+
+#grp_unsaved {
+    width: 500px;
+    height: 44px;
+}
+
+#save_grp {
     width: 10%;
 }
 

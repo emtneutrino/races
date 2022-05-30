@@ -33,6 +33,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 $(function() {
     let replyOpen = false;
     let openPanel = "";
+    let pvtTrackNames = "";
+    let pubTrackNames = "";
+    let pvtGrpNames = "";
+    let pubGrpNames = "";
 
     $("#mainPanel").hide();
     $("#editPanel").hide();
@@ -64,6 +68,22 @@ $(function() {
             document.getElementById("message").innerHTML = data.message;
             $("#replyPanel").show();
             replyOpen = true;
+        } else if ("trackNames" == data.update) {
+            if ("pvt" == data.access) {
+                pvtTrackNames = data.trackNames;
+            } else if ("pub" == data.access) {
+                pubTrackNames = data.trackNames;
+            };
+            $("#main_track_access").change()
+            $("#edit_track_access0").change()
+            $("#register_track_access").change()
+        } else if ("grpNames" == data.update) {
+            if ("pvt" == data.access) {
+                pvtGrpNames = data.grpNames;
+            } else if ("pub" == data.access) {
+                pubGrpNames = data.grpNames;
+            };
+            $("#grp_access0").change()
         };
     });
 
@@ -76,6 +96,14 @@ $(function() {
 
     $("#main_clear").click(function() {
         $.post("https://races/clear");
+    });
+
+    $("#main_track_access").change(function() {
+        if ("pvt" == $("#main_track_access").val()) {
+            document.getElementById("main_name").innerHTML = pvtTrackNames;
+        } else {
+            document.getElementById("main_name").innerHTML = pubTrackNames;
+        }
     });
 
     $("#main_load").click(function() {
@@ -174,44 +202,52 @@ $(function() {
         $.post("https://races/reverse");
     });
 
-    $("#edit_load").click(function() {
-        $.post("https://races/load", JSON.stringify({
-            access: $("#edit_track_access").val(),
-            trackName: $("#edit_name").val()
-        }));
+    $("#edit_track_access0").change(function() {
+        if ("pvt" == $("#edit_track_access0").val()) {
+            document.getElementById("edit_name").innerHTML = pvtTrackNames;
+        } else {
+            document.getElementById("edit_name").innerHTML = pubTrackNames;
+        }
     });
 
-    $("#edit_save").click(function() {
-        $.post("https://races/save", JSON.stringify({
-            access: $("#edit_track_access").val(),
+    $("#edit_load").click(function() {
+        $.post("https://races/load", JSON.stringify({
+            access: $("#edit_track_access0").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_overwrite").click(function() {
         $.post("https://races/overwrite", JSON.stringify({
-            access: $("#edit_track_access").val(),
+            access: $("#edit_track_access0").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_delete").click(function() {
         $.post("https://races/delete", JSON.stringify({
-            access: $("#edit_track_access").val(),
+            access: $("#edit_track_access0").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_blt").click(function() {
         $.post("https://races/blt", JSON.stringify({
-            access: $("#edit_track_access").val(),
+            access: $("#edit_track_access0").val(),
             trackName: $("#edit_name").val()
         }));
     });
 
     $("#edit_list").click(function() {
         $.post("https://races/list", JSON.stringify({
-            access: $("#edit_track_access").val()
+            access: $("#edit_track_access0").val()
+        }));
+    });
+
+    $("#edit_save").click(function() {
+        $.post("https://races/save", JSON.stringify({
+            access: $("#edit_track_access1").val(),
+            trackName: $("#edit_unsaved").val()
         }));
     });
 
@@ -235,6 +271,14 @@ $(function() {
     });
 
     /* register panel */
+    $("#register_track_access").change(function() {
+        if ("pvt" == $("#register_track_access").val()) {
+            document.getElementById("register_name").innerHTML = pvtTrackNames;
+        } else {
+            document.getElementById("register_name").innerHTML = pubTrackNames;
+        }
+    });
+
     $("#register_load").click(function() {
         $.post("https://races/load", JSON.stringify({
             access: $("#register_track_access").val(),
@@ -374,37 +418,45 @@ $(function() {
         $.post("https://races/delete_all_ai");
     });
 
-    $("#load_grp").click(function() {
-        $.post("https://races/load_grp", JSON.stringify({
-            access: $("#grp_access").val(),
-            name: $("#grp_name").val()
-        }));
+    $("#grp_access0").change(function() {
+        if ("pvt" == $("#grp_access0").val()) {
+            document.getElementById("grp_name").innerHTML = pvtGrpNames;
+        } else {
+            document.getElementById("grp_name").innerHTML = pubGrpNames;
+        }
     });
 
-    $("#save_grp").click(function() {
-        $.post("https://races/save_grp", JSON.stringify({
-            access: $("#grp_access").val(),
+    $("#load_grp").click(function() {
+        $.post("https://races/load_grp", JSON.stringify({
+            access: $("#grp_access0").val(),
             name: $("#grp_name").val()
         }));
     });
 
     $("#overwrite_grp").click(function() {
         $.post("https://races/overwrite_grp", JSON.stringify({
-            access: $("#grp_access").val(),
+            access: $("#grp_access0").val(),
             name: $("#grp_name").val()
         }));
     });
 
     $("#delete_grp").click(function() {
         $.post("https://races/delete_grp", JSON.stringify({
-            access: $("#grp_access").val(),
+            access: $("#grp_access0").val(),
             name: $("#grp_name").val()
         }));
     });
 
     $("#list_grp").click(function() {
         $.post("https://races/list_grp", JSON.stringify({
-            access: $("#grp_access").val()
+            access: $("#grp_access0").val()
+        }));
+    });
+
+    $("#save_grp").click(function() {
+        $.post("https://races/save_grp", JSON.stringify({
+            access: $("#grp_access1").val(),
+            name: $("#grp_unsaved").val()
         }));
     });
 

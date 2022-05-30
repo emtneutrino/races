@@ -1579,17 +1579,25 @@ local function showPanel(panel)
     panelShown = true
     if nil == panel then
         SetNuiFocus(true, true)
+        TriggerServerEvent("races:trackNames", false)
+        TriggerServerEvent("races:trackNames", true)
         SendNUIMessage({
             panel = "main",
             defaultVehicle = defaultVehicle
         })
     elseif "edit" == panel then
         SetNuiFocus(true, true)
+        TriggerServerEvent("races:trackNames", false)
+        TriggerServerEvent("races:trackNames", true)
         SendNUIMessage({
             panel = "edit"
         })
     elseif "register" == panel then
         SetNuiFocus(true, true)
+        TriggerServerEvent("races:trackNames", false)
+        TriggerServerEvent("races:trackNames", true)
+        TriggerServerEvent("races:aiGrpNames", false)
+        TriggerServerEvent("races:aiGrpNames", true)
         SendNUIMessage({
             panel = "register",
             defaultBuyin = defaultBuyin,
@@ -2289,6 +2297,9 @@ AddEventHandler("races:save", function(isPublic, trackName)
     if isPublic ~= nil and trackName ~= nil then
         isPublicTrack = isPublic
         savedTrackName = trackName
+        if true == panelShown then
+            TriggerServerEvent("races:trackNames", isPublic)
+        end
         sendMessage("Saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring save event.  Invalid parameters.\n")
@@ -2303,6 +2314,13 @@ AddEventHandler("races:overwrite", function(isPublic, trackName)
         sendMessage("Overwrote " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring overwrite event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:delete")
+AddEventHandler("races:delete", function(isPublic)
+    if true == panelShown then
+        TriggerServerEvent("races:trackNames", isPublic)
     end
 end)
 
@@ -2468,6 +2486,13 @@ AddEventHandler("races:loadGrp", function(isPublic, name, group)
         end
     else
         notifyPlayer("Ignoring load AI group event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:updateGrp")
+AddEventHandler("races:updateGrp", function(isPublic)
+    if true == panelShown then
+        TriggerServerEvent("races:aiGrpNames", isPublic)
     end
 end)
 
@@ -2750,7 +2775,7 @@ end)
 -- do not accept results event from previous race
 RegisterNetEvent("races:results")
 AddEventHandler("races:results", function(rIndex, raceResults)
-    if raceResults ~= nil then
+    if rIndex ~= nil and raceResults ~= nil then
         if rIndex == raceIndex then
             results = raceResults
             viewResults(true)
@@ -2782,27 +2807,73 @@ end)
 
 RegisterNetEvent("races:addRacer")
 AddEventHandler("races:addRacer", function(netID, name)
-    if racerBlipGT[netID] ~= nil then
-        RemoveBlip(racerBlipGT[netID].blip)
-        RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
-    end
-    local ped = NetToPed(netID)
-    if DoesEntityExist(ped) == 1 then
-        local blip = AddBlipForEntity(ped)
-        SetBlipSprite(blip, racerSprite)
-        SetBlipColour(blip, racerBlipColor)
-        local gamerTag = CreateFakeMpGamerTag(ped, name, false, false, nil, 0)
-        SetMpGamerTagVisibility(gamerTag, 0, true)
-        racerBlipGT[netID] = {blip = blip, gamerTag = gamerTag, netID = netID, name = name}
+    if netID ~= nil and name ~= nil then
+        if racerBlipGT[netID] ~= nil then
+            RemoveBlip(racerBlipGT[netID].blip)
+            RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
+        end
+        local ped = NetToPed(netID)
+        if DoesEntityExist(ped) == 1 then
+            local blip = AddBlipForEntity(ped)
+            SetBlipSprite(blip, racerSprite)
+            SetBlipColour(blip, racerBlipColor)
+            local gamerTag = CreateFakeMpGamerTag(ped, name, false, false, nil, 0)
+            SetMpGamerTagVisibility(gamerTag, 0, true)
+            racerBlipGT[netID] = {blip = blip, gamerTag = gamerTag, netID = netID, name = name}
+        end
+    else
+        notifyPlayer("Ignoring addRacer event.  Invalid parameters.\n")
     end
 end)
 
 RegisterNetEvent("races:delRacer")
 AddEventHandler("races:delRacer", function(netID)
-    if racerBlipGT[netID] ~= nil then
-        RemoveBlip(racerBlipGT[netID].blip)
-        RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
-        racerBlipGT[netID] = nil
+    if netID ~= nil then
+        if racerBlipGT[netID] ~= nil then
+            RemoveBlip(racerBlipGT[netID].blip)
+            RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
+            racerBlipGT[netID] = nil
+        end
+    else
+        notifyPlayer("Ignoring delRacer event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:trackNames")
+AddEventHandler("races:trackNames", function(isPublic, trackNames)
+    if isPublic ~= nil and trackNames ~= nil then
+        if true == panelShown then
+            local html = ""
+            for _, trackName in ipairs(trackNames) do
+                html = html .. "<option value = \"" .. trackName .. "\">" .. trackName .. "</option>"
+            end
+            SendNUIMessage({
+                update = "trackNames",
+                access = false == isPublic and "pvt" or "pub",
+                trackNames = html
+            })
+        end
+    else
+        notifyPlayer("Ignoring trackNames event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:aiGrpNames")
+AddEventHandler("races:aiGrpNames", function(isPublic, grpNames)
+    if isPublic ~= nil and grpNames ~= nil then
+        if true == panelShown then
+            local html = ""
+            for _, grpName in ipairs(grpNames) do
+                html = html .. "<option value = \"" .. grpName .. "\">" .. grpName .. "</option>"
+            end
+            SendNUIMessage({
+                update = "grpNames",
+                access = false == isPublic and "pvt" or "pub",
+                grpNames = html
+            })
+        end
+    else
+        notifyPlayer("Ignoring grpNames event.  Invalid parameters.\n")
     end
 end)
 
