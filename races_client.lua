@@ -1028,7 +1028,7 @@ local function addAIDriver(aiName, coord, heading)
                         currentLap = 1,
                         lapTimeStart = -1,
                         enteringVehicle = false,
-                        stuckCoord = vector3(coord.x, coord.y, coord.z),
+                        stuckCoord = coord,
                         stuckStart = -1
                     }
                     aiState.numRacing = aiState.numRacing + 1
@@ -2474,7 +2474,7 @@ AddEventHandler("races:loadGrp", function(isPublic, name, group)
         if deleteAllAIDrivers() == true then
             -- group[aiName] = {startCoord = {x, y, z}, heading, vehicleHash}
             for aiName, driver in pairs(group) do
-                if addAIDriver(aiName, driver.startCoord, driver.heading) == false then
+                if addAIDriver(aiName, vector3(driver.startCoord.x, driver.startCoord.y, driver.startCoord.z), driver.heading) == false then
                     loaded = false
                     break
                 end
