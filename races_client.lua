@@ -1011,7 +1011,6 @@ local function addAIDriver(aiName, coord, heading)
                     }
                 end
                 if nil == aiState.drivers[aiName] then
-                    local player = PlayerPedId()
                     aiState.drivers[aiName] = {
                         netID = nil,
                         raceState = STATE_JOINING,
