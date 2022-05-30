@@ -1755,7 +1755,11 @@ RegisterNUICallback("spawn_ai", function(data)
     if "" == vehicle then
         vehicle = nil
     end
-    spawnAIDriver(aiName, GetHashKey(vehicle))
+    if vehicle ~= nil then
+        spawnAIDriver(aiName, GetHashKey(vehicle))
+    else
+        spawnAIDriver(aiName, nil)
+    end
 end)
 
 RegisterNUICallback("list_ai", function()
@@ -2163,7 +2167,11 @@ RegisterCommand("races", function(_, args)
         elseif "delete" == args[2] then
             deleteAIDriver(args[3])
         elseif "spawn" == args[2] then
-            spawnAIDriver(args[3], GetHashKey(args[4]))
+            if args[4] ~= nil then
+                spawnAIDriver(args[3], GetHashKey(args[4]))
+            else
+                spawnAIDriver(args[3], nil)
+            end
         elseif "list" == args[2] then
             listAIDrivers()
         elseif "deleteAll" == args[2] then
