@@ -1019,6 +1019,9 @@ local function addAIDriver(aiName, coord, heading)
                         destCoord = nil,
                         destSet = false,
                         vehicle = nil,
+                        originalVehicleHash = nil,
+                        colorPri = nil,
+                        colorSec = nil,
                         ped = nil,
                         started = false,
                         currentWP = -1,
@@ -1173,6 +1176,8 @@ local function spawnAIDriver(aiName, vehicleHash)
                                 SetModelAsNoLongerNeeded(vehicleHash)
                                 SetVehicleEngineOn(driver.vehicle, true, true, false)
                                 SetVehRadioStation(driver.vehicle, "OFF")
+                                driver.originalVehicleHash = GetEntityModel(driver.vehicle)
+                                driver.colorPri, driver.colorSec = GetVehicleColours(driver.vehicle)
 
                                 local pedHash = "a_m_y_skater_01"
                                 RequestModel(pedHash)
@@ -2456,6 +2461,12 @@ AddEventHandler("races:unregister", function(rIndex)
                 if driver.ped ~= nil then
                     SetEntityAsNoLongerNeeded(driver.ped)
                 end
+                if #aiState.randVehicles > 0 then
+                    driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
+                    if driver.vehicle ~= nil then
+                        SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
+                    end
+                end
                 if driver.vehicle ~= nil then
                     SetEntityAsNoLongerNeeded(driver.vehicle)
                 end
@@ -3475,6 +3486,13 @@ Citizen.CreateThread(function()
                         end
                     end
                 elseif STATE_IDLE == driver.raceState then
+                    if #aiState.randVehicles > 0 then
+                        driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
+                        if driver.vehicle ~= nil then
+                            SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
+                        end
+                    end
+                    SetEntityAsNoLongerNeeded(driver.vehicle)
                     Citizen.CreateThread(function()
                         while true do
                             if GetVehicleNumberOfPassengers(driver.vehicle) == 0 then
@@ -3485,7 +3503,6 @@ Citizen.CreateThread(function()
                             Citizen.Wait(1000)
                         end
                     end)
-                    SetEntityAsNoLongerNeeded(driver.vehicle)
                     aiState.drivers[aiName] = nil
                     aiState.numRacing = aiState.numRacing - 1
                     if 0 == aiState.numRacing then
