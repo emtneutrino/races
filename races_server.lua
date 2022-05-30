@@ -1616,20 +1616,16 @@ AddEventHandler("races:rivals", function(rIndex)
     local source = source
     if rIndex ~= nil then
         if races[rIndex] ~= nil then
-            if races[rIndex].players[source] ~= nil then
-                local names = {}
-                for i, player in pairs(races[rIndex].players) do
-                    names[#names + 1] = player.playerName
-                end
-                table.sort(names)
-                local msg = "Competitors:\n"
-                for _, name in ipairs(names) do
-                    msg = msg .. name .. "\n"
-                end
-                sendMessage(source, msg)
-            else
-                sendMessage(source, "Cannot list competitors.  Not a member of this race.\n")
+            local names = {}
+            for _, player in pairs(races[rIndex].players) do
+                names[#names + 1] = player.playerName
             end
+            table.sort(names)
+            local msg = "Competitors:\n"
+            for _, name in ipairs(names) do
+                msg = msg .. name .. "\n"
+            end
+            sendMessage(source, msg)
         else
             sendMessage(source, "Cannot list competitors.  Race does not exist.\n")
         end
