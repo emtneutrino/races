@@ -56,7 +56,7 @@ For the following **`/races vl`** commands, [access] = {'pvt', 'pub'} where 'pvt
 **`/races vl saveLst [access] [name]`** - save new private or public vehicle list as [name]\
 **`/races vl overwriteLst [access] [name]`** - overwrite existing private or public vehicle list saved as [name]\
 **`/races vl deleteLst [access] [name]`** - delete private or public vehicle list saved as [name]\
-**`/races vl listLsts [access]`** - list saved private or public vehicle lists\
+**`/races vl listLsts [access]`** - list saved private or public vehicle lists
 
 **`/races leave`** - leave a race that you joined\
 **`/races rivals`** - list competitors in a race that you joined\
