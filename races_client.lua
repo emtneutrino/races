@@ -633,9 +633,9 @@ local function respawnAI(driver)
             passengers[#passengers + 1] = {ped = passenger, seat = i}
         end
     end
-    local currentVehicleHash = GetEntityModel(driver.vehicle)
-    RequestModel(currentVehicleHash)
-    while HasModelLoaded(currentVehicleHash) == false do
+    local vehicleHash = GetEntityModel(driver.vehicle)
+    RequestModel(vehicleHash)
+    while HasModelLoaded(vehicleHash) == false do
         Citizen.Wait(0)
     end
     SetEntityAsMissionEntity(driver.vehicle, true, true)
@@ -650,7 +650,7 @@ local function respawnAI(driver)
             coord = aiState.waypointCoords[driver.currentWP - 1]
         end
     end
-    driver.vehicle = putPedInVehicle(driver.ped, currentVehicleHash, coord)
+    driver.vehicle = putPedInVehicle(driver.ped, vehicleHash, coord)
     for _, passenger in pairs(passengers) do
         SetPedIntoVehicle(passenger.ped, driver.vehicle, passenger.seat)
     end
