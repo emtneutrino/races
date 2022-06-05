@@ -13,7 +13,7 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`/races clear`** - clear track waypoints\
 **`/races reverse`** - reverse order of track waypoints
 
-For the following '/races' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\
+For the following **`/races`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\
 **`/races load [access] [name]`** - load private or public track saved as [name]\
 **`/races save [access] [name]`** - save new private or public track as [name]\
 **`/races overwrite [access] [name]`** - overwrite existing private or public track saved as [name]\
@@ -21,7 +21,7 @@ For the following '/races' commands, [access] = {'pvt', 'pub'} where 'pvt' opera
 **`/races blt [access] [name]`** - list 10 best lap times of private or public track saved as [name]\
 **`/races list [access]`** - list saved private or public tracks
 
-For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
+For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle]`** - register your race restricted to [vehicle]\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class]`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use custom vehicle list\
@@ -36,7 +36,7 @@ For the following '/races register' commands, (buy-in) defaults to 500, (laps) d
 **`/races ai list`** - list AI driver names\
 **`/races ai deleteAll`** - delete all AI drivers
 
-For the following '/races ai' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\
+For the following **`/races ai`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\
 **`/races ai loadGrp [access] [name]`** - load private or public AI group saved as [name]\
 **`/races ai saveGrp [access] [name]`** - save new private or public AI group as [name]\
 **`/races ai overwriteGrp [access] [name]`** - overwrite existing private or public AI group saved as [name]\
@@ -51,7 +51,7 @@ For the following '/races ai' commands, [access] = {'pvt', 'pub'} where 'pvt' op
 **`/races vl deleteAll`** - delete all vehicles from vehicle list\
 **`/races vl list`** - list all vehicles in vehicle list
 
-For the following '/races vl' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private vehicle list and 'pub' operates on a public vehicle list\
+For the following **`/races vl`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private vehicle list and 'pub' operates on a public vehicle list\
 **`/races vl loadLst [access] [name]`** - load private or public vehicle list saved as [name]\
 **`/races vl saveLst [access] [name]`** - save new private or public vehicle list as [name]\
 **`/races vl overwriteLst [access] [name]`** - overwrite existing private or public vehicle list saved as [name]\
