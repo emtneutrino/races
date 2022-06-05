@@ -126,6 +126,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <div class = "row">
                 <button id = "main_edit">Edit Panel</button>
                 <button id = "main_register">Register Panel</button>
+                <button id = "main_ai">AI Panel</button>
+                <button id = "main_vlist">Vehicle List Panel</button>
             </div>
             <br>
             <div class = "row">
@@ -171,6 +173,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <div class = "row">
                 <button id = "edit_main">Main Panel</button>
                 <button id = "edit_register">Register Panel</button>
+                <button id = "edit_ai">AI Panel</button>
+                <button id = "edit_vlist">Vehicle List Panel</button>
             </div>
             <br>
             <div class = "row">
@@ -216,9 +220,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <div id = "rest">
                     Restrict:<input id = "restrict" placeholder = "Vehicle Name">
                 </div>
-                <div id = "file">
-                    Vehicle File:<input id = "filename" placeholder = "File Name">
-                </div>
                 <div id = "vclass">
                     <label for = "register_vclass">Vehicle Class:</label>
                     <select id = "register_vclass">
@@ -238,6 +239,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 Delay:<input id = "delay" placeholder = "Delay">
             </div>
             <br>
+            <div class = "row">
+                <button id = "register_main">Main Panel</button>
+                <button id = "register_edit">Edit Panel</button>
+                <button id = "register_ai">AI Panel</button>
+                <button id = "register_vlist">Vehicle List Panel</button>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "register_close">Close</button>
+            </div>
+        </div>
+
+        <div id = "aiPanel">
             <div class = "row">
                 AI Name:<input id = "ai_name" placeholder = "AI Name">
                 Vehicle Name:<input id = "ai_vehicle" placeholder = "Vehicle Name">
@@ -263,7 +277,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <button id = "load_grp">Load AI Group</button>
                 <button id = "overwrite_grp">Overwrite AI Group</button>
                 <button id = "delete_grp">Delete AI Group</button>
-                <button id = "list_grp">List AI Groups</button>
+                <button id = "list_grps">List AI Groups</button>
             </div>
             <br>
             <div class = "row">
@@ -278,12 +292,101 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <br>
             <div class = "row">
-                <button id = "register_main">Main Panel</button>
-                <button id = "register_edit">Edit Panel</button>
+                <button id = "ai_main">Main Panel</button>
+                <button id = "ai_edit">Edit Panel</button>
+                <button id = "ai_register">Register Panel</button>
+                <button id = "ai_vlist">Vehicle List Panel</button>
             </div>
             <br>
             <div class = "row">
-                <button id = "register_close">Close</button>
+                <button id = "ai_close">Close</button>
+            </div>
+        </div>
+
+        <div id = "listPanel">
+            <div class = "row">
+                <button id = "add_veh">Add Vehicle</button>
+                <select id = "all_veh_list">
+                </select>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "delete_veh">Delete Vehicle</button>
+                <select id = "veh_list">
+                </select>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "add_class">Add Vehicle Class</button>
+                <button id = "delete_class">Delete Vehicle Class</button>
+                <select id = "list_vclass">
+                    <option value = 0>0:Compacts</option>
+                    <option value = 1>1:Sedans</option>
+                    <option value = 2>2:SUVs</option>
+                    <option value = 3>3:Coupes</option>
+                    <option value = 4>4:Muscle</option>
+                    <option value = 5>5:Sports Classics</option>
+                    <option value = 6>6:Sports</option>
+                    <option value = 7>7:Super</option>
+                    <option value = 8>8:Motorcycles</option>
+                    <option value = 9>9:Off-road</option>
+                    <option value = 10>10:Industrial</option>
+                    <option value = 11>11:Utility</option>
+                    <option value = 12>12:Vans</option>
+                    <option value = 13>13:Cycles</option>
+                    <option value = 14>14:Boats</option>
+                    <option value = 15>15:Helicopters</option>
+                    <option value = 16>16:Planes</option>
+                    <option value = 17>17:Service</option>
+                    <option value = 18>18:Emergency</option>
+                    <option value = 19>19:Military</option>
+                    <option value = 20>20:Commercial</option>
+                    <option value = 21>21:Trains</option>
+                </select>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "add_all_veh">Add All Vehicles</button>
+                <button id = "delete_all_veh">Delete All Vehicles</button>
+                <button id = "list_veh">List Vehicles</button>
+            </div>
+            <br>
+            <div class = "row">
+                <select id = "list_access0">
+                    <option value = "pvt">Private</option>
+                    <option value = "pub">Public</option>
+                </select>
+                <label for = "list_name">Vehicle List Name:</label>
+                <select id = "list_name">
+                </select>
+            </div>
+            <div class = "row">
+                <button id = "load_list">Load Vehicle List</button>
+                <button id = "overwrite_list">Overwrite Vehicle List</button>
+                <button id = "delete_list">Delete Vehicle List</button>
+                <button id = "list_lists">List Vehicle Lists</button>
+            </div>
+            <br>
+            <div class = "row">
+                <select id = "list_access1">
+                    <option value = "pvt">Private</option>
+                    <option value = "pub">Public</option>
+                </select>
+                Vehicle List Name:<input id = "list_unsaved" placeholder = "Unsaved Vehicle List Name">
+            </div>
+            <div class = "row">
+                <button id = "save_list">Save Vehicle List</button>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "vlist_main">Main Panel</button>
+                <button id = "vlist_edit">Edit Panel</button>
+                <button id = "vlist_register">Register Panel</button>
+                <button id = "vlist_ai">AI Panel</button>
+            </div>
+            <br>
+            <div class = "row">
+                <button id = "list_close">Close</button>
             </div>
         </div>
 

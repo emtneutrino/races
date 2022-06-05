@@ -146,6 +146,14 @@ body {
     width: 25%;
 }
 
+#main_ai {
+    width: 25%;
+}
+
+#main_vlist {
+    width: 25%;
+}
+
 #editPanel {
     text-align: center;
     font-size: 25px;
@@ -207,7 +215,6 @@ body {
 
 #edit_unsaved {
     width: 500px;
-    height: 44px;
 }
 
 #edit_save {
@@ -219,6 +226,14 @@ body {
 }
 
 #edit_register {
+    width: 25%;
+}
+
+#edit_ai {
+    width: 25%;
+}
+
+#edit_vlist {
     width: 25%;
 }
 
@@ -297,6 +312,36 @@ body {
     width: 10%;
 }
 
+#register_main {
+    width: 25%;
+}
+
+#register_edit {
+    width: 25%;
+}
+
+#register_ai {
+    width: 25%;
+}
+
+#register_vlist {
+    width: 25%;
+}
+
+#aiPanel {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
 #ai_name {
     width: 25%;
 }
@@ -306,23 +351,23 @@ body {
 }
 
 #add_ai {
-    width: 10%;
+    width: 15%;
 }
 
 #delete_ai {
-    width: 10%;
+    width: 15%;
 }
 
 #spawn_ai {
-    width: 10%;
+    width: 15%;
 }
 
 #list_ai {
-    width: 10%;
+    width: 15%;
 }
 
 #delete_all_ai {
-    width: 10%;
+    width: 15%;
 }
 
 #grp_access0 {
@@ -335,19 +380,19 @@ body {
 }
 
 #load_grp {
-    width: 10%;
+    width: 20%;
 }
 
 #overwrite_grp {
-    width: 10%;
+    width: 20%;
 }
 
 #delete_grp {
-    width: 10%;
+    width: 20%;
 }
 
-#list_grp {
-    width: 10%;
+#list_grps {
+    width: 20%;
 }
 
 #grp_access1 {
@@ -356,18 +401,134 @@ body {
 
 #grp_unsaved {
     width: 500px;
-    height: 44px;
 }
 
 #save_grp {
-    width: 10%;
+    width: 20%;
 }
 
-#register_main {
+#ai_main {
     width: 25%;
 }
 
-#register_edit {
+#ai_edit {
+    width: 25%;
+}
+
+#ai_register {
+    width: 25%;
+}
+
+#ai_vlist {
+    width: 25%;
+}
+
+#listPanel {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#add_veh {
+    width: 15%;
+}
+
+#all_veh_list {
+    width: 500px;
+    height: 44px;
+}
+
+#delete_veh {
+    width: 15%;
+}
+
+#veh_list {
+    width: 500px;
+    height: 44px;
+}
+
+#add_class {
+    width: 20%;
+}
+
+#delete_class {
+    width: 20%;
+}
+
+#list_vclass {
+    height: 44px;
+}
+
+#add_all_veh {
+    width: 20%;
+}
+
+#delete_all_veh {
+    width: 20%;
+}
+
+#list_veh {
+    width: 20%;
+}
+
+#list_access0 {
+    height: 44px;
+}
+
+#list_name {
+    width: 500px;
+    height: 44px;
+}
+
+#load_list {
+    width: 20%;
+}
+
+#overwrite_list {
+    width: 20%;
+}
+
+#delete_list {
+    width: 20%;
+}
+
+#list_lists {
+    width: 20%;
+}
+
+#list_access1 {
+    height: 44px;
+}
+
+#list_unsaved {
+    width: 500px;
+}
+
+#save_list {
+    width: 20%;
+}
+
+#vlist_main {
+    width: 25%;
+}
+
+#vlist_edit {
+    width: 25%;
+}
+
+#vlist_register {
+    width: 25%;
+}
+
+#vlist_ai {
     width: 25%;
 }
 

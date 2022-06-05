@@ -13,7 +13,7 @@ Required arguments are in square brackets.  Optional arguments are in parenthese
 **`/races clear`** - clear track waypoints\
 **`/races reverse`** - reverse order of track waypoints
 
-For the following **`/races`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\
+For the following '/races' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\
 **`/races load [access] [name]`** - load private or public track saved as [name]\
 **`/races save [access] [name]`** - save new private or public track as [name]\
 **`/races overwrite [access] [name]`** - overwrite existing private or public track saved as [name]\
@@ -21,26 +21,42 @@ For the following **`/races`** commands, [access] = {'pvt', 'pub'} where 'pvt' o
 **`/races blt [access] [name]`** - list 10 best lap times of private or public track saved as [name]\
 **`/races list [access]`** - list saved private or public tracks
 
-For the following **`/races register`** commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
+For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI)`** - register your race with no vehicle restrictions\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle]`** - register your race restricted to [vehicle]\
-**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] (filename)`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use vehicles in (filename) file\
-**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (filename) (class) (vehicle)`** - register your race changing vehicles randomly every lap; (filename) defaults to **`random.txt`**; (class) defaults to any; (vehicle) defaults to any
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class]`** - register your race restricted to vehicles of type [class]; if [class] is '-1' then use custom vehicle list\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (class) (vehicle)`** - register your race changing vehicles randomly every lap; (class) defaults to any; (vehicle) defaults to any
 
 **`/races unregister`** - unregister your race\
-**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds\
+**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds
+
 **`/races ai add [name]`** - add an AI driver named [name]\
 **`/races ai delete [name]`** - delete an AI driver named [name]\
 **`/races ai spawn [name] (vehicle)`** - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\
 **`/races ai list`** - list AI driver names\
 **`/races ai deleteAll`** - delete all AI drivers
 
-For the following **`/races ai`** commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\
+For the following '/races ai' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\
 **`/races ai loadGrp [access] [name]`** - load private or public AI group saved as [name]\
 **`/races ai saveGrp [access] [name]`** - save new private or public AI group as [name]\
 **`/races ai overwriteGrp [access] [name]`** - overwrite existing private or public AI group saved as [name]\
 **`/races ai deleteGrp [access] [name]`** - delete private or public AI group saved as [name]\
-**`/races ai listGrp [access]`** - list saved private or public AI groups
+**`/races ai listGrps [access]`** - list saved private or public AI groups
+
+**`/races vl add [vehicle]`** - add [vehicle] to vehicle list\
+**`/races vl delete [vehicle]`** - delete [vehicle] from vehicle list\
+**`/races vl addClass [class]`** - add all vehicles of type [class] to vehicle list\
+**`/races vl deleteClass [class]`** - delete all vehicles of type [class] from vehicle list\
+**`/races vl addAll`** - add all vehicles to vehicle list\
+**`/races vl deleteAll`** - delete all vehicles from vehicle list\
+**`/races vl list`** - list all vehicles in vehicle list
+
+For the following '/races vl' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private vehicle list and 'pub' operates on a public vehicle list\
+**`/races vl loadLst [access] [name]`** - load private or public vehicle list saved as [name]\
+**`/races vl saveLst [access] [name]`** - save new private or public vehicle list as [name]\
+**`/races vl overwriteLst [access] [name]`** - overwrite existing private or public vehicle list saved as [name]\
+**`/races vl deleteLst [access] [name]`** - delete private or public vehicle list saved as [name]\
+**`/races vl listLsts [access]`** - list saved private or public vehicle lists\
 
 **`/races leave`** - leave a race that you joined\
 **`/races rivals`** - list competitors in a race that you joined\
@@ -50,7 +66,7 @@ For the following **`/races ai`** commands, [access] = {'pvt', 'pub'} where 'pvt
 **`/races lvehicles (class)`** - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\
 **`/races speedo (unit)`** - change unit of speed measurement to (unit) = {imperial, metric}; otherwise toggle display of speedometer if (unit) is not specified\
 **`/races funds`** - view available funds\
-**`/races panel (panel)`** - display (panel) = {edit, register} panel; otherwise display main panel if (panel) is not specified
+**`/races panel (panel)`** - display (panel) = {edit, register, ai, list} panel; otherwise display main panel if (panel) is not specified
 
 **IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `'/races panel'`, `'/races panel edit'` OR `'/races panel register'`.**
 
@@ -140,8 +156,8 @@ If permission is required to register races, the following commands will be rest
 
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI)`**\
 **`/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle]`**\
-**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] (filename)`**\
-**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (filename) (class) (vehicle)`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class]`**\
+**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (class) (vehicle)`**\
 **`/races unregister`**\
 **`/races start (delay)`**\
 **`/races ai add [name]`**\
@@ -153,7 +169,19 @@ If permission is required to register races, the following commands will be rest
 **`/races ai saveGrp [access] [name]`**\
 **`/races ai overwriteGrp [access] [name]`**\
 **`/races ai deleteGrp [access] [name]`**\
-**`/races ai listGrp [access]`**
+**`/races ai listGrps [access]`**\
+**`/races vl add [vehicle]`**\
+**`/races vl delete [vehicle]`**\
+**`/races vl addClass [class]`**\
+**`/races vl deleteClass [class]`**\
+**`/races vl addAll`**\
+**`/races vl deleteAll`**\
+**`/races vl list`**\
+**`/races vl loadLst [access] [name]`**\
+**`/races vl saveLst [access] [name]`**\
+**`/races vl overwriteLst [access] [name]`**\
+**`/races vl deleteLst [access] [name]`**\
+**`/races vl listLsts [access]`**
 
 If permission is required to spawn vehicles, the following command will be restricted to players who have permission:
 
@@ -211,19 +239,43 @@ If you want to restrict the vehicle used in a race, type **`/races register 100 
 
 If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 no class 0`** to restrict vehicles to class Compacts (0).
 
-If you want to restrict vehicles to a custom list used in a race, type **`/races register 100 2 180 no class -1 myvehicles.txt`** to restrict vehicles to class Custom (-1) which are listed in a file named **`resources/races/myvehicles.txt`**.  If you specify class Custom (-1), you must provide a file containing the vehicles you allow in the race.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
+If you want to create a Custom (-1) class vehicle race or a random vehicle race you must create a vehicle list first before registering the race.
 
-If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 no rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from the file **`resources/races/random.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/random.txt`** or remove vehicles from **`resources/races/random.txt`**.
+Type **`/races vl add zentorno`** to add a **`zentorno`** to your vehicle list.  If you are creating a random race, you can add the same vehicle multiple times to your vehicle list.  This will increase the chances that a racer will be put in this vehicle after they complete a lap.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** that you created, type **`/races register 100 2 180 no rand myvehicles.txt`**.  You can add vehicles from **`resources/races/vehicles.txt`** to **`resources/races/myvehicles.txt`**.
+Type **`/races vl delete zentorno`** to delete a **`zentorno`** from your vehicle list.  If you have multiple **`zentorno`** vehicles in your list, only one will be deleted at a time.
 
-If you want to increase the chances of a specific vehicle appearing, you can enter multiple entries of that vehicle in **`resources/races/random.txt`** or the file that you specified.  Blank lines in the file are ignored.  If there are invalid vehicles in the file, they will be ignored.
+If you want to add an entire class of vehicles to your vehicle list, type **`/races vl addClass 7`** to add all class Super (7) vehicles to your list.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class Compacts (0) in **`resources/races/myvehicles.txt`**, type **`/races register 100 2 180 no rand myvehicles.txt 0`**.
+If you want to delete an entire class of vehicles from your vehicle list, type **`/races vl deleteClass 9`** to delete all class Off-road (9) vehicles from your list.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles in **`resources/races/myvehicles.txt`** and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 no rand myvehicles.txt . adder`**.  The period between **`myvehicles.txt`** and **`adder`** indicates that vehicles can come from any class in **`resources/races/myvehicles.txt`**.
+If you want to add all vehicles to your vehicle list, type **`/races vl addAll`**.
 
-If you want a race where vehicles change randomly every lap to one selected from vehicles of class Compacts (0) in **`resources/races/myvehicles.txt`** and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 no rand myvehicles.txt 0 blista`**.  When you specify a class like Compacts (0), the start vehicle must be of class Compacts (0).
+If you want to delete all vehicles from your vehicle list, type **`/races vl deleteAll`**.
+
+To list all the vehicles in your vehicle list, type **`/races vl list`**.
+
+The commands **`/races vl saveLst`**, **`/races vl overwriteLst`**, **`/races vl listLsts`**, **`/races vl deleteLst`** and **`/races vl loadLst`** operate on your private list of vehicle lists if you specify **`pvt`** after the command or on the public list of vehicle lists if you specify **`pub`** after the command.  Only you have access to your private list of vehicle lists and can view and modify them.  All players have access to the public list of vehicle lists and can view and modify them.
+
+Type **`/races vl saveLst pvt mylist`** to save your vehicle list as **`mylist`**.  **`mylist`** must not exist.  If you want to overwrite an existing vehicle list named **`mylist`**, type **`/races vl overwriteLst pvt mylist`**.
+
+To list the vehicle lists you have saved, type **`/races vl listLsts pvt`**.  If you cannot see all the vehicle lists, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
+
+If you want to delete a vehicle list named **`mylist`**, type **`/races vl deleteLst pvt mylist`**.
+
+To load the vehicle list named **`mylist`**, type **`/races vl loadLst pvt mylist`**.  This will clear your current vehicle list and load the vehicles from the saved list.
+
+If you want to create a Custom (-1) class race using a vehicle list you created, type **`/races register 100 2 180 no class -1`**.
+
+If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 no rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from a vehicle list you created.
+
+If you want to increase the chances of a specific vehicle appearing, you can add that vehicle multiple times to your vehicle list.
+
+If you want a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0), type **`/races register 100 2 180 no rand 0`**.
+
+If you want a race where vehicles change randomly every lap to one selected from your vehicle list and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 no rand . adder`**.  The period between **`rand`** and **`adder`** indicates that vehicles can come from any class in your vehicle list.
+
+If you want a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0) and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 no rand 0 blista`**.  When you specify the class Compacts (0), the start vehicle must be of class Compacts (0).
 
 The different classes of vehicle you can specify are listed here:
 
@@ -269,7 +321,7 @@ To load a saved AI group named **`mygroup`**, type **`/races ai loadGrp pvt mygr
 
 AI group data is saved in the file **`resources/races/aiGroupData.json`**.
 
-If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . . rand . 9`** the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), no AI drivers allowed, the default file of vehicles to randomly select from (**`resources/races/random.txt`**) and vehicles of class Off-road (9).  This is the equivalent of **`/races register 500 4 120 no rand random.txt 9`**.
+If you want to use the default value for some arguments of the **`/races register`** command, you can type '.' to use the default value for that argument.  For example, if you type **`/races register . 4 . . rand 9`**, the race will be a random race using the default buy-in amount (500), 4 laps, the default DNF timeout (120 seconds), no AI drivers allowed and vehicles of class Off-road (9).  This is the equivalent of **`/races register 500 4 120 no rand 9`**.
 
 If you set the number of laps to 2 or more, the start and finish waypoints must be the same.  Instructions on how to do this are listed above.  You may only register one race at a time.  If you want to register a new race, but already registered one, you must unregister your current race first. You cannot register a race if you are currently editing waypoints.  Stop editing first.
 
@@ -380,6 +432,9 @@ in **`races_server.lua`**.  The following events will be saved to **`resources/r
 11. Saving an AI group
 12. Overwriting an AI group
 13. Deleting an AI group
+14. Saving a vehicle list
+15. Overwriting a vehicle list
+16. Deleting a vehicle list
 
 PORTING
 -------
@@ -421,6 +476,12 @@ Edit tracks command button panel\
 
 Register races command button panel\
 <img src="screenshots/Screenshot%20(11).png" width="800">
+
+AI command button panel\
+<img src="screenshots/Screenshot%20(12).png" width="800">
+
+Vehicle list command button panel\
+<img src="screenshots/Screenshot%20(13).png" width="800">
 
 VIDEOS
 ------

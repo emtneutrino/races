@@ -37,10 +37,14 @@ $(function() {
     let pubTrackNames = "";
     let pvtGrpNames = "";
     let pubGrpNames = "";
+    let pvtListNames = "";
+    let pubListNames = "";
 
     $("#mainPanel").hide();
     $("#editPanel").hide();
     $("#registerPanel").hide();
+    $("#aiPanel").hide();
+    $("#listPanel").hide();
     $("#replyPanel").hide();
 
     window.addEventListener("message", function(event) {
@@ -57,14 +61,22 @@ $(function() {
             $("#laps").val(data.defaultLaps);
             $("#timeout").val(data.defaultTimeout);
             $("#delay").val(data.defaultDelay);
-            $("#ai_vehicle").val(data.defaultVehicle);
             $("#rtype").change();
             $("#registerPanel").show();
             openPanel = "register";
+        } else if ("ai" == data.panel) {
+            $("#ai_vehicle").val(data.defaultVehicle);
+            $("#aiPanel").show();
+            openPanel = "ai";
+        } else if ("list" == data.panel) {
+            $("#listPanel").show();
+            openPanel = "list";
         } else if ("reply" == data.panel) {
             $("#mainPanel").hide();
             $("#editPanel").hide();
             $("#registerPanel").hide();
+            $("#aiPanel").hide();
+            $("#listPanel").hide();
             document.getElementById("message").innerHTML = data.message;
             $("#replyPanel").show();
             replyOpen = true;
@@ -84,6 +96,17 @@ $(function() {
                 pubGrpNames = data.grpNames;
             };
             $("#grp_access0").change()
+        } else if ("listNames" == data.update) {
+            if ("pvt" == data.access) {
+                pvtListNames = data.listNames;
+            } else if ("pub" == data.access) {
+                pubListNames = data.listNames;
+            };
+            $("#list_access0").change()
+        } else if ("allVehicles" == data.update) {
+            document.getElementById("all_veh_list").innerHTML = data.allVehicles;
+        } else if ("vehicleList" == data.update) {
+            document.getElementById("veh_list").innerHTML = data.vehicleList;
         };
     });
 
@@ -184,6 +207,20 @@ $(function() {
         }));
     });
 
+    $("#main_ai").click(function() {
+        $("#mainPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "ai"
+        }));
+    });
+
+    $("#main_vlist").click(function() {
+        $("#mainPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "list"
+        }));
+    });
+
     $("#main_close").click(function() {
         $("#mainPanel").hide();
         $.post("https://races/close");
@@ -265,6 +302,20 @@ $(function() {
         }));
     });
 
+    $("#edit_ai").click(function() {
+        $("#editPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "ai"
+        }));
+    });
+
+    $("#edit_vlist").click(function() {
+        $("#editPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "list"
+        }));
+    });
+
     $("#edit_close").click(function() {
         $("#editPanel").hide();
         $.post("https://races/close");
@@ -325,45 +376,26 @@ $(function() {
             "<option value = 21>21:Trains</option>";
         if ($("#rtype").val() == "norm") {
             $("#rest").hide();
-            $("#file").hide();
             $("#vclass").hide();
             $("#sveh").hide();
         } else if ($("#rtype").val() == "rest") {
             $("#rest").show();
-            $("#file").hide();
             $("#vclass").hide();
             $("#sveh").hide();
         } else if ($("#rtype").val() == "class") {
             $("#rest").hide();
-            if ($("#register_vclass").val() == "-1") {
-                $("#file").show();
-            } else {
-                $("#file").hide();
-            };
             document.getElementById("register_vclass").innerHTML = 
-                "<option value = -2>Any</option>" +
                 "<option value = -1>-1:Custom</option>" +
                 html;
             $("#vclass").show();
             $("#sveh").hide();
         } else if ($("#rtype").val() == "rand") {
             $("#rest").hide();
-            $("#file").show();
             document.getElementById("register_vclass").innerHTML = 
                 "<option value = -2>Any</option>" +
                 html;
             $("#vclass").show();
             $("#sveh").show();
-        };
-    });
-
-    $("#register_vclass").change(function() {
-        if ($("#rtype").val() == "class") {
-            if ($("#register_vclass").val() == "-1") {
-                $("#file").show();
-            } else {
-                $("#file").hide();
-            };
         };
     });
 
@@ -375,7 +407,6 @@ $(function() {
             allowAI: $("#allowAI").val(),
             rtype: $("#rtype").val(),
             restrict: $("#restrict").val(),
-            filename: $("#filename").val(),
             vclass: $("#register_vclass").val(),
             svehicle: $("#svehicle").val()
         }));
@@ -391,6 +422,40 @@ $(function() {
         }));
     });
 
+    $("#register_main").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "main"
+        }));
+    });
+
+    $("#register_edit").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "edit"
+        }));
+    });
+
+    $("#register_ai").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "ai"
+        }));
+    });
+
+    $("#register_vlist").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "list"
+        }));
+    });
+
+    $("#register_close").click(function() {
+        $("#registerPanel").hide();
+        $.post("https://races/close");
+    });
+
+/* AI panel */
     $("#add_ai").click(function() {
         $.post("https://races/add_ai", JSON.stringify({
             aiName: $("#ai_name").val()
@@ -447,8 +512,8 @@ $(function() {
         }));
     });
 
-    $("#list_grp").click(function() {
-        $.post("https://races/list_grp", JSON.stringify({
+    $("#list_grps").click(function() {
+        $.post("https://races/list_grps", JSON.stringify({
             access: $("#grp_access0").val()
         }));
     });
@@ -460,22 +525,148 @@ $(function() {
         }));
     });
 
-    $("#register_main").click(function() {
-        $("#registerPanel").hide();
+    $("#ai_main").click(function() {
+        $("#aiPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "main"
         }));
     });
 
-    $("#register_edit").click(function() {
-        $("#registerPanel").hide();
+    $("#ai_edit").click(function() {
+        $("#aiPanel").hide();
         $.post("https://races/show", JSON.stringify({
             panel: "edit"
         }));
     });
 
-    $("#register_close").click(function() {
-        $("#registerPanel").hide();
+    $("#ai_register").click(function() {
+        $("#aiPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "register"
+        }));
+    });
+
+    $("#ai_vlist").click(function() {
+        $("#aiPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "list"
+        }));
+    });
+
+    $("#ai_close").click(function() {
+        $("#aiPanel").hide();
+        $.post("https://races/close");
+    });
+
+    /* vehicle list panel */
+    $("#add_veh").click(function() {
+        $.post("https://races/add_veh", JSON.stringify({
+            vehicle: $("#all_veh_list").val()
+        }));
+    });
+
+    $("#delete_veh").click(function() {
+        $.post("https://races/delete_veh", JSON.stringify({
+            vehicle: $("#veh_list").val()
+        }));
+    });
+
+    $("#add_class").click(function() {
+        $.post("https://races/add_class", JSON.stringify({
+            class: $("#list_vclass").val()
+        }));
+    });
+
+    $("#delete_class").click(function() {
+        $.post("https://races/delete_class", JSON.stringify({
+            class: $("#list_vclass").val()
+        }));
+    });
+
+    $("#add_all_veh").click(function() {
+        $.post("https://races/add_all_veh");
+    });
+
+    $("#delete_all_veh").click(function() {
+        $.post("https://races/delete_all_veh");
+    });
+
+    $("#list_veh").click(function() {
+        $.post("https://races/list_veh");
+    });
+
+    $("#list_access0").change(function() {
+        if ("pvt" == $("#list_access0").val()) {
+            document.getElementById("list_name").innerHTML = pvtListNames;
+        } else {
+            document.getElementById("list_name").innerHTML = pubListNames;
+        }
+    });
+
+    $("#load_list").click(function() {
+        $.post("https://races/load_list", JSON.stringify({
+            access: $("#list_access0").val(),
+            name: $("#list_name").val()
+        }));
+    });
+
+    $("#overwrite_list").click(function() {
+        $.post("https://races/overwrite_list", JSON.stringify({
+            access: $("#list_access0").val(),
+            name: $("#list_name").val()
+        }));
+    });
+
+    $("#delete_list").click(function() {
+        $.post("https://races/delete_list", JSON.stringify({
+            access: $("#list_access0").val(),
+            name: $("#list_name").val()
+        }));
+    });
+
+    $("#list_lists").click(function() {
+        $.post("https://races/list_lists", JSON.stringify({
+            access: $("#list_access0").val()
+        }));
+    });
+
+    $("#save_list").click(function() {
+        $.post("https://races/save_list", JSON.stringify({
+            access: $("#list_access1").val(),
+            name: $("#list_unsaved").val()
+        }));
+    });
+
+    $("#vlist_main").click(function() {
+        $("#listPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "main"
+        }));
+    });
+
+    $("#vlist_edit").click(function() {
+        $("#listPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "edit"
+        }));
+    });
+
+    $("#vlist_register").click(function() {
+        $("#listPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "register"
+        }));
+    });
+
+    $("#vlist_ai").click(function() {
+        $("#listPanel").hide();
+        $.post("https://races/show", JSON.stringify({
+            panel: "ai"
+        }));
+    });
+
+    $("#list_close").click(function() {
+        $("#listPanel").hide();
         $.post("https://races/close");
     });
 
@@ -489,6 +680,10 @@ $(function() {
             $("#editPanel").show();
         } else if("register" == openPanel) {
             $("#registerPanel").show();
+        } else if("ai" == openPanel) {
+            $("#aiPanel").show();
+        } else if("list" == openPanel) {
+            $("#listPanel").show();
         };
     });
 
@@ -503,11 +698,17 @@ $(function() {
                     $("#editPanel").show();
                 } else if("register" == openPanel) {
                     $("#registerPanel").show();
+                } else if("ai" == openPanel) {
+                    $("#aiPanel").show();
+                } else if("list" == openPanel) {
+                    $("#listPanel").show();
                 };
             } else {
                 $("#mainPanel").hide();
                 $("#editPanel").hide();
                 $("#registerPanel").hide();
+                $("#aiPanel").hide();
+                $("#listPanel").hide();
                 $.post("https://races/close");
             };
         };

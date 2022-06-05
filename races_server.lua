@@ -30,18 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local function writeData(path, data)
-    local file, errMsg, errCode = io.open(path, "w+")
-    if file ~= fail then
-        file:write(json.encode(data))
-        file:close()
-        return true
-    else
-        print("writeData: Error opening file '" .. path .. "' for write : '" .. errMsg .. "' : " .. errCode)
-    end
-    return false
-end
-
 local function readData(path)
     local data = nil
     local file, errMsg, errCode = io.open(path, "r")
@@ -52,6 +40,18 @@ local function readData(path)
         print("readData: Error opening file '" .. path .. "' for read : '" .. errMsg .. "' : " .. errCode)
     end
     return data
+end
+
+local function writeData(path, data)
+    local file, errMsg, errCode = io.open(path, "w+")
+    if file ~= fail then
+        file:write(json.encode(data))
+        file:close()
+        return true
+    else
+        print("writeData: Error opening file '" .. path .. "' for write : '" .. errMsg .. "' : " .. errCode)
+    end
+    return false
 end
 
 local STATE_REGISTERING <const> = 0 -- registering race status
@@ -70,6 +70,11 @@ local requirePermissionBits <const> = -- bit flag indicating if permission is re
     (true == requirePermissionToRegister and ROLE_REGISTER or 0) |
     (true == requirePermissionToSpawn and ROLE_SPAWN or 0)
 
+local raceDataFilePath <const> = "./resources/races/raceData.json" -- race data file path
+if readData(raceDataFilePath) == nil then
+    writeData(raceDataFilePath, {})
+end
+
 local rolesDataFilePath <const> = "./resources/races/rolesData.json" -- roles data file path
 if readData(rolesDataFilePath) == nil then
     writeData(rolesDataFilePath, {})
@@ -80,15 +85,13 @@ if readData(aiGroupDataFilePath) == nil then
     writeData(aiGroupDataFilePath, {})
 end
 
-local raceDataFilePath <const> = "./resources/races/raceData.json" -- race data file path
-if readData(raceDataFilePath) == nil then
-    writeData(raceDataFilePath, {})
+local vehicleListDataFilePath <const> = "./resources/races/vehicleListData.json" -- vehicle list data file path
+if readData(vehicleListDataFilePath) == nil then
+    writeData(vehicleListDataFilePath, {})
 end
 
 local saveLog <const> = false -- flag indicating if certain events should be logged
 local logFilePath <const> = "./resources/races/log.txt" -- log file path
-
-local randomVehicleFileName <const> = "random.txt" -- default file used for random races
 
 local allVehicleFileName <const> = "vehicles.txt" -- list of all vehicles filename
 
@@ -598,6 +601,52 @@ local function saveTrack(isPublic, source, trackName, track)
     return false
 end
 
+local function loadVehicleList(isPublic, source, name)
+    local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
+    if license ~= nil then
+        local vehicleListData = readData(vehicleListDataFilePath)
+        if vehicleListData ~= nil then
+            if license ~= "PUBLIC" then
+                license = string.sub(license, 9)
+            end
+            local lists = vehicleListData[license]
+            if lists ~= nil then
+                return lists[name]
+            end
+        else
+            notifyPlayer(source, "loadVehicleList: Could not load vehicle list data.\n")
+        end
+    else
+        notifyPlayer(source, "loadVehicleList: Could not get license for player source ID: " .. source .. "\n")
+    end
+    return nil
+end
+
+local function saveVehicleList(isPublic, source, name, vehicleList)
+    local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
+    if license ~= nil then
+        local vehicleListData = readData(vehicleListDataFilePath)
+        if vehicleListData ~= nil then
+            if license ~= "PUBLIC" then
+                license = string.sub(license, 9)
+            end
+            local lists = vehicleListData[license] ~= nil and vehicleListData[license] or {}
+            lists[name] = vehicleList
+            vehicleListData[license] = lists
+            if true == writeData(vehicleListDataFilePath, vehicleListData) then
+                return true
+            else
+                notifyPlayer(source, "saveVehicleList: Could not write vehicle list data.\n")
+            end
+        else
+            notifyPlayer(source, "saveVehicleList: Could not load vehicle list data.\n")
+        end
+    else
+        notifyPlayer(source, "saveVehicleList: Could not get license for player source ID: " .. source .. "\n")
+    end
+    return false
+end
+
 local function loadAIGroup(isPublic, source, name)
     local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
     if license ~= nil then
@@ -646,19 +695,18 @@ end
 
 local function loadVehicleFile(source, vehicleFileName)
     local vehicleFilePath = "./resources/races/" .. vehicleFileName
-    local vehicles = {}
+    local vehicleList = {}
     local file, errMsg, errCode = io.open(vehicleFilePath, "r")
     if file ~= fail then
         for vehicle in file:lines() do
             if string.len(vehicle) > 0 then
-                vehicles[#vehicles + 1] = vehicle
+                vehicleList[#vehicleList + 1] = vehicle
             end
         end
     else
         notifyPlayer(source, "Error opening file '" .. vehicleFilePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
     end
-
-    return vehicles
+    return vehicleList
 end
 
 local function getClassName(vclass)
@@ -1035,8 +1083,8 @@ AddEventHandler("races:init", function()
     -- register any races created before player joined
     for rIndex, race in pairs(races) do
         if STATE_REGISTERING == race.state then
-            local rdata = {rtype = race.rtype, restrict = race.restrict, filename = race.filename, vclass = race.vclass, svehicle = race.svehicle}
-            TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.allowAI, race.vehicleList, rdata)
+            local rdata = {rtype = race.rtype, restrict = race.restrict, vclass = race.vclass, svehicle = race.svehicle, vehicleList = race.vehicleList}
+            TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.allowAI, rdata)
         end
     end
 end)
@@ -1101,7 +1149,7 @@ AddEventHandler("races:load", function(isPublic, trackName)
             sendMessage(source, "Cannot load.   " .. (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' not found.\n")
         end
     else
-        sendMessage(source, "Ignoring load event.  Invalid parameters.\n")
+        sendMessage(source, "Ignoring load track event.  Invalid parameters.\n")
     end
 end)
 
@@ -1120,13 +1168,13 @@ AddEventHandler("races:save", function(isPublic, trackName, waypointCoords)
                 TriggerClientEvent("races:save", source, isPublic, trackName)
                 logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
             else
-                sendMessage(source, "Error saving '" .. trackName .. "'.\n")
+                sendMessage(source, "Error saving " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
             end
         else
             sendMessage(source, (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' exists.  Use 'overwrite' command instead.\n")
         end
     else
-        sendMessage(source, "Ignoring save event.  Invalid parameters.\n")
+        sendMessage(source, "Ignoring save track event.  Invalid parameters.\n")
     end
 end)
 
@@ -1145,13 +1193,13 @@ AddEventHandler("races:overwrite", function(isPublic, trackName, waypointCoords)
                 TriggerClientEvent("races:overwrite", source, isPublic, trackName)
                 logMessage("'" .. GetPlayerName(source) .. "' overwrote " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
             else
-                sendMessage(source, "Error overwriting '" .. trackName .. "'.\n")
+                sendMessage(source, "Error overwriting " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
             end
         else
             sendMessage(source, (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' does not exist.  Use 'save' command instead.\n")
         end
     else
-        sendMessage(source, "Ignoring overwrite event.  Invalid parameters.\n")
+        sendMessage(source, "Ignoring overwrite track event.  Invalid parameters.\n")
     end
 end)
 
@@ -1170,13 +1218,13 @@ AddEventHandler("races:delete", function(isPublic, trackName)
                 sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
             else
-                sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
+                sendMessage(source, "Error deleting " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
             end
         else
             sendMessage(source, "Cannot delete.  " .. (true == isPublic and "Public" or "Private") .. " track '" .. trackName .. "' not found.\n")
         end
     else
-        sendMessage(source, "Ignoring delete event.  Invalid parameters.\n")
+        sendMessage(source, "Ignoring delete track event.  Invalid parameters.\n")
     end
 end)
 
@@ -1249,102 +1297,82 @@ AddEventHandler("races:register", function(waypointCoords, isPublic, trackName, 
                 if timeout >= 0 then
                     if "yes" == allowAI or "no" == allowAI then
                         if nil == races[source] then
-                            local registerRace = true
                             local umsg = ""
-                            local vehicleList = {}
                             if "rest" == rdata.rtype then
                                 if nil == rdata.restrict then
-                                    registerRace = false
                                     sendMessage(source, "Cannot register.  Invalid restricted vehicle.\n")
-                                else
-                                    umsg = " : using '" .. rdata.restrict .. "' vehicle"
+                                    return
                                 end
+                                umsg = " : using '" .. rdata.restrict .. "' vehicle"
                             elseif "class" == rdata.rtype then
                                 if nil == rdata.vclass or rdata.vclass < -1 or rdata.vclass > 21 then
-                                    registerRace = false
                                     sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
-                                else
-                                    umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
-                                    if -1 == rdata.vclass then
-                                        if nil == rdata.filename then
-                                            registerRace = false
-                                            sendMessage(source, "Cannot register.  Invalid file name.\n")
-                                        else
-                                            vehicleList = loadVehicleFile(source, rdata.filename)
-                                            if #vehicleList == 0 then
-                                                registerRace = false
-                                                sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
-                                            end
-                                        end
-                                    end
+                                    return
                                 end
+                                if -1 == rdata.vclass and #rdata.vehicleList == 0 then
+                                    sendMessage(source, "Cannot register.  Vehicle list is empty.\n")
+                                    return
+                                end
+                                umsg = " : using " .. getClassName(rdata.vclass) .. " vehicle class"
                             elseif "rand" == rdata.rtype then
+                                if #rdata.vehicleList == 0 then
+                                    sendMessage(source, "Cannot register.  Vehicle list is empty.\n")
+                                    return
+                                end
+                                umsg = " : using random "
+                                if rdata.vclass ~= nil then
+                                    if (rdata.vclass < 0 or rdata.vclass > 21) then
+                                        sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
+                                        return
+                                    end
+                                    umsg = umsg .. getClassName(rdata.vclass) .. " vehicle class"
+                                else
+                                    umsg = umsg .. "vehicles"
+                                end
+                                if rdata.svehicle ~= nil then
+                                    umsg = umsg .. " : '" .. rdata.svehicle .. "'"
+                                end
                                 buyin = 0
-                                if nil == rdata.filename then
-                                    rdata.filename = randomVehicleFileName
-                                end
-                                vehicleList = loadVehicleFile(source, rdata.filename)
-                                if #vehicleList == 0 then
-                                    registerRace = false
-                                    sendMessage(source, "Cannot register.  No vehicles loaded from " .. rdata.filename .. ".\n")
-                                else
-                                    umsg = " : using random "
-                                    if rdata.vclass ~= nil then
-                                        if (rdata.vclass < 0 or rdata.vclass > 21) then
-                                            registerRace = false
-                                            sendMessage(source, "Cannot register.  Invalid vehicle class.\n")
-                                        else
-                                            umsg = umsg .. getClassName(rdata.vclass) .. " vehicle class"
-                                        end
-                                    else
-                                        umsg = umsg .. "vehicles"
-                                    end
-                                    if true == registerRace and rdata.svehicle ~= nil then
-                                        umsg = umsg .. " : '" .. rdata.svehicle .. "'"
-                                    end
-                                end
                             elseif rdata.rtype ~= nil then
-                                registerRace = false
                                 sendMessage(source, "Cannot register.  Unknown race type.\n")
+                                return
                             end
-                            if true == registerRace then
-                                local owner = GetPlayerName(source)
-                                local msg = "Registered race using "
-                                if nil == trackName then
-                                    msg = msg .. "unsaved track "
-                                else
-                                    msg = msg .. (true == isPublic and "publicly" or "privately") .. " saved track '" .. trackName .. "' "
-                                end
-                                msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
-                                if "yes" == allowAI then
-                                    msg = msg .. " : AI allowed"
-                                end
-                                msg = msg .. umsg .. "\n"
-                                if false == distValid then
-                                    msg = msg .. "Prize distribution table is invalid\n"
-                                end
-                                sendMessage(source, msg)
-                                races[source] = {
-                                    state = STATE_REGISTERING,
-                                    waypointCoords = waypointCoords,
-                                    isPublic = isPublic,
-                                    trackName = trackName,
-                                    owner = owner,
-                                    buyin = buyin,
-                                    laps = laps,
-                                    timeout = timeout,
-                                    allowAI = allowAI,
-                                    rtype = rdata.rtype,
-                                    restrict = rdata.restrict,
-                                    vclass = rdata.vclass,
-                                    svehicle = rdata.svehicle,
-                                    vehicleList = vehicleList,
-                                    numRacing = 0,
-                                    players = {},
-                                    results = {}
-                                }
-                                TriggerClientEvent("races:register", -1, source, waypointCoords[1], isPublic, trackName, owner, buyin, laps, timeout, allowAI, vehicleList, rdata)
+                            local owner = GetPlayerName(source)
+                            local msg = "Registered race using "
+                            if nil == trackName then
+                                msg = msg .. "unsaved track "
+                            else
+                                msg = msg .. (true == isPublic and "publicly" or "privately") .. " saved track '" .. trackName .. "' "
                             end
+                            msg = msg .. ("by %s : %d buy-in : %d lap(s)"):format(owner, buyin, laps)
+                            if "yes" == allowAI then
+                                msg = msg .. " : AI allowed"
+                            end
+                            msg = msg .. umsg .. "\n"
+                            if false == distValid then
+                                msg = msg .. "Prize distribution table is invalid\n"
+                            end
+                            sendMessage(source, msg)
+                            races[source] = {
+                                state = STATE_REGISTERING,
+                                waypointCoords = waypointCoords,
+                                isPublic = isPublic,
+                                trackName = trackName,
+                                owner = owner,
+                                buyin = buyin,
+                                laps = laps,
+                                timeout = timeout,
+                                allowAI = allowAI,
+                                rtype = rdata.rtype,
+                                restrict = rdata.restrict,
+                                vclass = rdata.vclass,
+                                svehicle = rdata.svehicle,
+                                vehicleList = rdata.vehicleList,
+                                numRacing = 0,
+                                players = {},
+                                results = {}
+                            }
+                            TriggerClientEvent("races:register", -1, source, waypointCoords[1], isPublic, trackName, owner, buyin, laps, timeout, allowAI, rdata)
                         else
                             if STATE_RACING == races[source].state then
                                 sendMessage(source, "Cannot register.  Previous race in progress.\n")
@@ -1475,7 +1503,7 @@ AddEventHandler("races:saveGrp", function(isPublic, name, group)
                 sendMessage(source, "Saved " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'")
             else
-                sendMessage(source, "Error saving '" .. name .. "'.\n")
+                sendMessage(source, "Error saving " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
             end
         else
             sendMessage(source, (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' exists.  Use 'overwriteGrp' command instead.\n")
@@ -1498,13 +1526,13 @@ AddEventHandler("races:overwriteGrp", function(isPublic, name, group)
                 sendMessage(source, "Overwrote " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' overwrote " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'")
             else
-                sendMessage(source, "Error overwriting '" .. name .. "'.\n")
+                sendMessage(source, "Error overwriting " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
             end
         else
             sendMessage(source, (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' does not exist.  Use 'saveGrp' command instead.\n")
         end
     else
-        sendMessage(source, "Ignoring save AI group event.  Invalid parameters.\n")
+        sendMessage(source, "Ignoring overwrite AI group event.  Invalid parameters.\n")
     end
 end)
 
@@ -1523,7 +1551,7 @@ AddEventHandler("races:deleteGrp", function(isPublic, name)
                 sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'")
             else
-                sendMessage(source, "Error deleting '" .. trackName .. "'.\n")
+                sendMessage(source, "Error deleting " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
             end
         else
             sendMessage(source, "Cannot delete.  " .. (true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' not found.\n")
@@ -1533,8 +1561,8 @@ AddEventHandler("races:deleteGrp", function(isPublic, name)
     end
 end)
 
-RegisterNetEvent("races:listGrp")
-AddEventHandler("races:listGrp", function(isPublic)
+RegisterNetEvent("races:listGrps")
+AddEventHandler("races:listGrps", function(isPublic)
     local source = source
     if 0 == getRoleBits(source) & ROLE_REGISTER then
         sendMessage(source, "Permission required.\n")
@@ -1575,6 +1603,182 @@ AddEventHandler("races:listGrp", function(isPublic)
         end
     else
         sendMessage(source, "Ignoring list AI groups event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:addClass")
+AddEventHandler("races:addClass", function(class)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if class ~= nil then
+        if class >= 0 and class <= 21 then
+            local vehicleList = loadVehicleFile(source, allVehicleFileName)
+            if #vehicleList > 0 then
+                TriggerClientEvent("races:addClass", source, vehicleList, class)
+            else
+                sendMessage(source, "Cannot add vehicles to vehicle list.  Vehicle list not loaded.\n")
+            end
+        else
+            sendMessage(source, "Cannot add vehicles to vehicle list.  Invalid vehicle class.\n")
+        end
+    else
+        sendMessage(source, "Cannot add vehicles to vehicle list.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:addAll")
+AddEventHandler("races:addAll", function()
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    local vehicleList = loadVehicleFile(source, allVehicleFileName)
+    if #vehicleList > 0 then
+        TriggerClientEvent("races:addAll", source, vehicleList)
+    else
+        sendMessage(source, "Cannot add all vehicles to vehicle list.  Vehicle list not loaded.\n")
+    end
+end)
+
+RegisterNetEvent("races:loadLst")
+AddEventHandler("races:loadLst", function(isPublic, name)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if isPublic ~= nil and name ~= nil then
+        local list = loadVehicleList(isPublic, source, name)
+        if list ~= nil then
+            TriggerClientEvent("races:loadLst", source, isPublic, name, list)
+        else
+            sendMessage(source, "Cannot load.   " .. (true == isPublic and "Public" or "Private") .. " vehicle list '" .. name .. "' not found.\n")
+        end
+    else
+        sendMessage(source, "Ignoring load vehicle list event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:saveLst")
+AddEventHandler("races:saveLst", function(isPublic, name, vehicleList)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if isPublic ~= nil and name ~= nil and vehicleList ~= nil then
+        if loadVehicleList(isPublic, source, name) == nil then
+            if true == saveVehicleList(isPublic, source, name, vehicleList) then
+                TriggerClientEvent("races:updateList", source, isPublic)
+                sendMessage(source, "Saved " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+                logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'")
+            else
+                sendMessage(source, "Error saving " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+            end
+        else
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " vehicle list '" .. name .. "' exists.  Use 'overwrite' command instead.\n")
+        end
+    else
+        sendMessage(source, "Ignoring save vehicle list event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:overwriteLst")
+AddEventHandler("races:overwriteLst", function(isPublic, name, vehicleList)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_EDIT then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if isPublic ~= nil and name ~= nil and vehicleList ~= nil then
+        local list = loadVehicleList(isPublic, source, name)
+        if list ~= nil then
+            if true == saveVehicleList(isPublic, source, name, vehicleList) then
+                --TriggerClientEvent("races:overwrite", source, isPublic, trackName)
+                sendMessage(source, "Overwrote " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+                logMessage("'" .. GetPlayerName(source) .. "' overwrote " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'")
+            else
+                sendMessage(source, "Error overwriting " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+            end
+        else
+            sendMessage(source, (true == isPublic and "Public" or "Private") .. " vehicle list '" .. name .. "' does not exist.  Use 'save' command instead.\n")
+        end
+    else
+        sendMessage(source, "Ignoring overwrite vehicle list event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:deleteLst")
+AddEventHandler("races:deleteLst", function(isPublic, name)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if isPublic ~= nil and name ~= nil then
+        local list = loadVehicleList(isPublic, source, name)
+        if list ~= nil then
+            if true == saveVehicleList(isPublic, source, name, nil) then
+                TriggerClientEvent("races:updateList", source, isPublic)
+                sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+                logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'")
+            else
+                sendMessage(source, "Error deleting " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
+            end
+        else
+            sendMessage(source, "Cannot delete.  " .. (true == isPublic and "Public" or "Private") .. " vehicle list '" .. name .. "' not found.\n")
+        end
+    else
+        sendMessage(source, "Ignoring delete vehicle list event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:listLsts")
+AddEventHandler("races:listLsts", function(isPublic)
+    local source = source
+    if 0 == getRoleBits(source) & ROLE_REGISTER then
+        sendMessage(source, "Permission required.\n")
+        return
+    end
+    if isPublic ~= nil then
+        local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
+        if license ~= nil then
+            local vehicleListData = readData(vehicleListDataFilePath)
+            if vehicleListData ~= nil then
+                if license ~= "PUBLIC" then
+                    license = string.sub(license, 9)
+                end
+                local lists = vehicleListData[license]
+                if lists ~= nil then
+                    local names = {}
+                    for name in pairs(lists) do
+                        names[#names + 1] = name
+                    end
+                    if #names > 0 then
+                        table.sort(names)
+                        local msg = "Saved " .. (true == isPublic and "public" or "private") .. " vehicle lists:\n"
+                        for _, name in ipairs(names) do
+                            msg = msg .. name .. "\n"
+                        end
+                        sendMessage(source, msg)
+                    else
+                        sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " vehicle lists.\n")
+                    end
+                else
+                    sendMessage(source, "No saved " .. (true == isPublic and "public" or "private") .. " vehicle lists.\n")
+                end
+            else
+                sendMessage(source, "Could not load vehicle list data.\n")
+            end
+        else
+            sendMessage(source, "Could not get license for player source ID: " .. source .. "\n")
+        end
+    else
+        sendMessage(source, "Ignoring list vehicle lists event.  Invalid parameters.\n")
     end
 end)
 
@@ -1907,6 +2111,46 @@ AddEventHandler("races:aiGrpNames", function(isPublic)
         TriggerClientEvent("races:aiGrpNames", source, isPublic, grpNames)
     else
         sendMessage(source, "Ignoring list AI groups event.  Invalid parameters.\n")
+    end
+end)
+
+RegisterNetEvent("races:allVehicles")
+AddEventHandler("races:allVehicles", function()
+    local source = source
+    local allVehicles = loadVehicleFile(source, allVehicleFileName)
+    TriggerClientEvent("races:allVehicles", source, allVehicles)
+end)
+
+RegisterNetEvent("races:listNames")
+AddEventHandler("races:listNames", function(isPublic)
+    local source = source
+    if isPublic ~= nil then
+        local listNames = {}
+
+        local license = true == isPublic and "PUBLIC" or GetPlayerIdentifier(source, 0)
+        if license ~= nil then
+            local vehicleListData = readData(vehicleListDataFilePath)
+            if vehicleListData ~= nil then
+                if license ~= "PUBLIC" then
+                    license = string.sub(license, 9)
+                end
+                local lists = vehicleListData[license]
+                if lists ~= nil then
+                    for listName in pairs(lists) do
+                        listNames[#listNames + 1] = listName
+                    end
+                    table.sort(listNames)
+                end
+            else
+                sendMessage(source, "Could not load vehicle list data.\n")
+            end
+        else
+            sendMessage(source, "Could not get license for player source ID: " .. source .. "\n")
+        end
+
+        TriggerClientEvent("races:listNames", source, isPublic, listNames)
+    else
+        sendMessage(source, "Ignoring list vehicle lists event.  Invalid parameters.\n")
     end
 end)
 
