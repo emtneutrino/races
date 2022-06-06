@@ -482,6 +482,7 @@ local function finishRace(time)
         local vehicle = switchVehicle(PlayerPedId(), originalVehicleHash)
         if vehicle ~= nil then
             SetVehicleColours(vehicle, colorPri, colorSec)
+            SetEntityAsNoLongerNeeded(vehicle)
         end
     end
     raceState = STATE_IDLE
@@ -2792,6 +2793,7 @@ AddEventHandler("races:unregister", function(rIndex)
                     local vehicle = switchVehicle(player, originalVehicleHash)
                     if vehicle ~= nil then
                         SetVehicleColours(vehicle, colorPri, colorSec)
+                        SetEntityAsNoLongerNeeded(vehicle)
                     end
                 end
                 notifyPlayer("Race canceled.\n")
@@ -2802,7 +2804,7 @@ AddEventHandler("races:unregister", function(rIndex)
                 if driver.ped ~= nil then
                     SetEntityAsNoLongerNeeded(driver.ped)
                 end
-                if driver.originalVehicleHash ~= nil then
+                if IsEntityDead(driver.ped) == false and driver.originalVehicleHash ~= nil then
                     driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
                     if driver.vehicle ~= nil then
                         SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
@@ -3870,7 +3872,7 @@ Citizen.CreateThread(function()
                         end
                     end
                 elseif STATE_IDLE == driver.raceState then
-                    if driver.originalVehicleHash ~= nil then
+                    if IsEntityDead(driver.ped) == false and driver.originalVehicleHash ~= nil then
                         driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
                         if driver.vehicle ~= nil then
                             SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
