@@ -68,7 +68,7 @@ For the following **`/races vl`** commands, [access] = {'pvt', 'pub'} where 'pvt
 **`/races funds`** - view available funds\
 **`/races panel (panel)`** - display (panel) = {edit, register, ai, list} panel; otherwise display main panel if (panel) is not specified
 
-**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `'/races panel'`, `'/races panel edit'` OR `'/races panel register'`.**
+**IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A CLICKABLE INTERFACE BY TYPING `'/races panel'`, `'/races panel edit'`, `'/races panel register'`, `'/races panel ai'` OR `'/races panel list'`.**
 
 SERVER COMMANDS
 ---------------
@@ -227,6 +227,8 @@ To load the waypoints of a saved track named **`mytrack`**, type **`/races load 
 
 Type **`/races blt pvt mytrack`** to see the 10 best lap times recorded for **`mytrack`**.  Best lap times are recorded after a race has finished if the track was loaded, saved or overwritten without changing any waypoints before the race.  If you cannot see all the best lap times, type 'T' for chat and use the 'Page Up' and 'Page Down' keys to scroll.  Type 'Esc' when done.
 
+Track waypoints and best lap times data is saved in the file **`resources/races/raceData.json`**.
+
 You can clear all waypoints, except registration waypoints, by typing **`/races clear`**.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
 After you have set your track waypoints, you can register your race using the track.  This will advertise your race to all players.  Your track must have two or more waypoints.  At the starting waypoint of the track, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  This will be the registration waypoint.  It will be visible to all players.
@@ -239,7 +241,7 @@ If you want to restrict the vehicle used in a race, type **`/races register 100 
 
 If you want to restrict the vehicle class used in a race, type **`/races register 100 2 180 no class 0`** to restrict vehicles to class Compacts (0).
 
-If you want to create a Custom (-1) class vehicle race or a random vehicle race you must create a vehicle list first before registering the race.
+**If you want to create a race where only a custom list of vehicles are allowed or a race where vehicles change randomly every lap, you must create a vehicle list first before registering the race.**
 
 Type **`/races vl add zentorno`** to add a **`zentorno`** to your vehicle list.  If you are creating a random race, you can add the same vehicle multiple times to your vehicle list.  This will increase the chances that a racer will be put in this vehicle after they complete a lap.
 
@@ -265,17 +267,17 @@ If you want to delete a vehicle list named **`mylist`**, type **`/races vl delet
 
 To load the vehicle list named **`mylist`**, type **`/races vl loadLst pvt mylist`**.  This will clear your current vehicle list and load the vehicles from the saved list.
 
-If you want to create a Custom (-1) class race using a vehicle list you created, type **`/races register 100 2 180 no class -1`**.
+Vehicle list data is saved in the file **`resources/races/vehicleListData.json`**.
 
-If you want a race where vehicles change randomly every lap, type **`/races register 100 2 180 no rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from a vehicle list you created.
+If you want to create a race where only a custom list of vehicles are allowed, type **`/races register 100 2 180 no class -1`**.  The allowed vehicles will come from a vehicle list that you created or loaded.
 
-If you want to increase the chances of a specific vehicle appearing, you can add that vehicle multiple times to your vehicle list.
+If you want to create a race where vehicles change randomly every lap, type **`/races register 100 2 180 no rand`**.  Buy-in amounts will be set to 0 and there will be no payouts.  The randomly selected vehicles will come from a vehicle list that you created or loaded.  If you want to increase the chances of a specific vehicle appearing, you can add that vehicle multiple times to your vehicle list.
 
-If you want a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0), type **`/races register 100 2 180 no rand 0`**.
+If you want to create a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0), type **`/races register 100 2 180 no rand 0`**.
 
-If you want a race where vehicles change randomly every lap to one selected from your vehicle list and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 no rand . adder`**.  The period between **`rand`** and **`adder`** indicates that vehicles can come from any class in your vehicle list.
+If you want to create a race where vehicles change randomly every lap to one selected from your vehicle list and racers start in an **`adder`** vehicle, type **`/races register 100 2 180 no rand . adder`**.  The period between **`rand`** and **`adder`** indicates that vehicles can come from any class in your vehicle list.
 
-If you want a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0) and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 no rand 0 blista`**.  When you specify the class Compacts (0), the start vehicle must be of class Compacts (0).
+If you want to create a race where vehicles change randomly every lap to one selected from your vehicle list that are of class Compacts (0) and racers start in a **`blista`** vehicle, type **`/races register 100 2 180 no rand 0 blista`**.  When you specify the class Compacts (0), the start vehicle must be of class Compacts (0).
 
 The different classes of vehicle you can specify are listed here:
 
@@ -371,7 +373,7 @@ To toggle the display of the speedometer at any time, type **`/races speedo`**. 
 
 To view your available funds for race buy-ins, type **`/races funds`**.
 
-Type **`/races panel`** to show the main panel.  Type **`/races panel edit`** to show the edit tracks panel.  Type **`/races panel register`** to show the register races panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  There are buttons near the bottom that will let you switch to another panel if you click them.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
+Type **`/races panel`** to show the main panel.  Type **`/races panel edit`** to show the edit tracks panel.  Type **`/races panel register`** to show the register races panel.  Type **`/races panel ai`** to show the AI panel.  Type **`/races panel list`** to show the vehicle list panel.  All **`/races`** commands have a corresponding button and argument field(s) if needed.  Replies to the commands will show up in another panel as well as in chat.  There are buttons near the bottom that will let you switch to another panel if you click them.  To close the panel, type 'Escape' or click the 'Close' button at the bottom.
 
 Leaving a race or finishing it does not clear its track waypoints.  If you like the track, you can save it to your private list by typing **`/races save pvt nicetrack`**.
 
