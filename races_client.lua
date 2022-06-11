@@ -88,8 +88,8 @@ local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a 
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
 
 local highlightedCheckpoint = 0 -- index of highlighted checkpoint
-local selectedWaypoint = 0 -- index of currently selected waypoint
-local lastSelectedWaypoint = 0 -- index of last selected waypoint
+local selectedIndex0 = 0 -- index of first selected waypoint
+local selectedIndex1 = 0 -- index of second selected waypoint
 
 local raceIndex = -1 -- index of race player has joined
 local isPublicTrack = false -- flag indicating if saved track is public or not
@@ -489,39 +489,53 @@ local function finishRace(time)
 end
 
 local function editWaypoints(coord)
-    selectedWaypoint = 0
+    local selectedIndex = 0
     local minDist = maxRadius
     for index, waypoint in ipairs(waypoints) do
         local dist = #(coord - vector3(waypoint.coord.x, waypoint.coord.y, waypoint.coord.z))
         if dist < waypoint.coord.r and dist < minDist then
             minDist = dist
-            selectedWaypoint = index
+            selectedIndex = index
         end
     end
 
-    if 0 == selectedWaypoint then -- no existing waypoint selected
-        if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists, add new waypoint
+    if 0 == selectedIndex then -- no existing waypoint selected
+        if 0 == selectedIndex0 then -- no previous selected waypoints exist, add new waypoint
             local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
 
-            local coordRad = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}
-            waypoints[#waypoints + 1] = {coord = coordRad, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+            waypoints[#waypoints + 1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
 
-            startIsFinish = 1 == #waypoints and true or false
+            startIsFinish = 1 == #waypoints
             setStartToFinishBlips()
             deleteWaypointCheckpoints()
             setStartToFinishCheckpoints()
+        else -- first selected waypoint exists
+            if 0 == selectedIndex1 then -- second selected waypoint does not exist, move first selected waypoint to new location
+                local selectedWaypoint0 = waypoints[selectedIndex0]
+                selectedWaypoint0.coord = {x = coord.x, y = coord.y, z = coord.z, r = selectedWaypoint0.coord.r}
 
-        else -- previous selected waypoint exists, move previous selected waypoint to new location
-            waypoints[lastSelectedWaypoint].coord = {x = coord.x, y = coord.y, z = coord.z, r = waypoints[lastSelectedWaypoint].coord.r}
+                SetBlipCoords(selectedWaypoint0.blip, coord.x, coord.y, coord.z)
 
-            SetBlipCoords(waypoints[lastSelectedWaypoint].blip, coord.x, coord.y, coord.z)
+                DeleteCheckpoint(selectedWaypoint0.checkpoint)
+                local color = getCheckpointColor(selectedBlipColor)
+                local checkpointType = 38 == selectedWaypoint0.sprite and finishCheckpoint or midCheckpoint
+                selectedWaypoint0.checkpoint = makeCheckpoint(checkpointType, selectedWaypoint0.coord, coord, color, 127, selectedIndex0 - 1)
+            else -- second selected waypoint exists, add waypoint between first and second selected waypoints
+                for i = #waypoints, selectedIndex1, -1 do
+                    waypoints[i + 1] = waypoints[i]
+                end
 
-            DeleteCheckpoint(waypoints[lastSelectedWaypoint].checkpoint)
-            local color = getCheckpointColor(selectedBlipColor)
-            local checkpointType = 38 == waypoints[lastSelectedWaypoint].sprite and finishCheckpoint or midCheckpoint
-            waypoints[lastSelectedWaypoint].checkpoint = makeCheckpoint(checkpointType, waypoints[lastSelectedWaypoint].coord, coord, color, 127, lastSelectedWaypoint - 1)
+                local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
 
-            selectedWaypoint = lastSelectedWaypoint
+                waypoints[selectedIndex1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+
+                setStartToFinishBlips()
+                deleteWaypointCheckpoints()
+                setStartToFinishCheckpoints()
+
+                selectedIndex0 = 0
+                selectedIndex1 = 0
+            end
         end
 
         savedTrackName = nil
@@ -529,90 +543,171 @@ local function editWaypoints(coord)
         SetBlipRoute(waypoints[1].blip, true)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
     else -- existing waypoint selected
-        if 0 == lastSelectedWaypoint then -- no previous selected waypoint exists
-            SetBlipColour(waypoints[selectedWaypoint].blip, selectedBlipColor)
+        local selectedWaypoint = waypoints[selectedIndex]
+        if 0 == selectedIndex0 then -- no previous selected waypoint exists, show that waypoint is selected
+            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
             local color = getCheckpointColor(selectedBlipColor)
-            SetCheckpointRgba(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-            SetCheckpointRgba2(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
+            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
 
-            lastSelectedWaypoint = selectedWaypoint
-        else -- previous selected waypoint exists
-            if selectedWaypoint ~= lastSelectedWaypoint then -- selected waypoint and previous selected waypoint are different
-                local splitCombine = false
-                local checkpointType = finishCheckpoint
-                local waypointNum = 0
-                if true == startIsFinish then
-                    if #waypoints == selectedWaypoint and 1 == lastSelectedWaypoint then -- split start/finish waypoint
-                        splitCombine = true
+            selectedIndex0 = selectedIndex
+        else -- first selected waypoint exists
+            if selectedIndex == selectedIndex0 then -- selected waypoint and first selected waypoint are the same, unselect
+                SetBlipColour(selectedWaypoint.blip, selectedWaypoint.color)
+                local color = getCheckpointColor(selectedWaypoint.color)
+                SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
 
-                        startIsFinish = false
-
-                        waypoints[1].sprite = startSprite
-                        waypoints[1].color = startBlipColor
-                        waypoints[1].number = -1
-                        waypoints[1].name = "Start"
-
-                        waypoints[#waypoints].sprite = finishSprite
-                        waypoints[#waypoints].color = finishBlipColor
-                        waypoints[#waypoints].number = -1
-                        waypoints[#waypoints].name = "Finish"
-                    end
+                if selectedIndex1 ~= 0 then
+                    selectedIndex0 = selectedIndex1
+                    selectedIndex1 = 0
                 else
-                    if 1 == selectedWaypoint and #waypoints == lastSelectedWaypoint then -- combine start and finish waypoints
-                        splitCombine = true
+                    selectedIndex0 = 0
+                end
+            elseif selectedIndex == selectedIndex1 then -- selected waypoint and second selected waypoint are the same
+                SetBlipColour(selectedWaypoint.blip, selectedWaypoint.color)
+                local color = getCheckpointColor(selectedWaypoint.color)
+                SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
 
-                        startIsFinish = true
+                selectedIndex1 = 0
+            else -- selected waypoint and first and second selected waypoints are different
+                if 0 == selectedIndex1 then -- second selected waypoint does not exist
+                    local splitCombine = false
+                    local checkpointType = finishCheckpoint
+                    local waypointNum = 0
+                    if true == startIsFinish then
+                        if #waypoints == selectedIndex and 1 == selectedIndex0 then -- split start/finish waypoint
+                            splitCombine = true
 
-                        waypoints[1].sprite = startFinishSprite
-                        waypoints[1].color = startFinishBlipColor
-                        waypoints[1].number = -1
-                        waypoints[1].name = "Start/Finish"
+                            startIsFinish = false
 
-                        waypoints[#waypoints].sprite = midSprite
-                        waypoints[#waypoints].color = midBlipColor
-                        waypoints[#waypoints].number = #waypoints - 1
-                        waypoints[#waypoints].name = "Waypoint"
+                            waypoints[1].sprite = startSprite
+                            waypoints[1].color = startBlipColor
+                            waypoints[1].number = -1
+                            waypoints[1].name = "Start"
 
-                        checkpointType = midCheckpoint
-                        waypointNum = #waypoints - 1
+                            waypoints[#waypoints].sprite = finishSprite
+                            waypoints[#waypoints].color = finishBlipColor
+                            waypoints[#waypoints].number = -1
+                            waypoints[#waypoints].name = "Finish"
+                        end
+                    else
+                        if 1 == selectedIndex and #waypoints == selectedIndex0 then -- combine start and finish waypoints
+                            splitCombine = true
+
+                            startIsFinish = true
+
+                            waypoints[1].sprite = startFinishSprite
+                            waypoints[1].color = startFinishBlipColor
+                            waypoints[1].number = -1
+                            waypoints[1].name = "Start/Finish"
+
+                            waypoints[#waypoints].sprite = midSprite
+                            waypoints[#waypoints].color = midBlipColor
+                            waypoints[#waypoints].number = #waypoints - 1
+                            waypoints[#waypoints].name = "Waypoint"
+
+                            checkpointType = midCheckpoint
+                            waypointNum = #waypoints - 1
+                        end
+                    end
+                    if true == splitCombine then
+                        setBlipProperties(1)
+                        setBlipProperties(#waypoints)
+
+                        local color = getCheckpointColor(waypoints[1].color)
+                        SetCheckpointRgba(waypoints[1].checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(waypoints[1].checkpoint, color.r, color.g, color.b, 127)
+
+                        DeleteCheckpoint(waypoints[#waypoints].checkpoint)
+                        color = getCheckpointColor(waypoints[#waypoints].color)
+                        waypoints[#waypoints].checkpoint = makeCheckpoint(checkpointType, waypoints[#waypoints].coord, waypoints[#waypoints].coord, color, 127, waypointNum)
+
+                        selectedIndex0 = 0
+                        savedTrackName = nil
+                    else
+                        if selectedIndex == selectedIndex0 + 1 then
+                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                            color = getCheckpointColor(selectedBlipColor)
+                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                            selectedIndex1 = selectedIndex
+                        elseif selectedIndex == selectedIndex0 - 1 then
+                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                            color = getCheckpointColor(selectedBlipColor)
+                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                            selectedIndex1 = selectedIndex0
+                            selectedIndex0 = selectedIndex
+                        else
+                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                            color = getCheckpointColor(selectedBlipColor)
+                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                            local selectedWaypoint0 = waypoints[selectedIndex0]
+                            SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
+                            color = getCheckpointColor(selectedWaypoint0.color)
+                            SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+                            SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+
+                            selectedIndex0 = selectedIndex
+                        end
+                    end
+                else -- second selected waypoint exists
+                    if selectedIndex == selectedIndex1 + 1 then
+                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                        color = getCheckpointColor(selectedBlipColor)
+                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                        local selectedWaypoint0 = waypoints[selectedIndex0]
+                        SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
+                        color = getCheckpointColor(selectedWaypoint0.color)
+                        SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+
+                        selectedIndex0 = selectedIndex1
+                        selectedIndex1 = selectedIndex
+                    elseif selectedIndex == selectedIndex0 - 1 then
+                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                        color = getCheckpointColor(selectedBlipColor)
+                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                        local selectedWaypoint1 = waypoints[selectedIndex1]
+                        SetBlipColour(selectedWaypoint1.blip, selectedWaypoint1.color)
+                        color = getCheckpointColor(selectedWaypoint1.color)
+                        SetCheckpointRgba(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+
+                        selectedIndex1 = selectedIndex0
+                        selectedIndex0 = selectedIndex
+                    else
+                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
+                        color = getCheckpointColor(selectedBlipColor)
+                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+
+                        local selectedWaypoint0 = waypoints[selectedIndex0]
+                        SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
+                        color = getCheckpointColor(selectedWaypoint0.color)
+                        SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+
+                        local selectedWaypoint1 = waypoints[selectedIndex1]
+                        SetBlipColour(selectedWaypoint1.blip, selectedWaypoint1.color)
+                        color = getCheckpointColor(selectedWaypoint1.color)
+                        SetCheckpointRgba(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+                        SetCheckpointRgba2(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+
+                        selectedIndex0 = selectedIndex
+                        selectedIndex1 = 0
                     end
                 end
-                if true == splitCombine then
-                    setBlipProperties(1)
-                    setBlipProperties(#waypoints)
-
-                    local color = getCheckpointColor(waypoints[1].color)
-                    SetCheckpointRgba(waypoints[1].checkpoint, color.r, color.g, color.b, 127)
-                    SetCheckpointRgba2(waypoints[1].checkpoint, color.r, color.g, color.b, 127)
-
-                    DeleteCheckpoint(waypoints[#waypoints].checkpoint)
-                    color = getCheckpointColor(waypoints[#waypoints].color)
-                    waypoints[#waypoints].checkpoint = makeCheckpoint(checkpointType, waypoints[#waypoints].coord, waypoints[#waypoints].coord, color, 127, waypointNum)
-
-                    selectedWaypoint = 0
-                    lastSelectedWaypoint = 0
-                    savedTrackName = nil
-                else
-                    SetBlipColour(waypoints[lastSelectedWaypoint].blip, waypoints[lastSelectedWaypoint].color)
-                    local color = getCheckpointColor(waypoints[lastSelectedWaypoint].color)
-                    SetCheckpointRgba(waypoints[lastSelectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-                    SetCheckpointRgba2(waypoints[lastSelectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-
-                    SetBlipColour(waypoints[selectedWaypoint].blip, selectedBlipColor)
-                    color = getCheckpointColor(selectedBlipColor)
-                    SetCheckpointRgba(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-                    SetCheckpointRgba2(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-
-                    lastSelectedWaypoint = selectedWaypoint
-                end
-            else -- selected waypoint and previous selected waypoint are the same
-                SetBlipColour(waypoints[selectedWaypoint].blip, waypoints[selectedWaypoint].color)
-                local color = getCheckpointColor(waypoints[selectedWaypoint].color)
-                SetCheckpointRgba(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-                SetCheckpointRgba2(waypoints[selectedWaypoint].checkpoint, color.r, color.g, color.b, 127)
-
-                selectedWaypoint = 0
-                lastSelectedWaypoint = 0
             end
         end
     end
@@ -703,11 +798,14 @@ local function edit()
     elseif STATE_EDITING == raceState then
         raceState = STATE_IDLE
         highlightedCheckpoint = 0
-        if selectedWaypoint > 0 then
-            SetBlipColour(waypoints[selectedWaypoint].blip, waypoints[selectedWaypoint].color)
-            selectedWaypoint = 0
+        if selectedIndex0 ~= 0 then
+            SetBlipColour(waypoints[selectedIndex0].blip, waypoints[selectedIndex0].color)
+            selectedIndex0 = 0
         end
-        lastSelectedWaypoint = 0
+        if selectedIndex1 ~= 0 then
+            SetBlipColour(waypoints[selectedIndex1].blip, waypoints[selectedIndex1].color)
+            selectedIndex1 = 0
+        end
         deleteWaypointCheckpoints()
         sendMessage("Editing stopped.\n")
     else
@@ -724,8 +822,8 @@ local function clear()
         sendMessage("Waypoints cleared.\n")
     elseif STATE_EDITING == raceState then
         highlightedCheckpoint = 0
-        selectedWaypoint = 0
-        lastSelectedWaypoint = 0
+        selectedIndex0 = 0
+        selectedIndex1 = 0
         deleteWaypointCheckpoints()
         deleteWaypointBlips()
         waypoints = {}
@@ -750,8 +848,8 @@ local function reverse()
         elseif STATE_EDITING == raceState then
             savedTrackName = nil
             highlightedCheckpoint = 0
-            selectedWaypoint = 0
-            lastSelectedWaypoint = 0
+            selectedIndex0 = 0
+            selectedIndex1 = 0
             deleteWaypointCheckpoints()
             loadWaypointBlips(waypointsToCoordsRev())
             setStartToFinishCheckpoints()
@@ -1685,18 +1783,8 @@ end
 
 local function respawn()
     if STATE_RACING == raceState then
-        local coord = startCoord
-        if true == startIsFinish then
-            if currentWaypoint > 0 then
-                coord = waypoints[currentWaypoint].coord
-            end
-        else
-            if currentWaypoint > 1 then
-                coord = waypoints[currentWaypoint - 1].coord
-            end
-        end
-        local player = PlayerPedId()
         local passengers = {}
+        local player = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(player, false)
         if vehicle ~= 0 then
             if GetPedInVehicleSeat(vehicle, -1) == player then
@@ -1710,7 +1798,16 @@ local function respawn()
                 DeleteVehicle(vehicle)
             end
         end
-        SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
+        local coord = startCoord
+        if true == startIsFinish then
+            if currentWaypoint > 0 then
+                coord = waypoints[currentWaypoint].coord
+            end
+        else
+            if currentWaypoint > 1 then
+                coord = waypoints[currentWaypoint - 1].coord
+            end
+        end
         if currentVehicleHash ~= nil then
             RequestModel(currentVehicleHash)
             while HasModelLoaded(currentVehicleHash) == false do
@@ -1721,6 +1818,8 @@ local function respawn()
             for _, passenger in pairs(passengers) do
                 SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
             end
+        else
+            SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
         end
     else
         sendMessage("Cannot respawn.  Not in a race.\n")
@@ -2599,8 +2698,8 @@ AddEventHandler("races:load", function(isPublic, trackName, waypointCoords)
             isPublicTrack = isPublic
             savedTrackName = trackName
             highlightedCheckpoint = 0
-            selectedWaypoint = 0
-            lastSelectedWaypoint = 0
+            selectedIndex0 = 0
+            selectedIndex1 = 0
             deleteWaypointCheckpoints()
             loadWaypointBlips(waypointCoords)
             setStartToFinishCheckpoints()
@@ -3320,15 +3419,15 @@ Citizen.CreateThread(function()
 
             if closestIndex ~= 0 then
                 if highlightedCheckpoint ~= 0 and closestIndex ~= highlightedCheckpoint then
-                    local color = highlightedCheckpoint == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
+                    local color = (highlightedCheckpoint == selectedIndex0 or highlightedCheckpoint == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
                     SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
                 end
-                local color = closestIndex == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
+                local color = (closestIndex == selectedIndex0 or closestIndex == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
                 SetCheckpointRgba(waypoints[closestIndex].checkpoint, color.r, color.g, color.b, 255)
                 highlightedCheckpoint = closestIndex
                 drawMsg(0.50, 0.50, "Press [ENTER] key, [A] button or [CROSS] button to select waypoint", 0.7, 0)
             elseif highlightedCheckpoint ~= 0 then
-                local color = highlightedCheckpoint == selectedWaypoint and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
+                local color = (highlightedCheckpoint == selectedIndex0 or highlightedCheckpoint == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
                 SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
                 highlightedCheckpoint = 0
             end
@@ -3348,17 +3447,17 @@ Citizen.CreateThread(function()
                 end
             elseif IsControlJustReleased(0, 215) == 1 then -- enter key or A button or cross button
                 editWaypoints(playerCoord)
-            elseif selectedWaypoint > 0 then
+            elseif selectedIndex0 ~= 0 and 0 == selectedIndex1 then
+                local selectedWaypoint0 = waypoints[selectedIndex0]
                 if IsControlJustReleased(2, 216) == 1 then -- space key or X button or square button
-                    DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
-                    RemoveBlip(waypoints[selectedWaypoint].blip)
-                    table.remove(waypoints, selectedWaypoint)
+                    DeleteCheckpoint(selectedWaypoint0.checkpoint)
+                    RemoveBlip(selectedWaypoint0.blip)
+                    table.remove(waypoints, selectedIndex0)
 
-                    if highlightedCheckpoint == selectedWaypoint then
+                    if highlightedCheckpoint == selectedIndex0 then
                         highlightedCheckpoint = 0
                     end
-                    selectedWaypoint = 0
-                    lastSelectedWaypoint = 0
+                    selectedIndex0 = 0
 
                     savedTrackName = nil
 
@@ -3372,19 +3471,19 @@ Citizen.CreateThread(function()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                     end
-                elseif IsControlJustReleased(0, 187) == 1 and waypoints[selectedWaypoint].coord.r > minRadius then -- arrow down or DPAD DOWN
-                    waypoints[selectedWaypoint].coord.r = waypoints[selectedWaypoint].coord.r - 0.5
-                    DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
+                elseif IsControlJustReleased(0, 187) == 1 and selectedWaypoint0.coord.r > minRadius then -- arrow down or DPAD DOWN
+                    selectedWaypoint0.coord.r = selectedWaypoint0.coord.r - 0.5
+                    DeleteCheckpoint(selectedWaypoint0.checkpoint)
                     local color = getCheckpointColor(selectedBlipColor)
-                    local checkpointType = 38 == waypoints[selectedWaypoint].sprite and finishCheckpoint or midCheckpoint
-                    waypoints[selectedWaypoint].checkpoint = makeCheckpoint(checkpointType, waypoints[selectedWaypoint].coord, waypoints[selectedWaypoint].coord, color, 127, selectedWaypoint - 1)
+                    local checkpointType = 38 == selectedWaypoint0.sprite and finishCheckpoint or midCheckpoint
+                    selectedWaypoint0.checkpoint = makeCheckpoint(checkpointType, selectedWaypoint0.coord, selectedWaypoint0.coord, color, 127, selectedIndex0 - 1)
                     savedTrackName = nil
-                elseif IsControlJustReleased(0, 188) == 1 and waypoints[selectedWaypoint].coord.r < maxRadius then -- arrow up or DPAD UP
-                    waypoints[selectedWaypoint].coord.r = waypoints[selectedWaypoint].coord.r + 0.5
-                    DeleteCheckpoint(waypoints[selectedWaypoint].checkpoint)
+                elseif IsControlJustReleased(0, 188) == 1 and selectedWaypoint0.coord.r < maxRadius then -- arrow up or DPAD UP
+                    selectedWaypoint0.coord.r = selectedWaypoint0.coord.r + 0.5
+                    DeleteCheckpoint(selectedWaypoint0.checkpoint)
                     local color = getCheckpointColor(selectedBlipColor)
-                    local checkpointType = 38 == waypoints[selectedWaypoint].sprite and finishCheckpoint or midCheckpoint
-                    waypoints[selectedWaypoint].checkpoint = makeCheckpoint(checkpointType, waypoints[selectedWaypoint].coord, waypoints[selectedWaypoint].coord, color, 127, selectedWaypoint - 1)
+                    local checkpointType = 38 == selectedWaypoint0.sprite and finishCheckpoint or midCheckpoint
+                    selectedWaypoint0.checkpoint = makeCheckpoint(checkpointType, selectedWaypoint0.coord, selectedWaypoint0.coord, color, 127, selectedIndex0 - 1)
                     savedTrackName = nil
                 end
             end
