@@ -693,22 +693,6 @@ local function saveAIGroup(isPublic, source, name, group)
     return false
 end
 
-local function loadVehicleFile(source, vehicleFileName)
-    local vehicleFilePath = "./resources/races/" .. vehicleFileName
-    local vehicleList = {}
-    local file, errMsg, errCode = io.open(vehicleFilePath, "r")
-    if file ~= fail then
-        for vehicle in file:lines() do
-            if string.len(vehicle) > 0 then
-                vehicleList[#vehicleList + 1] = vehicle
-            end
-        end
-    else
-        notifyPlayer(source, "Error opening file '" .. vehicleFilePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
-    end
-    return vehicleList
-end
-
 local function getClassName(vclass)
     if -1 == vclass then
         return "'Custom'(-1)"
@@ -1088,7 +1072,34 @@ AddEventHandler("races:init", function()
         end
     end
 
-    local allVehicles = loadVehicleFile(source, allVehicleFileName)
+    local allVehicles = {}
+    local vehicleFilePath = "./resources/races/" .. allVehicleFileName
+    local file, errMsg, errCode = io.open(vehicleFilePath, "r")
+    if file ~= fail then
+        for vehicle in file:lines() do
+            if string.len(vehicle) > 0 then
+                allVehicles[#allVehicles + 1] = vehicle
+            end
+        end
+        table.sort(allVehicles)
+        local current = allVehicles[1]
+        for i = 2, #allVehicles do
+            while true do
+                if allVehicles[i] ~= nil then
+                    if allVehicles[i] == current then
+                        table.remove(allVehicles, i)
+                    else
+                        current = allVehicles[i]
+                        break
+                    end
+                else
+                    break
+                end
+            end
+        end
+    else
+        notifyPlayer(source, "Error opening file '" .. vehicleFilePath .. "' for read : '" .. errMsg .. "' : " .. errCode)
+    end
     TriggerClientEvent("races:allVehicles", source, allVehicles)
 end)
 
@@ -1169,6 +1180,7 @@ AddEventHandler("races:save", function(isPublic, trackName, waypointCoords)
             track = {waypointCoords = waypointCoords, bestLaps = {}}
             if true == saveTrack(isPublic, source, trackName, track) then
                 TriggerClientEvent("races:save", source, isPublic, trackName)
+                TriggerEvent("races:trackNames", isPublic, source)
                 logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
             else
                 sendMessage(source, "Error saving " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
@@ -1217,7 +1229,7 @@ AddEventHandler("races:delete", function(isPublic, trackName)
         local track = loadTrack(isPublic, source, trackName)
         if track ~= nil then
             if true == saveTrack(isPublic, source, trackName, nil) then
-                TriggerClientEvent("races:delete", source, isPublic)
+                TriggerEvent("races:trackNames", isPublic, source)
                 sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'")
             else
@@ -1502,7 +1514,7 @@ AddEventHandler("races:saveGrp", function(isPublic, name, group)
     if isPublic ~= nil and name ~= nil and group ~= nil then
         if loadAIGroup(isPublic, source, name) == nil then
             if true == saveAIGroup(isPublic, source, name, group) then
-                TriggerClientEvent("races:updateGrp", source, isPublic)
+                TriggerEvent("races:aiGrpNames", isPublic, source)
                 sendMessage(source, "Saved " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'")
             else
@@ -1550,7 +1562,7 @@ AddEventHandler("races:deleteGrp", function(isPublic, name)
         local group = loadAIGroup(isPublic, source, name)
         if group ~= nil then
             if true == saveAIGroup(isPublic, source, name, nil) then
-                TriggerClientEvent("races:updateGrp", source, isPublic)
+                TriggerEvent("races:aiGrpNames", isPublic, source)
                 sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'")
             else
@@ -1609,44 +1621,6 @@ AddEventHandler("races:listGrps", function(isPublic)
     end
 end)
 
-RegisterNetEvent("races:addClass")
-AddEventHandler("races:addClass", function(class)
-    local source = source
-    if 0 == getRoleBits(source) & ROLE_REGISTER then
-        sendMessage(source, "Permission required.\n")
-        return
-    end
-    if class ~= nil then
-        if class >= 0 and class <= 21 then
-            local vehicleList = loadVehicleFile(source, allVehicleFileName)
-            if #vehicleList > 0 then
-                TriggerClientEvent("races:addClass", source, vehicleList, class)
-            else
-                sendMessage(source, "Cannot add vehicles to vehicle list.  Vehicle list not loaded.\n")
-            end
-        else
-            sendMessage(source, "Cannot add vehicles to vehicle list.  Invalid vehicle class.\n")
-        end
-    else
-        sendMessage(source, "Cannot add vehicles to vehicle list.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:addAll")
-AddEventHandler("races:addAll", function()
-    local source = source
-    if 0 == getRoleBits(source) & ROLE_REGISTER then
-        sendMessage(source, "Permission required.\n")
-        return
-    end
-    local vehicleList = loadVehicleFile(source, allVehicleFileName)
-    if #vehicleList > 0 then
-        TriggerClientEvent("races:addAll", source, vehicleList)
-    else
-        sendMessage(source, "Cannot add all vehicles to vehicle list.  Vehicle list not loaded.\n")
-    end
-end)
-
 RegisterNetEvent("races:loadLst")
 AddEventHandler("races:loadLst", function(isPublic, name)
     local source = source
@@ -1676,7 +1650,7 @@ AddEventHandler("races:saveLst", function(isPublic, name, vehicleList)
     if isPublic ~= nil and name ~= nil and vehicleList ~= nil then
         if loadVehicleList(isPublic, source, name) == nil then
             if true == saveVehicleList(isPublic, source, name, vehicleList) then
-                TriggerClientEvent("races:updateList", source, isPublic)
+                TriggerEvent("races:listNames", isPublic, source)
                 sendMessage(source, "Saved " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' saved " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'")
             else
@@ -1726,7 +1700,7 @@ AddEventHandler("races:deleteLst", function(isPublic, name)
         local list = loadVehicleList(isPublic, source, name)
         if list ~= nil then
             if true == saveVehicleList(isPublic, source, name, nil) then
-                TriggerClientEvent("races:updateList", source, isPublic)
+                TriggerEvent("races:listNames", isPublic, source)
                 sendMessage(source, "Deleted " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'.\n")
                 logMessage("'" .. GetPlayerName(source) .. "' deleted " .. (true == isPublic and "public" or "private") .. " vehicle list '" .. name .. "'")
             else
@@ -1841,17 +1815,6 @@ AddEventHandler("races:rivals", function(rIndex)
     end
 end)
 
-RegisterNetEvent("races:lvehicles")
-AddEventHandler("races:lvehicles", function(vclass)
-    local source = source
-    local vehicleList = loadVehicleFile(source, allVehicleFileName)
-    if #vehicleList > 0 then
-        TriggerClientEvent("races:lvehicles", source, vehicleList, vclass)
-    else
-        sendMessage(source, "Cannot list vehicles.  Vehicle list not loaded.\n")
-    end
-end)
-
 RegisterNetEvent("races:funds")
 AddEventHandler("races:funds", function()
     local source = source
@@ -1905,7 +1868,7 @@ end)
 
 RegisterNetEvent("races:finish")
 AddEventHandler("races:finish", function(rIndex, netID, aiName, numWaypointsPassed, finishTime, bestLapTime, vehicleName, altSource)
-    local source = altSource ~= nil and altSource or source
+    local source = altSource or source
     if rIndex ~= nil and netID ~= nil and numWaypointsPassed ~= nil and finishTime ~= nil and bestLapTime ~= nil and vehicleName ~= nil then
         local race = races[rIndex]
         if race ~= nil then
@@ -2052,8 +2015,8 @@ AddEventHandler("races:report", function(rIndex, netID, aiName, numWaypointsPass
 end)
 
 RegisterNetEvent("races:trackNames")
-AddEventHandler("races:trackNames", function(isPublic)
-    local source = source
+AddEventHandler("races:trackNames", function(isPublic, altSource)
+    local source = altSource or source
     if isPublic ~= nil then
         local trackNames = {}
 
@@ -2085,8 +2048,8 @@ AddEventHandler("races:trackNames", function(isPublic)
 end)
 
 RegisterNetEvent("races:aiGrpNames")
-AddEventHandler("races:aiGrpNames", function(isPublic)
-    local source = source
+AddEventHandler("races:aiGrpNames", function(isPublic, altSource)
+    local source = altSource or source
     if isPublic ~= nil then
         local grpNames = {}
 
@@ -2118,8 +2081,8 @@ AddEventHandler("races:aiGrpNames", function(isPublic)
 end)
 
 RegisterNetEvent("races:listNames")
-AddEventHandler("races:listNames", function(isPublic)
-    local source = source
+AddEventHandler("races:listNames", function(isPublic, altSource)
+    local source = altSource or source
     if isPublic ~= nil then
         local listNames = {}
 

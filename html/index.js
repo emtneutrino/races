@@ -64,7 +64,9 @@ $(function() {
             $("#delay").val(data.defaultDelay);
             $("#rtype").change();
             document.getElementById("register_rest_vehicle").innerHTML = data.allVehicles;
-            document.getElementById("register_start_vehicle").innerHTML = data.allVehicles;
+            document.getElementById("register_start_vehicle").innerHTML =
+                "<option value = \"\"></option>" +
+                data.allVehicles;
             $("#registerPanel").show();
             openPanel = "register";
         } else if ("ai" == data.panel) {

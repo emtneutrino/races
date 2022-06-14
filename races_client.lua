@@ -127,7 +127,7 @@ local vehicleList = {} -- vehicle list used for custom class races and random ra
 local restrictedHash = nil -- vehicle hash of race with restricted vehicle
 local restrictedClass = nil -- restricted vehicle class
 
-local customClassVehicleList = {} -- list of vehicles in class -1 (Custom)
+local customClassVehicleList = {} -- list of vehicles in class Custom (-1) race
 
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in random vehicle races
 local colorPri = -1 -- primary color of original vehicle
@@ -154,6 +154,7 @@ local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
 
 local panelShown = false -- flag indicating if main, edit, register, ai or list panel is shown
+local allVehiclesList = {} -- list of all vehicles from vehicles.txt
 local allVehiclesHTML = "" -- html option list of all vehicles
 
 local roleBits = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
@@ -757,8 +758,8 @@ end
 local function updateList()
     table.sort(vehicleList)
     local html = ""
-    for i = 1, #vehicleList do
-        html = html .. "<option value = \"" .. vehicleList[i] .. "\">" .. vehicleList[i] .. "</option>"
+    for _, vehicle in ipairs(vehicleList) do
+        html = html .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
     end
     SendNUIMessage({
         update = "vehicleList",
@@ -1011,7 +1012,9 @@ local function register(buyin, laps, timeout, allowAI, rtype, arg7, arg8)
                                         return
                                     end
                                     vclass = math.tointeger(tonumber(arg7))
-                                    if vclass ~= nil then
+                                    if nil == vclass then
+                                        vehList = vehicleList
+                                    else
                                         if vclass < 0 or vclass > 21 then
                                             sendMessage("Cannot register.  Invalid vehicle class.\n")
                                             return
@@ -1026,8 +1029,6 @@ local function register(buyin, laps, timeout, allowAI, rtype, arg7, arg8)
                                             sendMessage("Cannot register.  Vehicle list is empty.\n")
                                             return
                                         end
-                                    else
-                                        vehList = vehicleList
                                     end
                                     svehicle = arg8
                                     if svehicle ~= nil then
@@ -1444,14 +1445,27 @@ local function loadGrp(access, name)
         sendMessage("Permission required.\n")
         return
     end
-    if "pvt" == access or "pub" == access then
-        if name ~= nil then
-            TriggerServerEvent("races:loadGrp", "pub" == access, name)
+    local pIndex = GetPlayerServerId(PlayerId())
+    if starts[pIndex] ~= nil then
+        if "yes" == starts[pIndex].allowAI then
+            if aiState ~= nil then
+                if "pvt" == access or "pub" == access then
+                    if name ~= nil then
+                        TriggerServerEvent("races:loadGrp", "pub" == access, name)
+                    else
+                        sendMessage("Cannot load AI group.  Name required.\n")
+                    end
+                else
+                    sendMessage("Cannot load AI group.  Invalid access type.\n")
+                end
+            else
+                sendMessage("No AI drivers added.\n")
+            end
         else
-            sendMessage("Cannot load AI group.  Name required.\n")
+            sendMessage("AI drivers not allowed.\n")
         end
     else
-        sendMessage("Cannot load AI group.  Invalid access type.\n")
+        sendMessage("Race has not been registered.\n")
     end
 end
 
@@ -1604,7 +1618,15 @@ local function addClass(class)
     end
     class = math.tointeger(tonumber(class))
     if class ~= nil and class >= 0 and class <= 21 then
-        TriggerServerEvent("races:addClass", class)
+        for _, vehicle in pairs(allVehiclesList) do
+            if GetVehicleClassFromName(vehicle) == class then
+                vehicleList[#vehicleList + 1] = vehicle
+            end
+        end
+        if true == panelShown then
+            updateList()
+        end
+        sendMessage("Vehicles of class " .. getClassName(class) .. " added to vehicle list.\n")
     else
         sendMessage("Cannot add vehicles to vehicle list.  Invalid vehicle class.\n")
     end
@@ -1644,7 +1666,13 @@ local function addAllVeh()
         sendMessage("Permission required.\n")
         return
     end
-    TriggerServerEvent("races:addAll")
+    for _, vehicle in pairs(allVehiclesList) do
+        vehicleList[#vehicleList + 1] = vehicle
+    end
+    if true == panelShown then
+        updateList()
+    end
+    sendMessage("Added all vehicles to vehicle list.\n")
 end
 
 local function delAllVeh()
@@ -1879,7 +1907,25 @@ end
 local function lvehicles(vclass)
     vclass = math.tointeger(tonumber(vclass))
     if nil == vclass or (vclass >= 0 and vclass <= 21) then
-        TriggerServerEvent("races:lvehicles", vclass)
+        local msg = "Available vehicles"
+        if nil == vclass then
+            msg = msg .. ": "
+        else
+            msg = msg .. " of class " .. getClassName(vclass) .. ": "
+        end
+        local vehicleFound = false
+        for _, vehicle in ipairs(allVehiclesList) do
+            if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
+                msg = msg .. vehicle .. ", "
+                vehicleFound = true
+            end
+        end
+        if false == vehicleFound then
+            msg = "No vehicles in list."
+        else
+            msg = string.sub(msg, 1, -3)
+        end
+        sendMessage(msg)
     else
         sendMessage("Cannot list vehicles.  Invalid vehicle class.\n")
     end
@@ -1914,8 +1960,8 @@ local function showPanel(panel)
     panelShown = true
     if nil == panel then
         SetNuiFocus(true, true)
-        TriggerServerEvent("races:trackNames", false)
-        TriggerServerEvent("races:trackNames", true)
+        TriggerServerEvent("races:trackNames", false, nil)
+        TriggerServerEvent("races:trackNames", true, nil)
         SendNUIMessage({
             panel = "main",
             defaultVehicle = defaultVehicle,
@@ -1923,15 +1969,15 @@ local function showPanel(panel)
         })
     elseif "edit" == panel then
         SetNuiFocus(true, true)
-        TriggerServerEvent("races:trackNames", false)
-        TriggerServerEvent("races:trackNames", true)
+        TriggerServerEvent("races:trackNames", false, nil)
+        TriggerServerEvent("races:trackNames", true, nil)
         SendNUIMessage({
             panel = "edit"
         })
     elseif "register" == panel then
         SetNuiFocus(true, true)
-        TriggerServerEvent("races:trackNames", false)
-        TriggerServerEvent("races:trackNames", true)
+        TriggerServerEvent("races:trackNames", false, nil)
+        TriggerServerEvent("races:trackNames", true, nil)
         SendNUIMessage({
             panel = "register",
             defaultBuyin = defaultBuyin,
@@ -1942,8 +1988,8 @@ local function showPanel(panel)
         })
     elseif "ai" == panel then
         SetNuiFocus(true, true)
-        TriggerServerEvent("races:aiGrpNames", false)
-        TriggerServerEvent("races:aiGrpNames", true)
+        TriggerServerEvent("races:aiGrpNames", false, nil)
+        TriggerServerEvent("races:aiGrpNames", true, nil)
         SendNUIMessage({
             panel = "ai",
             defaultVehicle = defaultVehicle,
@@ -1952,8 +1998,8 @@ local function showPanel(panel)
     elseif "list" == panel then
         SetNuiFocus(true, true)
         updateList()
-        TriggerServerEvent("races:listNames", false)
-        TriggerServerEvent("races:listNames", true)
+        TriggerServerEvent("races:listNames", false, nil)
+        TriggerServerEvent("races:listNames", true, nil)
         SendNUIMessage({
             panel = "list",
             allVehicles = allVehiclesHTML
@@ -2721,9 +2767,6 @@ AddEventHandler("races:save", function(isPublic, trackName)
     if isPublic ~= nil and trackName ~= nil then
         isPublicTrack = isPublic
         savedTrackName = trackName
-        if true == panelShown then
-            TriggerServerEvent("races:trackNames", isPublic)
-        end
         sendMessage("Saved " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring save event.  Invalid parameters.\n")
@@ -2738,13 +2781,6 @@ AddEventHandler("races:overwrite", function(isPublic, trackName)
         sendMessage("Overwrote " .. (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'.\n")
     else
         notifyPlayer("Ignoring overwrite event.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:delete")
-AddEventHandler("races:delete", function(isPublic)
-    if true == panelShown then
-        TriggerServerEvent("races:trackNames", isPublic)
     end
 end)
 
@@ -2764,40 +2800,6 @@ AddEventHandler("races:blt", function(isPublic, trackName, bestLaps)
         end
     else
         notifyPlayer("Ignoring best lap times event.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:addClass")
-AddEventHandler("races:addClass", function(list, class)
-    if list ~= nil and class ~= nil then
-        for _, vehicle in pairs(list) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 and GetVehicleClassFromName(vehicle) == class then
-                vehicleList[#vehicleList + 1] = vehicle
-            end
-        end
-        if true == panelShown then
-            updateList()
-        end
-        sendMessage("Vehicles of class " .. getClassName(class) .. " added to vehicle list.\n")
-    else
-        notifyPlayer("Ignoring add vehicle class event.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:addAll")
-AddEventHandler("races:addAll", function(list)
-    if list ~= nil then
-        for _, vehicle in pairs(list) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-                vehicleList[#vehicleList + 1] = vehicle
-            end
-        end
-        if true == panelShown then
-            updateList()
-        end
-        sendMessage("Added all vehicles to vehicle list.\n")
-    else
-        notifyPlayer("Ignoring add all vehicles event.  Invalid parameters.\n")
     end
 end)
 
@@ -2953,49 +2955,6 @@ AddEventHandler("races:loadGrp", function(isPublic, name, group)
     end
 end)
 
-RegisterNetEvent("races:updateGrp")
-AddEventHandler("races:updateGrp", function(isPublic)
-    if true == panelShown then
-        TriggerServerEvent("races:aiGrpNames", isPublic)
-    end
-end)
-
-RegisterNetEvent("races:updateList")
-AddEventHandler("races:updateList", function(isPublic)
-    if true == panelShown then
-        TriggerServerEvent("races:listNames", isPublic)
-    end
-end)
-
-RegisterNetEvent("races:lvehicles")
-AddEventHandler("races:lvehicles", function(list, vclass)
-    if list ~= nil then
-        local msg = "Available vehicles"
-        if nil == vclass then
-            msg = msg .. ": "
-        else
-            msg = msg .. " of class " .. getClassName(vclass) .. ": "
-        end
-        local vehicleFound = false
-        for _, vehicle in pairs(list) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-                if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
-                    msg = msg .. vehicle .. ", "
-                    vehicleFound = true
-                end
-            end
-        end
-        if false == vehicleFound then
-            msg = "No vehicles in list."
-        else
-            msg = string.sub(msg, 1, -3)
-        end
-        sendMessage(msg)
-    else
-        notifyPlayer("Ignoring list vehicles event.  Invalid parameters.\n")
-    end
-end)
-
 RegisterNetEvent("races:start")
 AddEventHandler("races:start", function(rIndex, delay)
     if rIndex ~= nil and delay ~= nil then
@@ -3141,14 +3100,7 @@ AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
                         if startVehicle ~= nil then
                             msg = msg .. " : '" .. startVehicle .. "'"
                         end
-                        for _, vehName in pairs(starts[rIndex].vehicleList) do
-                            if nil == restrictedClass or GetVehicleClassFromName(vehName) == restrictedClass then
-                                randVehicles[#randVehicles + 1] = vehName
-                            end
-                        end
-                        if #randVehicles == 0 then
-                            msg = msg .. " : No random vehicles loaded"
-                        end
+                        randVehicles = starts[rIndex].vehicleList
                     end
                     msg = msg .. ".\n"
                     notifyPlayer(msg)
@@ -3174,11 +3126,7 @@ AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
                     driver.destSet = true
                     driver.currentWP = true == aiState.startIsFinish and 0 or 1
                     if "rand" == aiState.rtype then
-                        for _, vehName in pairs(aiState.vehicleList) do
-                            if nil == aiState.vclass or GetVehicleClassFromName(vehName) == aiState.vclass then
-                                aiState.randVehicles[#aiState.randVehicles + 1] = vehName
-                            end
-                        end
+                        aiState.randVehicles = aiState.vehicleList
                     end
                     notifyPlayer("AI driver '" .. aiName .. "' joined race.\n")
                 else
@@ -3310,6 +3258,22 @@ AddEventHandler("races:delRacer", function(netID)
     end
 end)
 
+RegisterNetEvent("races:allVehicles")
+AddEventHandler("races:allVehicles", function(allVehicles)
+    if allVehicles ~= nil then
+        allVehiclesList = {}
+        allVehiclesHTML = ""
+        for _, vehicle in ipairs(allVehicles) do
+            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
+                allVehiclesList[#allVehiclesList + 1] = vehicle
+                allVehiclesHTML = allVehiclesHTML .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
+            end
+        end
+    else
+        notifyPlayer("Ignoring allVehicles event.  Invalid parameters.\n")
+    end
+end)
+
 RegisterNetEvent("races:trackNames")
 AddEventHandler("races:trackNames", function(isPublic, trackNames)
     if isPublic ~= nil and trackNames ~= nil then
@@ -3345,20 +3309,6 @@ AddEventHandler("races:aiGrpNames", function(isPublic, grpNames)
         end
     else
         notifyPlayer("Ignoring grpNames event.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:allVehicles")
-AddEventHandler("races:allVehicles", function(allVehicles)
-    if allVehicles ~= nil then
-        allVehiclesHTML = ""
-        for _, vehicle in pairs(allVehicles) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-                allVehiclesHTML = allVehiclesHTML .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
-            end
-        end
-    else
-        notifyPlayer("Ignoring allVehicles event.  Invalid parameters.\n")
     end
 end)
 
