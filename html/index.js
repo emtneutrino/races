@@ -50,7 +50,8 @@ $(function() {
     window.addEventListener("message", function(event) {
         let data = event.data;
         if ("main" == data.panel) {
-            $("#vehicle").val(data.defaultVehicle);
+            document.getElementById("main_vehicle").innerHTML = data.allVehicles;
+            $("#main_vehicle").val(data.defaultVehicle);
             $("#mainPanel").show();
             openPanel = "main";
         } else if ("edit" == data.panel) {
@@ -62,13 +63,17 @@ $(function() {
             $("#timeout").val(data.defaultTimeout);
             $("#delay").val(data.defaultDelay);
             $("#rtype").change();
+            document.getElementById("register_rest_vehicle").innerHTML = data.allVehicles;
+            document.getElementById("register_start_vehicle").innerHTML = data.allVehicles;
             $("#registerPanel").show();
             openPanel = "register";
         } else if ("ai" == data.panel) {
+            document.getElementById("ai_vehicle").innerHTML = data.allVehicles;
             $("#ai_vehicle").val(data.defaultVehicle);
             $("#aiPanel").show();
             openPanel = "ai";
         } else if ("list" == data.panel) {
+            document.getElementById("list_vehicle").innerHTML = data.allVehicles;
             $("#listPanel").show();
             openPanel = "list";
         } else if ("reply" == data.panel) {
@@ -103,8 +108,6 @@ $(function() {
                 pubListNames = data.listNames;
             };
             $("#list_access0").change()
-        } else if ("allVehicles" == data.update) {
-            document.getElementById("all_veh_list").innerHTML = data.allVehicles;
         } else if ("vehicleList" == data.update) {
             document.getElementById("veh_list").innerHTML = data.vehicleList;
         };
@@ -167,7 +170,7 @@ $(function() {
 
     $("#spawn").click(function() {
         $.post("https://races/spawn", JSON.stringify({
-            vehicle: $("#vehicle").val()
+            vehicle: $("#main_vehicle").val()
         }));
     });
 
@@ -406,9 +409,9 @@ $(function() {
             timeout: $("#timeout").val(),
             allowAI: $("#allowAI").val(),
             rtype: $("#rtype").val(),
-            restrict: $("#restrict").val(),
+            restrict: $("#register_rest_vehicle").val(),
             vclass: $("#register_vclass").val(),
-            svehicle: $("#svehicle").val()
+            svehicle: $("#register_start_vehicle").val()
         }));
     });
 
@@ -561,7 +564,7 @@ $(function() {
     /* vehicle list panel */
     $("#add_veh").click(function() {
         $.post("https://races/add_veh", JSON.stringify({
-            vehicle: $("#all_veh_list").val()
+            vehicle: $("#list_vehicle").val()
         }));
     });
 

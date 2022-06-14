@@ -153,7 +153,8 @@ local starts = {} -- starts[playerID] = {isPublic, trackName, owner, buyin, laps
 local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
 
-local panelShown = false -- flag indicating if main, edit or register panel is shown
+local panelShown = false -- flag indicating if main, edit, register, ai or list panel is shown
+local allVehiclesHTML = "" -- html option list of all vehicles
 
 local roleBits = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
 
@@ -1917,7 +1918,8 @@ local function showPanel(panel)
         TriggerServerEvent("races:trackNames", true)
         SendNUIMessage({
             panel = "main",
-            defaultVehicle = defaultVehicle
+            defaultVehicle = defaultVehicle,
+            allVehicles = allVehiclesHTML
         })
     elseif "edit" == panel then
         SetNuiFocus(true, true)
@@ -1935,7 +1937,8 @@ local function showPanel(panel)
             defaultBuyin = defaultBuyin,
             defaultLaps = defaultLaps,
             defaultTimeout = defaultTimeout,
-            defaultDelay = defaultDelay
+            defaultDelay = defaultDelay,
+            allVehicles = allVehiclesHTML
         })
     elseif "ai" == panel then
         SetNuiFocus(true, true)
@@ -1943,16 +1946,17 @@ local function showPanel(panel)
         TriggerServerEvent("races:aiGrpNames", true)
         SendNUIMessage({
             panel = "ai",
-            defaultVehicle = defaultVehicle
+            defaultVehicle = defaultVehicle,
+            allVehicles = allVehiclesHTML
         })
     elseif "list" == panel then
         SetNuiFocus(true, true)
-        TriggerServerEvent("races:allVehicles")
         updateList()
         TriggerServerEvent("races:listNames", false)
         TriggerServerEvent("races:listNames", true)
         SendNUIMessage({
-            panel = "list"
+            panel = "list",
+            allVehicles = allVehiclesHTML
         })
     else
         notifyPlayer("Invalid panel.\n")
@@ -3347,16 +3351,12 @@ end)
 RegisterNetEvent("races:allVehicles")
 AddEventHandler("races:allVehicles", function(allVehicles)
     if allVehicles ~= nil then
-        local html = ""
+        allVehiclesHTML = ""
         for _, vehicle in pairs(allVehicles) do
             if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-                html = html .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
+                allVehiclesHTML = allVehiclesHTML .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
             end
         end
-        SendNUIMessage({
-            update = "allVehicles",
-            allVehicles = html
-        })
     else
         notifyPlayer("Ignoring allVehicles event.  Invalid parameters.\n")
     end

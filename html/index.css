@@ -110,8 +110,9 @@ body {
     width: 25%;
 }
 
-#vehicle {
+#main_vehicle {
     width: 25%;
+    height: 44px;
 }
 
 #lvehicles {
@@ -296,7 +297,15 @@ body {
     height: 44px;
 }
 
+#register_rest_vehicle {
+    height: 44px;
+}
+
 #register_vclass {
+    height: 44px;
+}
+
+#register_start_vehicle {
     height: 44px;
 }
 
@@ -348,6 +357,7 @@ body {
 
 #ai_vehicle {
     width: 25%;
+    height: 44px;
 }
 
 #add_ai {
@@ -441,7 +451,7 @@ body {
     width: 15%;
 }
 
-#all_veh_list {
+#list_vehicle {
     width: 500px;
     height: 44px;
 }

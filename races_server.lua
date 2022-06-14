@@ -1087,6 +1087,9 @@ AddEventHandler("races:init", function()
             TriggerClientEvent("races:register", source, rIndex, race.waypointCoords[1], race.isPublic, race.trackName, race.owner, race.buyin, race.laps, race.timeout, race.allowAI, rdata)
         end
     end
+
+    local allVehicles = loadVehicleFile(source, allVehicleFileName)
+    TriggerClientEvent("races:allVehicles", source, allVehicles)
 end)
 
 RegisterNetEvent("races:request")
@@ -2112,13 +2115,6 @@ AddEventHandler("races:aiGrpNames", function(isPublic)
     else
         sendMessage(source, "Ignoring list AI groups event.  Invalid parameters.\n")
     end
-end)
-
-RegisterNetEvent("races:allVehicles")
-AddEventHandler("races:allVehicles", function()
-    local source = source
-    local allVehicles = loadVehicleFile(source, allVehicleFileName)
-    TriggerClientEvent("races:allVehicles", source, allVehicles)
 end)
 
 RegisterNetEvent("races:listNames")

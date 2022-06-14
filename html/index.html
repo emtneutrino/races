@@ -76,7 +76,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <br>
             <div class = "row">
                 <button id = "spawn">Spawn Vehicle</button>
-                Vehicle Name:<input id = "vehicle" placeholder = "Vehicle Name">
+                <select id = "main_vehicle">
+                </select>
             </div>
             <br>
             <div class = "row">
@@ -218,7 +219,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>
             <div class = "row">
                 <div id = "rest">
-                    Restrict:<input id = "restrict" placeholder = "Vehicle Name">
+                    <label for = "register_rest_vehicle">Restrict:</label>
+                    <select id = "register_rest_vehicle">
+                    </select>
                 </div>
                 <div id = "vclass">
                     <label for = "register_vclass">Vehicle Class:</label>
@@ -226,7 +229,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     </select>
                 </div>
                 <div id = "sveh">
-                    Start Vehicle:<input id = "svehicle" placeholder = "Vehicle Name">
+                    <label for = "register_start_vehicle">Start Vehicle:</label>
+                    <select id = "register_start_vehicle">
+                    </select>
                 </div>
             </div>
             <br>
@@ -254,7 +259,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <div id = "aiPanel">
             <div class = "row">
                 AI Name:<input id = "ai_name" placeholder = "AI Name">
-                Vehicle Name:<input id = "ai_vehicle" placeholder = "Vehicle Name">
+                <label for = "ai_vehicle">Vehicle Name:</label>
+                <select id = "ai_vehicle">
+                </select>
             </div>
             <div class = "row">
                 <button id = "add_ai">Add AI</button>
@@ -306,7 +313,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <div id = "listPanel">
             <div class = "row">
                 <button id = "add_veh">Add Vehicle</button>
-                <select id = "all_veh_list">
+                <select id = "list_vehicle">
                 </select>
             </div>
             <br>
