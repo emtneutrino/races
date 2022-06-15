@@ -2786,7 +2786,7 @@ end)
 
 RegisterNetEvent("races:blt")
 AddEventHandler("races:blt", function(isPublic, trackName, bestLaps)
-    if isPublic ~= nil and trackName ~=nil and bestLaps ~= nil then
+    if isPublic ~= nil and trackName ~= nil and bestLaps ~= nil then
         local msg = (true == isPublic and "public" or "private") .. " track '" .. trackName .. "'"
         if #bestLaps > 0 then
             msg = "Best lap times for " .. msg .. ":\n"
@@ -2818,7 +2818,7 @@ end)
 
 RegisterNetEvent("races:register")
 AddEventHandler("races:register", function(rIndex, coord, isPublic, trackName, owner, buyin, laps, timeout, allowAI, rdata)
-    if rIndex ~= nil and coord ~= nil and isPublic ~= nil and owner ~= nil and buyin ~= nil and laps ~=nil and timeout ~= nil and allowAI ~= nil and rdata ~= nil then
+    if rIndex ~= nil and coord ~= nil and isPublic ~= nil and owner ~= nil and buyin ~= nil and laps ~= nil and timeout ~= nil and allowAI ~= nil and rdata ~= nil then
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
