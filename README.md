@@ -2,7 +2,7 @@ INSTALLATION
 ------------
 Setting up a server:  https://docs.fivem.net/docs/server-manual/setting-up-a-server/
 
-Create a **`races/`** folder under your server **`resources/`** folder.  Place **`fxmanifest.lua`**, **`races_client.lua`**, **`races_server.lua`**, **`port.lua`**, **`raceData.json`**, **`vehicles.txt`** and **`random.txt`** in the **`resources/races/`** folder.  Create an **`html/`** folder under your server **`resources/races/`** folder.  Place **`index.css`**, **`index.html`**, **`index.js`** and **`reset.css`** in the **`resources/races/html/`** folder.  Add **`ensure races`** to your **`server.cfg`** file.
+Create a **`races/`** folder under your server **`resources/`** folder.  Place **`fxmanifest.lua`**, **`races_client.lua`**, **`races_server.lua`**, **`port.lua`**, **`raceData.json`** and **`vehicles.txt`** in the **`resources/races/`** folder.  Create an **`html/`** folder under your server **`resources/races/`** folder.  Place **`index.css`**, **`index.html`**, **`index.js`** and **`reset.css`** in the **`resources/races/html/`** folder.  Add **`ensure races`** to your **`server.cfg`** file.
 
 CLIENT COMMANDS
 ---------------
