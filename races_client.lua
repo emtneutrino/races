@@ -3426,12 +3426,12 @@ Citizen.CreateThread(function()
                     local foundZ, groundZ = GetGroundZFor_3dCoord(coord.x, coord.y, height, true)
                     if 1 == foundZ then
                         coord = vector3(coord.x, coord.y, groundZ)
-                        editWaypoints(coord)
+                        editWaypoints(coord, heading)
                         break
                     end
                 end
             elseif IsControlJustReleased(0, 215) == 1 then -- enter key or A button or cross button
-                editWaypoints(playerCoord)
+                editWaypoints(playerCoord, heading)
             elseif selectedIndex0 ~= 0 and 0 == selectedIndex1 then
                 local selectedWaypoint0 = waypoints[selectedIndex0]
                 if IsControlJustReleased(2, 216) == 1 then -- space key or X button or square button
