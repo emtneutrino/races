@@ -857,6 +857,11 @@ local function getRoleBits(source)
     return roleBits
 end
 
+RegisterNetEvent("setplayeralpha")
+AddEventHandler('setplayeralpha', function(alphaValue)
+    TriggerClientEvent('setplayeralpha', -1, alphaValue)
+end)
+
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         local msg = "Commands:\n"

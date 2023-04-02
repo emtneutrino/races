@@ -36,6 +36,16 @@ local STATE_JOINING <const> = 2
 local STATE_RACING <const> = 3
 local raceState = STATE_IDLE -- race state
 
+local GHOSTING_IDLE <const> = 0
+local GHOSTING_DOWN <const> = 1
+local GHOSTING_UP <const> = 2
+local ghostState = GHOSTING_IDLE
+local ghosting = false
+local ghostingTime = 0 --Timer for how long you've been ghosting
+local ghostingMaxTime = 3000
+local ghostingInterval = 0.0 --Timer for the animation of ghosting
+local ghostingInternalMaxTime = 0.25 --How quickly alpha values animates (s)
+
 local ROLE_EDIT <const> = 1 -- edit tracks role
 local ROLE_REGISTER <const> = 2 -- register races role
 local ROLE_SPAWN <const> = 4 -- spawn vehicles role
@@ -1811,7 +1821,22 @@ local function rivals()
     end
 end
 
+local function SetGhosting(_ghosting)
+    ghosting = _ghosting
+    SetLocalPlayerAsGhost(_ghosting)
+    if true == ghosting then
+        ghostState = GHOSTING_UP
+        ghostingTime = GetGameTimer()
+        ghostingInternalMaxTime = .5
+    else
+        ghostState = GHOSTING_IDLE
+        ghostingInterval = 0.0
+        ghostingTime = 0
+    end
+end
+
 local function respawn()
+    SetGhosting(true)
     if STATE_RACING == raceState then
         local passengers = {}
         local player = PlayerPedId()
@@ -2725,6 +2750,12 @@ RegisterCommand("races", function(_, args)
     end
 end)
 
+RegisterNetEvent("setplayeralpha")
+AddEventHandler("setplayeralpha", function(playerID, alphaValue)
+    sendMessage(playerID)
+    SetGhostedEntityAlpha(alphaValue)
+end)
+
 RegisterNetEvent("races:roles")
 AddEventHandler("races:roles", function(roles)
     if 0 == roles & ROLE_EDIT and STATE_EDITING == raceState then
@@ -3511,6 +3542,39 @@ Citizen.CreateThread(function()
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
                     bestLapVehicleName = currentVehicleName
                     lapTimeStart = currentTime
+                end
+
+                if true == ghosting then
+                    local ghostingDifference = currentTime - ghostingTime
+                    local deltaTime = GetFrameTime()
+    
+                    if ghostState == GHOSTING_UP then
+                        if(ghostingInterval >= ghostingInternalMaxTime) then
+                            SetGhostedEntityAlpha( 128 )
+                            TriggerServerEvent('setplayeralpha', player, 150)
+                            ghostState = GHOSTING_DOWN
+                            ghostingInternalMaxTime = ghostingInternalMaxTime / 1.1875
+                            ghostingInterval = ghostingInternalMaxTime
+                        else
+                            ghostingInterval = ghostingInterval + deltaTime
+                        end
+                        
+                    elseif ghostState == GHOSTING_DOWN then
+                        if(ghostingInterval <= 0) then
+                            SetGhostedEntityAlpha( 50 )
+                            TriggerServerEvent('setplayeralpha', player, 50)
+                            ghostState = GHOSTING_UP
+                            ghostingInternalMaxTime = ghostingInternalMaxTime / 1.1875
+                            ghostingInterval = 0
+                        else
+                            ghostingInterval = ghostingInterval - deltaTime
+                        end
+                    end
+    
+                    SetGhostedEntityAlpha( ghostingInterval * 254 )
+                    if ghostingDifference > ghostingMaxTime then
+                        SetGhosting(false)
+                    end
                 end
 
                 if IsControlPressed(0, 73) == 1 then -- X key or A button or cross button
