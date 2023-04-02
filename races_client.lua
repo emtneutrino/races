@@ -346,6 +346,12 @@ local function drawRect(x, y, w, h, r, g, b, a)
     DrawRect(x + w / 2.0, y + h / 2.0, w, h, r, g, b, a)
 end
 
+local function drawRespawnMessage(numerator, denominator)
+    local percent = numerator / denominator
+    DrawRect(0.92, 0.95, 0.1, 0.03, 0, 0, 0, 127)
+    DrawRect(0.92, 0.95, 0.1 * percent, 0.03, 255, 255, 0, 255)
+end
+
 local function waypointsToCoords()
     local waypointCoords = {}
     for i = 1, #waypoints do
@@ -3579,6 +3585,7 @@ Citizen.CreateThread(function()
 
                 if IsControlPressed(0, 73) == 1 then -- X key or A button or cross button
                     if true == respawnCtrlPressed then
+                        drawRespawnMessage(currentTime - respawnTime, 1000)
                         if currentTime - respawnTime > 1000 then
                             respawnCtrlPressed = false
                             respawn()
