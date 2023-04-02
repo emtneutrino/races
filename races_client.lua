@@ -490,7 +490,7 @@ local function finishRace(time)
     raceState = STATE_IDLE
 end
 
-local function editWaypoints(coord)
+local function editWaypoints(coord, heading)
     local selectedIndex = 0
     local minDist = maxRadius
     for index, waypoint in ipairs(waypoints) do
@@ -505,7 +505,7 @@ local function editWaypoints(coord)
         if 0 == selectedIndex0 then -- no previous selected waypoints exist, add new waypoint
             local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
 
-            waypoints[#waypoints + 1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+            waypoints[#waypoints + 1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius, heading = heading}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil }
 
             startIsFinish = 1 == #waypoints
             setStartToFinishBlips()
@@ -514,7 +514,7 @@ local function editWaypoints(coord)
         else -- first selected waypoint exists
             if 0 == selectedIndex1 then -- second selected waypoint does not exist, move first selected waypoint to new location
                 local selectedWaypoint0 = waypoints[selectedIndex0]
-                selectedWaypoint0.coord = {x = coord.x, y = coord.y, z = coord.z, r = selectedWaypoint0.coord.r}
+                selectedWaypoint0.coord = {x = coord.x, y = coord.y, z = coord.z, r = selectedWaypoint0.coord.r, heading = heading}
 
                 SetBlipCoords(selectedWaypoint0.blip, coord.x, coord.y, coord.z)
 
@@ -529,7 +529,7 @@ local function editWaypoints(coord)
 
                 local blip = AddBlipForCoord(coord.x, coord.y, coord.z)
 
-                waypoints[selectedIndex1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
+                waypoints[selectedIndex1] = {coord = {x = coord.x, y = coord.y, z = coord.z, r = defaultRadius, heading = heading}, checkpoint = nil, blip = blip, sprite = -1, color = -1, number = -1, name = nil}
 
                 setStartToFinishBlips()
                 deleteWaypointCheckpoints()
@@ -546,6 +546,7 @@ local function editWaypoints(coord)
         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
     else -- existing waypoint selected
         local selectedWaypoint = waypoints[selectedIndex]
+        selectedWaypoint.coord.heading = heading
         if 0 == selectedIndex0 then -- no previous selected waypoint exists, show that waypoint is selected
             SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
             local color = getCheckpointColor(selectedBlipColor)
@@ -1842,6 +1843,7 @@ local function respawn()
             while HasModelLoaded(currentVehicleHash) == false do
                 Citizen.Wait(0)
             end
+            SetEntityHeading(vehicle, coord.heading)
             vehicle = putPedInVehicle(player, currentVehicleHash, coord)
             SetEntityAsNoLongerNeeded(vehicle)
             for _, passenger in pairs(passengers) do
@@ -1849,6 +1851,7 @@ local function respawn()
             end
         else
             SetEntityCoords(player, coord.x, coord.y, coord.z, false, false, false, true)
+            SetEntityHeading(player, coord.heading)
         end
     else
         sendMessage("Cannot respawn.  Not in a race.\n")
@@ -3356,6 +3359,7 @@ Citizen.CreateThread(function()
         Citizen.Wait(0)
         local player = PlayerPedId()
         local playerCoord = GetEntityCoords(player)
+        local heading = GetEntityHeading(player)
         if STATE_EDITING == raceState then
             local closestIndex = 0
             local minDist = maxRadius
@@ -3391,12 +3395,12 @@ Citizen.CreateThread(function()
                     local foundZ, groundZ = GetGroundZFor_3dCoord(coord.x, coord.y, height, true)
                     if 1 == foundZ then
                         coord = vector3(coord.x, coord.y, groundZ)
-                        editWaypoints(coord)
+                        editWaypoints(coord, heading)
                         break
                     end
                 end
             elseif IsControlJustReleased(0, 215) == 1 then -- enter key or A button or cross button
-                editWaypoints(playerCoord)
+                editWaypoints(playerCoord, heading)
             elseif selectedIndex0 ~= 0 and 0 == selectedIndex1 then
                 local selectedWaypoint0 = waypoints[selectedIndex0]
                 if IsControlJustReleased(2, 216) == 1 then -- space key or X button or square button
