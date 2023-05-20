@@ -1,6 +1,6 @@
 --[[
 
-Copyright (c) 2022, Neil J. Tan
+Copyright (c) 2023, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local STATE_IDLE <const> = 0
-local STATE_EDITING <const> = 1
-local STATE_JOINING <const> = 2
-local STATE_RACING <const> = 3
+local STATE_IDLE <const> = 0 -- idle state
+local STATE_EDITING <const> = 1 -- editing track state
+local STATE_JOINING <const> = 2 -- joining race state
+local STATE_RACING <const> = 3 -- racing state
 local raceState = STATE_IDLE -- race state
-
-local ROLE_EDIT <const> = 1 -- edit tracks role
-local ROLE_REGISTER <const> = 2 -- register races role
-local ROLE_SPAWN <const> = 4 -- spawn vehicles role
 
 local white <const> = {r = 255, g = 255, b = 255}
 local red <const> = {r = 255, g = 0, b = 0}
@@ -53,9 +49,7 @@ local finishBlipColor <const> = 0 -- white
 local midBlipColor <const> = 38 -- dark blue
 local registerBlipColor <const> = 83 -- purple
 local racerBlipColor <const> = 2 -- green
-
 local selectedBlipColor <const> = 1 -- red
-
 local blipRouteColor <const> = 18 -- light blue
 
 local startFinishSprite <const> = 38 -- checkered flag
@@ -73,12 +67,20 @@ local arrow3Checkpoint <const> = 7 -- cylinder with 3 arrows
 local defaultBuyin <const> = 500 -- default race buy-in
 local defaultLaps <const> = 1 -- default number of laps in a race
 local defaultTimeout <const> = 120 -- default DNF timeout
+local defaultAllowAI <const> = "no" -- default allow AI value
 local defaultDelay <const> = 30 -- default race start delay
-local defaultVehicle <const> = "adder" -- default spawned vehicle
+local defaultModel <const> = "adder" -- default spawned vehicle model
 local defaultRadius <const> = 5.0 -- default waypoint radius
 
 local minRadius <const> = 0.5 -- minimum waypoint radius
 local maxRadius <const> = 10.0 -- maximum waypoint radius
+
+local waypoints = {} -- waypoints[] = {coord = {x, y, z, r}, checkpoint, blip, sprite, color, number, name}
+local startIsFinish = false -- flag indicating if start and finish are same waypoint
+
+local highlightedIndex = 0 -- index of highlighted checkpoint
+local selectedIndex0 = 0 -- index of first selected waypoint
+local selectedIndex1 = 0 -- index of second selected waypoint
 
 local topSide <const> = 0.45 -- top position of HUD
 local leftSide <const> = 0.02 -- left position of HUD
@@ -87,83 +89,81 @@ local rightSide <const> = leftSide + 0.08 -- right position of HUD
 local maxNumVisible <const> = 3 -- maximum number of waypoints visible during a race
 local numVisible = maxNumVisible -- number of waypoints visible during a race - may be less than maxNumVisible
 
-local highlightedCheckpoint = 0 -- index of highlighted checkpoint
-local selectedIndex0 = 0 -- index of first selected waypoint
-local selectedIndex1 = 0 -- index of second selected waypoint
-
 local raceIndex = -1 -- index of race player has joined
 local isPublicTrack = false -- flag indicating if saved track is public or not
 local savedTrackName = nil -- name of saved track - nil if track not saved
 
-local waypoints = {} -- waypoints[] = {coord = {x, y, z, r}, checkpoint, blip, sprite, color, number, name}
-local startIsFinish = false -- flag indicating if start and finish are same waypoint
+local raceStart = -1 -- start time of race before delay
+local raceDelay = -1 -- delay before official start of race
+
+local started = false -- flag indicating if race started
+
+local startCoord = nil -- coordinates of vehicle once race has started
+
+local camTransStarted = false -- flag indicating if camera transition at start of race has started
+
+local countdown = -1 -- countdown before start
+
+local vehicleFrozen = false -- flag indicating if vehicle player is in is frozen before start of race
+
+local position = -1 -- position in race out of numRacers players
+local numRacers = -1 -- number of players in race - no DNF players included
+
+local numWaypointsPassed = -1 -- number of waypoints player has passed
+local currentWaypoint = -1 -- current waypoint index - for multi-lap races, actual current waypoint index is currentWaypoint % #waypoints + 1
+local waypointCoord = nil -- coordinates of current waypoint
+local raceCheckpoint = nil -- race checkpoint of current waypoint in world
 
 local numLaps = -1 -- number of laps in current race
 local currentLap = -1 -- current lap
 
-local numWaypointsPassed = -1 -- number of waypoints player has passed
-local currentWaypoint = -1 -- current waypoint - for multi-lap races, actual current waypoint is currentWaypoint % #waypoints + 1
-local waypointCoord = nil -- coordinates of current waypoint
-
-local raceStart = -1 -- start time of race before delay
-local raceDelay = -1 -- delay before official start of race
-local countdown = -1 -- countdown before start
-local drawLights = false -- draw start lights
-
-local position = -1 -- position in race out of numRacers players
-local numRacers = -1 -- number of players in race - no DNF players included
-local racerBlipGT = {} -- blips and gamer tags for all racers participating in race
-
 local lapTimeStart = -1 -- start time of current lap
 local bestLapTime = -1 -- best lap time
-
-local raceCheckpoint = nil -- race checkpoint in world
+local bestLapVehicleName = nil -- name of vehicle in which player recorded best lap time
 
 local DNFTimeout = -1 -- DNF timeout after first player finishes the race
 local beginDNFTimeout = false -- flag indicating if DNF timeout should begin
 local timeoutStart = -1 -- start time of DNF timeout
 
-local vehicleList = {} -- vehicle list used for custom class races and random races
-local restrictedHash = nil -- vehicle hash of race with restricted vehicle
-local restrictedClass = nil -- restricted vehicle class
+local vehicleList = {} -- vehicle list used for custom class races and random vehicle races
+local customClassVehicleList = {} -- list of vehicles in 'Custom'(-1) class race
+local randomVehicleList = {} -- list of vehicles used in random vehicle races
 
-local customClassVehicleList = {} -- list of vehicles in class Custom (-1) race
+local restrictedHash = nil -- vehicle hash of race with restricted vehicle
+local restrictedClass = nil -- vehicle class of race with restricted class
 
 local originalVehicleHash = nil -- vehicle hash of original vehicle before switching to other vehicles in random vehicle races
-local colorPri = -1 -- primary color of original vehicle
-local colorSec = -1 -- secondary color of original vehicle
+local originalColorPri = -1 -- primary color of original vehicle
+local originalColorSec = -1 -- secondary color of original vehicle
+local originalColorPearl = -1 -- pearlescent color of original vehicle
+local originalColorWheel = -1 -- wheel color of original vehicle
+local startVehicle = nil -- vehicle model of starting vehicle used in random vehicle races
 
-local startVehicle = nil -- vehicle name hash of starting vehicle used in random races
 local currentVehicleHash = nil -- hash of current vehicle being driven
+local currentColorPri = -1 -- primary color of current vehicle
+local currentColorSec = -1 -- secondary color of current vehicle
+local currentColorPearl = -1 -- pearlescent color of current vehicle
+local currentColorWheel = -1 -- wheel color of current vehicle
 local currentVehicleName = nil -- name of current vehicle being driven
-local bestLapVehicleName = nil -- name of vehicle in which player recorded best lap time
-
-local randVehicles = {} -- list of random vehicles used in random vehicle races
 
 local respawnCtrlPressed = false -- flag indicating if respawn crontrol is pressed
-local respawnTime = -1 -- time when respawn control pressed
-local startCoord = nil -- coordinates of vehicle once race has started
+local respawnStart = -1 -- start time when respawn control pressed
 
-local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
-
-local started = false -- flag indicating if race started
+local racerBlipGT = {} -- blips and gamer tags for all racers participating in race
 
 local starts = {} -- starts[playerID] = {isPublic, trackName, owner, buyin, laps, timeout, rtype, restrict, vclass, svehicle, vehicleList, blip, checkpoint} - registration points
+
+local results = {} -- results[] = {source, playerName, finishTime, bestLapTime, vehicleName}
 
 local speedo = false -- flag indicating if speedometer is displayed
 local unitom = "imperial" -- current unit of measurement
 
-local panelShown = false -- flag indicating if main, edit, register, ai or list panel is shown
-local allVehiclesList = {} -- list of all vehicles from vehicles.txt
+local panelShown = false -- flag indicating if main, track, ai, list or register panel is shown
+
+local allVehiclesList = {} -- list of all vehicles from vehicles.json
 local allVehiclesHTML = "" -- html option list of all vehicles
 
-local roleBits = 0 -- bit flag indicating if player is permitted to create tracks, register races, and/or spawn vehicles
-
-local aiState = nil -- table containing race info and AI driver info table
-
-local enteringVehicle = false -- flag indicating if player is entering a vehicle
-
-local camTransStarted = false -- flag indicating if camera transition at start of race has started
+local aiState = nil -- table containing race and AI driver info
 
 math.randomseed(GetCloudTimeAsInt())
 
@@ -238,12 +238,13 @@ local function deleteWaypointBlips()
 end
 
 local function setBlipProperties(index)
-    SetBlipSprite(waypoints[index].blip, waypoints[index].sprite)
-    SetBlipColour(waypoints[index].blip, waypoints[index].color)
-    ShowNumberOnBlip(waypoints[index].blip, waypoints[index].number)
+    local waypoint = waypoints[index]
+    SetBlipSprite(waypoint.blip, waypoint.sprite)
+    SetBlipColour(waypoint.blip, waypoint.color)
+    ShowNumberOnBlip(waypoint.blip, waypoint.number)
     BeginTextCommandSetBlipName("STRING")
-    AddTextComponentSubstringPlayerName(waypoints[index].name)
-    EndTextCommandSetBlipName(waypoints[index].blip)
+    AddTextComponentSubstringPlayerName(waypoint.name)
+    EndTextCommandSetBlipName(waypoint.blip)
 end
 
 local function setStartToFinishBlips()
@@ -314,7 +315,7 @@ local function restoreBlips()
     end
 end
 
-local function removeRegistrationPoint(rIndex)
+local function deleteRegistrationPoint(rIndex)
     RemoveBlip(starts[rIndex].blip) -- delete registration blip
     DeleteCheckpoint(starts[rIndex].checkpoint) -- delete registration checkpoint
     starts[rIndex] = nil
@@ -365,52 +366,54 @@ local function minutesSeconds(milliseconds)
     return minutes, seconds
 end
 
-local function putPedInVehicle(ped, vehicleHash, coord)
-    coord = coord or GetEntityCoords(ped)
-    local vehicle = CreateVehicle(vehicleHash, coord.x, coord.y, coord.z, GetEntityHeading(ped), true, false)
-    SetModelAsNoLongerNeeded(vehicleHash)
+local function putPedInVehicle(ped, model, priColor, secColor, pearlColor, wheelColor, coord)
+    local vehicle = CreateVehicle(model, coord.x, coord.y, coord.z, GetEntityHeading(ped), true, false)
+    SetModelAsNoLongerNeeded(model)
+    if priColor ~= -1 and secColor ~= -1 and pearlColor ~= -1 and wheelColor ~= -1 then
+        SetVehicleColours(vehicle, priColor, secColor)
+        SetVehicleExtraColours(vehicle, pearlColor, wheelColor)
+    end
+    SetVehicleDirtLevel(vehicle, 0.0)
     SetVehicleEngineOn(vehicle, true, true, false)
-    SetPedIntoVehicle(ped, vehicle, -1)
     SetVehRadioStation(vehicle, "OFF")
+    SetPedIntoVehicle(ped, vehicle, -1)
     return vehicle
 end
 
-local function switchVehicle(ped, vehicleHash)
-    local vehicle = nil
-    if vehicleHash ~= nil then
-        local pedVehicle = GetVehiclePedIsIn(ped, false)
-        if pedVehicle ~= 0 then
-            if GetPedInVehicleSeat(pedVehicle, -1) == ped then
-                RequestModel(vehicleHash)
-                while HasModelLoaded(vehicleHash) == false do
-                    Citizen.Wait(0)
-                end
-                local passengers = {}
-                for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(pedVehicle)) - 2 do
-                    local passenger = GetPedInVehicleSeat(pedVehicle, i)
-                    if passenger ~= 0 then
-                        passengers[#passengers + 1] = {ped = passenger, seat = i}
-                    end
-                end
-                local coord = GetEntityCoords(pedVehicle)
-                local speed = GetEntitySpeed(ped)
-                SetEntityAsMissionEntity(pedVehicle, true, true)
-                DeleteVehicle(pedVehicle)
-                vehicle = putPedInVehicle(ped, vehicleHash, coord)
-                SetVehicleForwardSpeed(vehicle, speed)
-                for _, passenger in pairs(passengers) do
-                    SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
-                end
-            end
-        else
-            RequestModel(vehicleHash)
-            while HasModelLoaded(vehicleHash) == false do
+local function switchVehicle(ped, model, priColor, secColor, pearlColor, wheelColor)
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle ~= 0 then
+        local newVehicle = nil
+        if GetPedInVehicleSeat(vehicle, -1) == ped then
+            RequestModel(model)
+            while false == HasModelLoaded(model) do
                 Citizen.Wait(0)
             end
-            vehicle = putPedInVehicle(ped, vehicleHash, nil)
+            local passengers = {}
+            for seat = 0, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
+                local passenger = GetPedInVehicleSeat(vehicle, seat)
+                if passenger ~= 0 then
+                    passengers[#passengers + 1] = {ped = passenger, seat = seat}
+                end
+            end
+            local coord = GetEntityCoords(vehicle)
+            local speed = GetEntitySpeed(ped)
+            SetEntityAsMissionEntity(vehicle, true, true)
+            DeleteVehicle(vehicle)
+            newVehicle = putPedInVehicle(ped, model, priColor, secColor, pearlColor, wheelColor, coord)
+            SetVehicleForwardSpeed(newVehicle, speed)
+            for _, passenger in pairs(passengers) do
+                SetPedIntoVehicle(passenger.ped, newVehicle, passenger.seat)
+            end
         end
+        return newVehicle
+    else
+        RequestModel(model)
+        while false == HasModelLoaded(model) do
+            Citizen.Wait(0)
+        end
+        return putPedInVehicle(ped, model, priColor, secColor, pearlColor, wheelColor, GetEntityCoords(ped))
     end
-    return vehicle
 end
 
 local function getClassName(vclass)
@@ -466,8 +469,8 @@ local function getClassName(vclass)
 end
 
 local function vehicleInList(vehicle, list)
-    for _, vehName in pairs(list) do
-        if GetEntityModel(vehicle) == GetHashKey(vehName) then
+    for _, model in pairs(list) do
+        if GetEntityModel(vehicle) == GetHashKey(model) then
             return true
         end
     end
@@ -480,14 +483,17 @@ local function finishRace(time)
     SetBlipRoute(waypoints[1].blip, true)
     SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
     speedo = false
-    if originalVehicleHash ~= nil then
-        local vehicle = switchVehicle(PlayerPedId(), originalVehicleHash)
-        if vehicle ~= nil then
-            SetVehicleColours(vehicle, colorPri, colorSec)
-            SetEntityAsNoLongerNeeded(vehicle)
-        end
+    if originalVehicleHash ~= nil then -- in random vehicle race
+        SetEntityAsNoLongerNeeded(switchVehicle(PlayerPedId(), originalVehicleHash, originalColorPri, originalColorSec, originalColorPearl, originalColorWheel))
     end
     raceState = STATE_IDLE
+end
+
+local function setBlipCheckpointColor(waypoint, color)
+    SetBlipColour(waypoint.blip, color)
+    local cpColor = getCheckpointColor(color)
+    SetCheckpointRgba(waypoint.checkpoint, cpColor.r, cpColor.g, cpColor.b, 127)
+    SetCheckpointRgba2(waypoint.checkpoint, cpColor.r, cpColor.g, cpColor.b, 127)
 end
 
 local function editWaypoints(coord)
@@ -547,18 +553,12 @@ local function editWaypoints(coord)
     else -- existing waypoint selected
         local selectedWaypoint = waypoints[selectedIndex]
         if 0 == selectedIndex0 then -- no previous selected waypoint exists, show that waypoint is selected
-            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-            local color = getCheckpointColor(selectedBlipColor)
-            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+            setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
 
             selectedIndex0 = selectedIndex
         else -- first selected waypoint exists
             if selectedIndex == selectedIndex0 then -- selected waypoint and first selected waypoint are the same, unselect
-                SetBlipColour(selectedWaypoint.blip, selectedWaypoint.color)
-                local color = getCheckpointColor(selectedWaypoint.color)
-                SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                setBlipCheckpointColor(selectedWaypoint, selectedWaypoint.color)
 
                 if selectedIndex1 ~= 0 then
                     selectedIndex0 = selectedIndex1
@@ -566,11 +566,8 @@ local function editWaypoints(coord)
                 else
                     selectedIndex0 = 0
                 end
-            elseif selectedIndex == selectedIndex1 then -- selected waypoint and second selected waypoint are the same
-                SetBlipColour(selectedWaypoint.blip, selectedWaypoint.color)
-                local color = getCheckpointColor(selectedWaypoint.color)
-                SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+            elseif selectedIndex == selectedIndex1 then -- selected waypoint and second selected waypoint are the same, unselect
+                setBlipCheckpointColor(selectedWaypoint, selectedWaypoint.color)
 
                 selectedIndex1 = 0
             else -- selected waypoint and first and second selected waypoints are different
@@ -629,82 +626,39 @@ local function editWaypoints(coord)
                         selectedIndex0 = 0
                         savedTrackName = nil
                     else
-                        if selectedIndex == selectedIndex0 + 1 then
-                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                            color = getCheckpointColor(selectedBlipColor)
-                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                        if selectedIndex0 + 1 == selectedIndex then
+                            setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
 
                             selectedIndex1 = selectedIndex
-                        elseif selectedIndex == selectedIndex0 - 1 then
-                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                            color = getCheckpointColor(selectedBlipColor)
-                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
+                        elseif selectedIndex0 - 1 == selectedIndex then
+                            setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
 
                             selectedIndex1 = selectedIndex0
                             selectedIndex0 = selectedIndex
                         else
-                            SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                            color = getCheckpointColor(selectedBlipColor)
-                            SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                            SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-
-                            local selectedWaypoint0 = waypoints[selectedIndex0]
-                            SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
-                            color = getCheckpointColor(selectedWaypoint0.color)
-                            SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
-                            SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+                            setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
+                            setBlipCheckpointColor(waypoints[selectedIndex0], waypoints[selectedIndex0].color)
 
                             selectedIndex0 = selectedIndex
                         end
                     end
                 else -- second selected waypoint exists
-                    if selectedIndex == selectedIndex1 + 1 then
-                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                        color = getCheckpointColor(selectedBlipColor)
-                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-
-                        local selectedWaypoint0 = waypoints[selectedIndex0]
-                        SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
-                        color = getCheckpointColor(selectedWaypoint0.color)
-                        SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
+                    if selectedIndex1 + 1 == selectedIndex then
+                        setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
+                        setBlipCheckpointColor(waypoints[selectedIndex0], waypoints[selectedIndex0].color)
 
                         selectedIndex0 = selectedIndex1
                         selectedIndex1 = selectedIndex
-                    elseif selectedIndex == selectedIndex0 - 1 then
-                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                        color = getCheckpointColor(selectedBlipColor)
-                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-
-                        local selectedWaypoint1 = waypoints[selectedIndex1]
-                        SetBlipColour(selectedWaypoint1.blip, selectedWaypoint1.color)
-                        color = getCheckpointColor(selectedWaypoint1.color)
-                        SetCheckpointRgba(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+                    elseif selectedIndex0 - 1 == selectedIndex then
+                        setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
+                        setBlipCheckpointColor(waypoints[selectedIndex1], waypoints[selectedIndex1].color)
 
                         selectedIndex1 = selectedIndex0
                         selectedIndex0 = selectedIndex
                     else
-                        SetBlipColour(selectedWaypoint.blip, selectedBlipColor)
-                        color = getCheckpointColor(selectedBlipColor)
-                        SetCheckpointRgba(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint.checkpoint, color.r, color.g, color.b, 127)
-
-                        local selectedWaypoint0 = waypoints[selectedIndex0]
-                        SetBlipColour(selectedWaypoint0.blip, selectedWaypoint0.color)
-                        color = getCheckpointColor(selectedWaypoint0.color)
-                        SetCheckpointRgba(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint0.checkpoint, color.r, color.g, color.b, 127)
-
-                        local selectedWaypoint1 = waypoints[selectedIndex1]
-                        SetBlipColour(selectedWaypoint1.blip, selectedWaypoint1.color)
-                        color = getCheckpointColor(selectedWaypoint1.color)
-                        SetCheckpointRgba(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
-                        SetCheckpointRgba2(selectedWaypoint1.checkpoint, color.r, color.g, color.b, 127)
+                        setBlipCheckpointColor(selectedWaypoint, selectedBlipColor)
+                        setBlipCheckpointColor(waypoints[selectedIndex0], waypoints[selectedIndex0].color)
+                        setBlipCheckpointColor(waypoints[selectedIndex1], waypoints[selectedIndex1].color)
 
                         selectedIndex0 = selectedIndex
                         selectedIndex1 = 0
@@ -724,20 +678,6 @@ local function removeRacerBlipGT()
 end
 
 local function respawnAI(driver)
-    local passengers = {}
-    for i = 0, GetVehicleModelNumberOfSeats(GetEntityModel(driver.vehicle)) - 2 do
-        local passenger = GetPedInVehicleSeat(driver.vehicle, i)
-        if passenger ~= 0 then
-            passengers[#passengers + 1] = {ped = passenger, seat = i}
-        end
-    end
-    local vehicleHash = GetEntityModel(driver.vehicle)
-    RequestModel(vehicleHash)
-    while HasModelLoaded(vehicleHash) == false do
-        Citizen.Wait(0)
-    end
-    SetEntityAsMissionEntity(driver.vehicle, true, true)
-    DeleteVehicle(driver.vehicle)
     local coord = driver.startCoord
     if true == aiState.startIsFinish then
         if driver.currentWP > 0 then
@@ -748,18 +688,34 @@ local function respawnAI(driver)
             coord = aiState.waypointCoords[driver.currentWP - 1]
         end
     end
-    driver.vehicle = putPedInVehicle(driver.ped, vehicleHash, coord)
+    local passengers = {}
+    for seat = 0, GetVehicleModelNumberOfSeats(GetEntityModel(driver.vehicle)) - 2 do
+        local ped = GetPedInVehicleSeat(driver.vehicle, seat)
+        if ped ~= 0 then
+            passengers[#passengers + 1] = {ped = ped, seat = seat}
+        end
+    end
+    local priColor, secColor = GetVehicleColours(driver.vehicle)
+    local pearlColor, wheelColor = GetVehicleExtraColours(driver.vehicle)
+    local vehicleHash = GetEntityModel(driver.vehicle)
+    RequestModel(vehicleHash)
+    while false == HasModelLoaded(vehicleHash) do
+        Citizen.Wait(0)
+    end
+    SetEntityAsMissionEntity(driver.vehicle, true, true)
+    DeleteVehicle(driver.vehicle)
+    driver.vehicle = putPedInVehicle(driver.ped, vehicleHash, priColor, secColor, pearlColor, wheelColor, coord)
     for _, passenger in pairs(passengers) do
         SetPedIntoVehicle(passenger.ped, driver.vehicle, passenger.seat)
     end
     driver.destSet = true
 end
 
-local function updateList()
+local function updateVehicleList()
     table.sort(vehicleList)
     local html = ""
-    for _, vehicle in ipairs(vehicleList) do
-        html = html .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
+    for _, model in ipairs(vehicleList) do
+        html = html .. "<option value = \"" .. model .. "\">" .. model .. "</option>"
     end
     SendNUIMessage({
         update = "vehicleList",
@@ -767,31 +723,33 @@ local function updateList()
     })
 end
 
-local function request(role)
-    if role ~= nil then
-        local roleBit = 0
-        if "edit" == role then
-            roleBit = ROLE_EDIT
-        elseif "register" == role then
-            roleBit = ROLE_REGISTER
-        elseif "spawn" == role then
-            roleBit = ROLE_SPAWN
-        end
-        if roleBit ~= 0 then
-            TriggerServerEvent("races:request", roleBit)
+local function deleteDriver(aiName, pIndex)
+    local driver = aiState.drivers[aiName]
+    if driver ~= nil then
+        if STATE_JOINING == driver.raceState then
+            TriggerServerEvent("races:leave", pIndex, driver.netID, aiName)
+            DeletePed(driver.ped)
+            SetEntityAsMissionEntity(driver.vehicle, true, true)
+            DeleteVehicle(driver.vehicle)
+            aiState.drivers[aiName] = nil
+            aiState.numRacing = aiState.numRacing - 1
+            if 0 == aiState.numRacing then
+                aiState = nil
+            end
+            sendMessage("AI driver '" .. aiName .. "' deleted.\n")
+            return true
+        elseif STATE_RACING == driver.raceState then
+            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is in a race.\n")
         else
-            sendMessage("Cannot make request.  Invalid role.\n")
+            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is not joined to a race.\n")
         end
     else
-        sendMessage("Cannot make request.  Role required.\n")
+        sendMessage("Cannot delete AI driver.  AI driver '" .. aiName .. "' not found.\n")
     end
+    return false
 end
 
 local function edit()
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if STATE_IDLE == raceState then
         raceState = STATE_EDITING
         SetWaypointOff()
@@ -799,7 +757,7 @@ local function edit()
         sendMessage("Editing started.\n")
     elseif STATE_EDITING == raceState then
         raceState = STATE_IDLE
-        highlightedCheckpoint = 0
+        highlightedIndex = 0
         if selectedIndex0 ~= 0 then
             SetBlipColour(waypoints[selectedIndex0].blip, waypoints[selectedIndex0].color)
             selectedIndex0 = 0
@@ -823,7 +781,7 @@ local function clear()
         savedTrackName = nil
         sendMessage("Waypoints cleared.\n")
     elseif STATE_EDITING == raceState then
-        highlightedCheckpoint = 0
+        highlightedIndex = 0
         selectedIndex0 = 0
         selectedIndex1 = 0
         deleteWaypointCheckpoints()
@@ -838,10 +796,6 @@ local function clear()
 end
 
 local function reverse()
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if #waypoints > 1 then
         if STATE_IDLE == raceState then
             savedTrackName = nil
@@ -849,7 +803,7 @@ local function reverse()
             sendMessage("Waypoints reversed.\n")
         elseif STATE_EDITING == raceState then
             savedTrackName = nil
-            highlightedCheckpoint = 0
+            highlightedIndex = 0
             selectedIndex0 = 0
             selectedIndex1 = 0
             deleteWaypointCheckpoints()
@@ -865,78 +819,70 @@ local function reverse()
 end
 
 local function loadTrack(access, trackName)
-    if 0 == roleBits & (ROLE_EDIT | ROLE_REGISTER) then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if trackName ~= nil then
             if STATE_IDLE == raceState or STATE_EDITING == raceState then
                 TriggerServerEvent("races:load", "pub" == access, trackName)
             else
-                sendMessage("Cannot load.  Leave race first.\n")
+                sendMessage("Cannot load track.  Leave race first.\n")
             end
         else
-            sendMessage("Cannot load.  Name required.\n")
+            sendMessage("Cannot load track.  Name required.\n")
         end
     else
-        sendMessage("Cannot load.  Invalid access type.\n")
+        sendMessage("Cannot load track.  Invalid access type.\n")
     end
 end
 
 local function saveTrack(access, trackName)
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if trackName ~= nil then
             if #waypoints > 1 then
                 TriggerServerEvent("races:save", "pub" == access, trackName, waypointsToCoords())
             else
-                sendMessage("Cannot save.  Track needs to have at least 2 waypoints.\n")
+                sendMessage("Cannot save track.  Track needs to have at least 2 waypoints.\n")
             end
         else
-            sendMessage("Cannot save.  Name required.\n")
+            sendMessage("Cannot save track.  Name required.\n")
         end
     else
-        sendMessage("Cannot save.  Invalid access type.\n")
+        sendMessage("Cannot save track.  Invalid access type.\n")
     end
 end
 
 local function overwriteTrack(access, trackName)
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if trackName ~= nil then
             if #waypoints > 1 then
                 TriggerServerEvent("races:overwrite", "pub" == access, trackName, waypointsToCoords())
             else
-                sendMessage("Cannot overwrite.  Track needs to have at least 2 waypoints.\n")
+                sendMessage("Cannot overwrite track.  Track needs to have at least 2 waypoints.\n")
             end
         else
-            sendMessage("Cannot overwrite.  Name required.\n")
+            sendMessage("Cannot overwrite track.  Name required.\n")
         end
     else
-        sendMessage("Cannot overwrite.  Invalid access type.\n")
+        sendMessage("Cannot overwrite track.  Invalid access type.\n")
     end
 end
 
 local function deleteTrack(access, trackName)
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if trackName ~= nil then
             TriggerServerEvent("races:delete", "pub" == access, trackName)
         else
-            sendMessage("Cannot delete.  Name required.\n")
+            sendMessage("Cannot delete track.  Name required.\n")
         end
     else
-        sendMessage("Cannot delete.  Invalid access type.\n")
+        sendMessage("Cannot delete track.  Invalid access type.\n")
+    end
+end
+
+local function listTracks(access)
+    if "pvt" == access or "pub" == access then
+        TriggerServerEvent("races:list", "pub" == access)
+    else
+        sendMessage("Cannot list tracks.  Invalid access type.\n")
     end
 end
 
@@ -952,186 +898,26 @@ local function bestLapTimes(access, trackName)
     end
 end
 
-local function listTracks(access)
-    if "pvt" == access or "pub" == access then
-        TriggerServerEvent("races:list", "pub" == access)
-    else
-        sendMessage("Cannot list tracks.  Invalid access type.\n")
-    end
-end
-
-local function register(buyin, laps, timeout, allowAI, rtype, arg7, arg8)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    buyin = (nil == buyin or "." == buyin) and defaultBuyin or math.tointeger(tonumber(buyin))
-    if buyin ~= nil and buyin >= 0 then
-        laps = (nil == laps or "." == laps) and defaultLaps or math.tointeger(tonumber(laps))
-        if laps ~= nil and laps > 0 then
-            timeout = (nil == timeout or "." == timeout) and defaultTimeout or math.tointeger(tonumber(timeout))
-            if timeout ~= nil and timeout >= 0 then
-                allowAI = (nil == allowAI or "." == allowAI) and "no" or allowAI
-                if "yes" == allowAI or "no" == allowAI then
-                    if STATE_IDLE == raceState then
-                        if #waypoints > 1 then
-                            if laps < 2 or (laps >= 2 and true == startIsFinish) then
-                                if "." == arg7 then
-                                    arg7 = nil
-                                end
-                                if "." == arg8 then
-                                    arg8 = nil
-                                end
-                                buyin = "yes" == allowAI and 0 or buyin
-                                local restrict = nil
-                                local vclass = nil
-                                local svehicle = nil
-                                local vehList = nil
-                                if "rest" == rtype then
-                                    restrict = arg7
-                                    if nil == restrict or IsModelInCdimage(restrict) ~= 1 or IsModelAVehicle(restrict) ~= 1 then
-                                        sendMessage("Cannot register.  Invalid restricted vehicle.\n")
-                                        return
-                                    end
-                                elseif "class" == rtype then
-                                    vclass = math.tointeger(tonumber(arg7))
-                                    if nil == vclass or vclass < -1 or vclass > 21 then
-                                        sendMessage("Cannot register.  Invalid vehicle class.\n")
-                                        return
-                                    end
-                                    if -1 == vclass then
-                                        if #vehicleList == 0 then
-                                            sendMessage("Cannot register.  Vehicle list is empty.\n")
-                                            return
-                                        end
-                                        vehList = vehicleList
-                                    end
-                                elseif "rand" == rtype then
-                                    if #vehicleList == 0 then
-                                        sendMessage("Cannot register.  Vehicle list is empty.\n")
-                                        return
-                                    end
-                                    vclass = math.tointeger(tonumber(arg7))
-                                    if nil == vclass then
-                                        vehList = vehicleList
-                                    else
-                                        if vclass < 0 or vclass > 21 then
-                                            sendMessage("Cannot register.  Invalid vehicle class.\n")
-                                            return
-                                        end
-                                        vehList = {}
-                                        for _, vehicle in pairs(vehicleList) do
-                                            if GetVehicleClassFromName(vehicle) == vclass then
-                                                vehList[#vehList + 1] = vehicle
-                                            end
-                                        end
-                                        if #vehList == 0 then
-                                            sendMessage("Cannot register.  Vehicle list is empty.\n")
-                                            return
-                                        end
-                                    end
-                                    svehicle = arg8
-                                    if svehicle ~= nil then
-                                        if IsModelInCdimage(svehicle) ~= 1 or IsModelAVehicle(svehicle) ~= 1 then
-                                            sendMessage("Cannot register.  Invalid start vehicle.\n")
-                                            return
-                                        elseif vclass ~= nil and GetVehicleClassFromName(svehicle) ~= vclass then
-                                            sendMessage("Cannot register.  Start vehicle not of restricted vehicle class.\n")
-                                            return
-                                        end
-                                    end
-                                    buyin = 0
-                                elseif rtype ~= nil then
-                                    sendMessage("Cannot register.  Unknown race type.\n")
-                                    return
-                                end
-                                local rdata = {rtype = rtype, restrict = restrict, vclass = vclass, svehicle = svehicle, vehicleList = vehList}
-                                TriggerServerEvent("races:register", waypointsToCoords(), isPublicTrack, savedTrackName, buyin, laps, timeout, allowAI, rdata)
-                            else
-                                sendMessage("For multi-lap races, start and finish waypoints need to be the same: While editing waypoints, select finish waypoint first, then select start waypoint.  To separate start/finish waypoint, add a new waypoint or select start/finish waypoint first, then select highest numbered waypoint.\n")
-                            end
-                        else
-                            sendMessage("Cannot register.  Track needs to have at least 2 waypoints.\n")
-                        end
-                    elseif STATE_EDITING == raceState then
-                        sendMessage("Cannot register.  Stop editing first.\n")
-                    else
-                        sendMessage("Cannot register.  Leave race first.\n")
-                    end
-                else
-                    sendMessage("Invalid AI allowed value.\n")
-                end
-            else
-                sendMessage("Invalid DNF timeout.\n")
-            end
-        else
-            sendMessage("Invalid number of laps.\n")
-        end
-    else
-        sendMessage("Invalid buy-in amount.\n")
-    end
-end
-
-local function unregister()
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    TriggerServerEvent("races:unregister")
-end
-
-local function startRace(delay)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    delay = math.tointeger(tonumber(delay)) or defaultDelay
-    if delay ~= nil and delay >= 5 then
-        if aiState ~= nil then
-            local allSpawned = true
-            for _, driver in pairs(aiState.drivers) do
-                if nil == driver.ped or nil == driver.vehicle then
-                    allSpawned = false
-                    break
-                end
-            end
-            if true == allSpawned then
-                TriggerServerEvent("races:start", delay)
-            else
-                sendMessage("Cannot start.  Some AI drivers not spawned.\n")
-            end
-        else
-            TriggerServerEvent("races:start", delay)
-        end
-    else
-        sendMessage("Cannot start.  Invalid delay.\n")
-    end
-end
-
 local function addAIDriver(aiName, coord, heading)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return false
-    end
     if aiName ~= nil then
-        local pIndex = GetPlayerServerId(PlayerId())
-        if starts[pIndex] ~= nil then
-            if "yes" == starts[pIndex].allowAI then
+        local start = starts[GetPlayerServerId(PlayerId())]
+        if start ~= nil then
+            if "yes" == start.allowAI then
                 if nil == aiState then
                     aiState = {
                         numRacing = 0,
                         raceStart = -1,
                         raceDelay = -1,
-                        numLaps = starts[pIndex].laps,
-                        DNFTimeout = starts[pIndex].timeout * 1000,
+                        numLaps = start.laps,
+                        DNFTimeout = start.timeout * 1000,
                         beginDNFTimeout = false,
                         timeoutStart = -1,
-                        rtype = starts[pIndex].rtype,
-                        restrict = starts[pIndex].restrict,
-                        vclass = starts[pIndex].vclass,
-                        svehicle = starts[pIndex].svehicle,
-                        vehicleList = starts[pIndex].vehicleList,
-                        randVehicles = {},
+                        rtype = start.rtype,
+                        restrict = start.restrict,
+                        vclass = start.vclass,
+                        svehicle = start.svehicle,
+                        vehicleList = start.vehicleList,
+                        randomVehicleList = {},
                         waypointCoords = nil,
                         startIsFinish = false,
                         drivers = {}
@@ -1141,22 +927,24 @@ local function addAIDriver(aiName, coord, heading)
                     aiState.drivers[aiName] = {
                         netID = nil,
                         raceState = STATE_JOINING,
+                        started = false,
                         startCoord = coord,
                         heading = heading,
-                        destCoord = nil,
                         destSet = false,
+                        destCoord = nil,
+                        model = nil,
                         vehicle = nil,
-                        originalVehicleHash = nil,
                         colorPri = -1,
                         colorSec = -1,
+                        colorPearl = -1,
+                        colorWheel = -1,
                         ped = nil,
-                        started = false,
                         currentWP = -1,
                         numWaypointsPassed = 0,
-                        bestLapVehicleName = nil,
-                        bestLapTime = -1,
                         currentLap = 1,
                         lapTimeStart = -1,
+                        bestLapTime = -1,
+                        bestLapVehicleName = nil,
                         enteringVehicle = false,
                         stuckCoord = coord,
                         stuckStart = -1
@@ -1165,25 +953,21 @@ local function addAIDriver(aiName, coord, heading)
                     sendMessage("AI driver '" .. aiName .. "' added.\n")
                     return true
                 else
-                    sendMessage("AI driver '" .. aiName .. "' already exists.\n")
+                    sendMessage("Cannot add AI driver.  AI driver '" .. aiName .. "' already exists.\n")
                 end
             else
-                sendMessage("AI drivers not allowed.\n")
+                sendMessage("Cannot add AI driver.  AI drivers not allowed.\n")
             end
         else
-            sendMessage("Race has not been registered.\n")
+            sendMessage("Cannot add AI driver.  Race has not been registered.\n")
         end
     else
-        sendMessage("Name required.\n")
+        sendMessage("Cannot add AI driver.  Name required.\n")
     end
     return false
 end
 
-local function deleteAIDriver(aiName)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return false
-    end
+local function spawnAIDriver(aiName, model)
     if aiName ~= nil then
         local pIndex = GetPlayerServerId(PlayerId())
         if starts[pIndex] ~= nil then
@@ -1191,357 +975,271 @@ local function deleteAIDriver(aiName)
                 if aiState ~= nil then
                     local driver = aiState.drivers[aiName]
                     if driver ~= nil then
-                        if STATE_JOINING == driver.raceState then
-                            if driver.ped ~= nil or driver.vehicle ~= nil then
-                                TriggerServerEvent("races:leave", pIndex, driver.netID, aiName)
-                            end
-                            if driver.ped ~= nil then
-                                DeletePed(driver.ped)
-                            end
-                            if driver.vehicle ~= nil then
-                                SetEntityAsMissionEntity(driver.vehicle, true, true)
-                                DeleteVehicle(driver.vehicle)
-                            end
-                            aiState.drivers[aiName] = nil
-                            aiState.numRacing = aiState.numRacing - 1
-                            if 0 == aiState.numRacing then
-                                aiState = nil
-                            end
-                            sendMessage("AI driver '" .. aiName .. "' deleted.\n")
-                            return true
-                        elseif STATE_RACING == driver.raceState then
-                            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is in a race.\n")
-                        else
-                            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is not joined to a race.\n")
-                        end
-                    else
-                        sendMessage("'" .. aiName .. "' not an AI driver.\n")
-                    end
-                else
-                    sendMessage("No AI drivers added.\n")
-                end
-            else
-                sendMessage("AI drivers not allowed.\n")
-            end
-        else
-            sendMessage("Race has not been registered.\n")
-        end
-    else
-        sendMessage("Name required.\n")
-    end
-    return false
-end
-
-local function spawnAIDriver(aiName, vehicleHash)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return false
-    end
-    if aiName ~= nil then
-        local pIndex = GetPlayerServerId(PlayerId())
-        if starts[pIndex] ~= nil then
-            if "yes" == starts[pIndex].allowAI then
-                if aiState ~= nil then
-                    local driver = aiState.drivers[aiName]
-                    if driver ~= nil then
-                        if nil == driver.vehicle and nil == driver.ped then
-                            vehicleHash = vehicleHash or "adder"
-                            if IsModelInCdimage(vehicleHash) == 1 and IsModelAVehicle(vehicleHash) == 1 then
-                                if "rest" == aiState.rtype then
-                                    if vehicleHash ~= GetHashKey(aiState.restrict) then
-                                        sendMessage("Cannot join race.  AI needs to be in restricted vehicle.")
+                        model = model or defaultModel
+                        if 1 == IsModelInCdimage(model) and 1 == IsModelAVehicle(model) then
+                            if "rest" == aiState.rtype then
+                                if model ~= aiState.restrict then
+                                    sendMessage("Cannot spawn '" .. aiName .. "'.  AI needs to be in '" .. aiState.restrict .. "' vehicle.\n")
+                                    return false
+                                end
+                            elseif "class" == aiState.rtype then
+                                if aiState.vclass ~= -1 then
+                                    if GetVehicleClassFromName(model) ~= aiState.vclass then
+                                        sendMessage("Cannot spawn  '" .. aiName .. "'.  AI needs to be in vehicle of " .. getClassName(aiState.vclass) .. " class.\n")
                                         return false
                                     end
-                                elseif "class" == aiState.rtype then
-                                    if aiState.vclass ~= -1 then
-                                        if GetVehicleClassFromName(vehicleHash) ~= aiState.vclass then
-                                            sendMessage("Cannot join race.  AI needs to be in vehicle of " .. getClassName(aiState.vclass) .. " class.")
-                                            return false
+                                elseif 0 == #aiState.vehicleList then
+                                    sendMessage("Cannot spawn  '" .. aiName .. "'.  Vehicle list is empty.\n")
+                                    return false
+                                else
+                                    local found = false
+                                    local list = ""
+                                    for _, vehModel in pairs(aiState.vehicleList) do
+                                        if model == vehModel then
+                                            found = true
+                                            break
                                         end
-                                    else
-                                        if #aiState.vehicleList == 0 then
-                                            sendMessage("Cannot join race.  No valid vehicles in vehicle list.")
-                                            return false
-                                        else
-                                            local found = false
-                                            local list = ""
-                                            for _, vehName in pairs(aiState.vehicleList) do
-                                                if vehicleHash == vehName then
-                                                    found = true
-                                                    break
-                                                end
-                                                list = list .. vehName .. ", "
-                                            end
-                                            if false == found then
-                                                list = string.sub(list, 1, -3)
-                                                sendMessage("Cannot join race.  AI needs to be in one of the following vehicles: " .. list)
-                                                return false
-                                            end
-                                        end
+                                        list = list .. vehModel .. ", "
                                     end
-                                elseif "rand" == aiState.rtype then
-                                    if #aiState.vehicleList == 0 then
-                                        sendMessage("Cannot join race.  No valid vehicles in vehicle list.")
+                                    if false == found then
+                                        sendMessage("Cannot spawn  '" .. aiName .. "'.  AI needs to be in one of the following vehicles: " .. string.sub(list, 1, -3) .. "\n")
                                         return false
-                                    else
-                                        if aiState.vclass ~= nil then
-                                            if nil == aiState.svehicle then
-                                                if GetVehicleClassFromName(vehicleHash) ~= aiState.vclass then
-                                                    sendMessage("Cannot join race.  AI needs to be in vehicle of " .. getClassName(aiState.vclass) .. " class.")
-                                                    return false
-                                                end
-                                            end
-                                        end
                                     end
                                 end
+                            elseif "rand" == aiState.rtype then
+                                if 0 == #aiState.vehicleList then
+                                    sendMessage("Cannot spawn  '" .. aiName .. "'.  Vehicle list is empty.\n")
+                                    return false
+                                elseif aiState.vclass ~= nil and nil == aiState.svehicle and GetVehicleClassFromName(model) ~= aiState.vclass then
+                                    sendMessage("Cannot spawn  '" .. aiName .. "'.  AI needs to be in vehicle of " .. getClassName(aiState.vclass) .. " class.\n")
+                                    return false
+                                end
+                            end
 
-                                RequestModel(vehicleHash)
-                                while HasModelLoaded(vehicleHash) == false do
+                            driver.model = model
+                            if driver.ped ~= nil and driver.vehicle ~= nil then
+                                driver.vehicle = switchVehicle(driver.ped, model, -1, -1, -1, -1)
+                            else
+                                local pedModel = "a_m_y_skater_01"
+                                RequestModel(model)
+                                RequestModel(pedModel)
+                                while false == HasModelLoaded(model) or false == HasModelLoaded(pedModel) do
                                     Citizen.Wait(0)
                                 end
-                                driver.vehicle = CreateVehicle(vehicleHash, driver.startCoord.x, driver.startCoord.y, driver.startCoord.z, driver.heading, true, false)
-                                SetModelAsNoLongerNeeded(vehicleHash)
-                                SetVehicleEngineOn(driver.vehicle, true, true, false)
-                                SetVehRadioStation(driver.vehicle, "OFF")
-                                if "rand" == aiState.rtype then
-                                    driver.originalVehicleHash = GetEntityModel(driver.vehicle)
-                                    driver.colorPri, driver.colorSec = GetVehicleColours(driver.vehicle)
-                                end
-
-                                local pedHash = "a_m_y_skater_01"
-                                RequestModel(pedHash)
-                                while HasModelLoaded(pedHash) == false do
-                                    Citizen.Wait(0)
-                                end
-                                driver.ped = CreatePedInsideVehicle(driver.vehicle, PED_TYPE_CIVMALE, pedHash, -1, true, false)
-                                SetModelAsNoLongerNeeded(pedHash)
+                                driver.ped = CreatePed(PED_TYPE_CIVMALE, pedModel, driver.startCoord.x, driver.startCoord.y, driver.startCoord.z, driver.heading, true, false)
+                                SetModelAsNoLongerNeeded(pedModel)
                                 SetDriverAbility(driver.ped, 1.0)
                                 SetDriverAggressiveness(driver.ped, 0.0)
                                 SetBlockingOfNonTemporaryEvents(driver.ped, true)
                                 SetPedCanBeDraggedOut(driver.ped, false)
 
-                                while NetworkGetEntityIsNetworked(driver.ped) == false do
+                                while false == NetworkGetEntityIsNetworked(driver.ped) do
                                     Citizen.Wait(0)
                                     NetworkRegisterEntityAsNetworked(driver.ped)
                                 end
                                 driver.netID = PedToNet(driver.ped)
 
-                                driver.bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash))
+                                driver.vehicle = putPedInVehicle(driver.ped, model, -1, -1, -1, -1, driver.startCoord)
 
                                 TriggerServerEvent("races:join", pIndex, driver.netID, aiName)
-
-                                sendMessage("AI driver '" .. aiName .. "' spawned.\n")
-
-                                return true
-                            else
-                                sendMessage("Cannot spawn vehicle.  Invalid vehicle.\n")
                             end
+
+                            if "rand" == aiState.rtype then
+                                driver.colorPri, driver.colorSec = GetVehicleColours(driver.vehicle)
+                                driver.colorPearl, driver.colorWheel = GetVehicleExtraColours(driver.vehicle)
+                            end
+                            driver.bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(model))
+
+                            sendMessage("AI driver '" .. aiName .. "' spawned in '" .. driver.bestLapVehicleName .. "'.\n")
+
+                            return true
                         else
-                            sendMessage("Vehicle and driver already spawned.\n")
+                            sendMessage("Cannot spawn  '" .. aiName .. "'.  Invalid vehicle.\n")
                         end
                     else
-                        sendMessage("'" .. aiName .. "' not an AI driver.\n")
+                        sendMessage("Cannot spawn  '" .. aiName .. "'.  AI driver '" .. aiName .. "' not found.\n")
                     end
                 else
-                    sendMessage("No AI drivers added.\n")
+                    sendMessage("Cannot spawn  '" .. aiName .. "'.  No AI drivers to spawn.\n")
                 end
             else
-                sendMessage("AI drivers not allowed.\n")
+                sendMessage("Cannot spawn  '" .. aiName .. "'.  AI drivers not allowed.\n")
             end
         else
-            sendMessage("Race has not been registered.\n")
+            sendMessage("Cannot spawn  '" .. aiName .. "'.  Race has not been registered.\n")
         end
     else
-        sendMessage("Name required.\n")
+        sendMessage("Cannot spawn AI driver.  Name required.\n")
+    end
+    return false
+end
+
+local function deleteAIDriver(aiName)
+    if aiName ~= nil then
+        local pIndex = GetPlayerServerId(PlayerId())
+        if starts[pIndex] ~= nil then
+            if "yes" == starts[pIndex].allowAI then
+                if aiState ~= nil then
+                    return deleteDriver(aiName, pIndex)
+                else
+                    sendMessage("Cannot delete AI driver.  No AI drivers to delete.\n")
+                end
+            else
+                sendMessage("Cannot delete AI driver.  AI drivers not allowed.\n")
+            end
+        else
+            sendMessage("Cannot delete AI driver.  Race has not been registered.\n")
+        end
+    else
+        sendMessage("Cannot delete AI driver.  Name required.\n")
+    end
+    return false
+end
+
+local function deleteAllAIDrivers()
+    local pIndex = GetPlayerServerId(PlayerId())
+    if starts[pIndex] ~= nil then
+        if "yes" == starts[pIndex].allowAI then
+            if aiState ~= nil then
+                for aiName in pairs(aiState.drivers) do
+                    deleteDriver(aiName, pIndex)
+                end
+                sendMessage("All AI deleted.\n")
+            else
+                sendMessage("No AI drivers to delete.\n")
+            end
+            return true
+        else
+            sendMessage("Cannot delete all AI drivers.  AI drivers not allowed.\n")
+        end
+    else
+        sendMessage("Cannot delete all AI drivers.  Race has not been registered.\n")
     end
     return false
 end
 
 local function listAIDrivers()
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    local pIndex = GetPlayerServerId(PlayerId())
-    if starts[pIndex] ~= nil then
-        if "yes" == starts[pIndex].allowAI then
+    local start = starts[GetPlayerServerId(PlayerId())]
+    if start ~= nil then
+        if "yes" == start.allowAI then
             if aiState ~= nil then
                 local aiNames = {}
                 for aiName in pairs(aiState.drivers) do
                     aiNames[#aiNames + 1] = aiName
                 end
-                if #aiNames > 0 then
-                    table.sort(aiNames)
-                    local msg = "AI drivers:\n"
-                    for _, aiName in ipairs(aiNames) do
-                        msg = msg .. aiName .. "\n"
-                    end
-                    sendMessage(msg)
-                else
-                    sendMessage("No AI drivers added.\n")
-                end
-            else
-                sendMessage("No AI drivers added.\n")
-            end
-        else
-            sendMessage("AI drivers not allowed.\n")
-        end
-    else
-        sendMessage("Race has not been registered.\n")
-    end
-end
-
-local function deleteAllAIDrivers()
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return false
-    end
-    local pIndex = GetPlayerServerId(PlayerId())
-    if starts[pIndex] ~= nil then
-        if "yes" == starts[pIndex].allowAI then
-            if aiState ~= nil then
-                for aiName, driver in pairs(aiState.drivers) do
-                    if STATE_JOINING == driver.raceState then
-                        if driver.ped ~= nil or driver.vehicle ~= nil then
-                            TriggerServerEvent("races:leave", pIndex, driver.netID, aiName)
-                        end
-                        if driver.ped ~= nil then
-                            DeletePed(driver.ped)
-                        end
-                        if driver.vehicle ~= nil then
-                            SetEntityAsMissionEntity(driver.vehicle, true, true)
-                            DeleteVehicle(driver.vehicle)
-                        end
-                        aiState.drivers[aiName] = nil
-                        aiState.numRacing = aiState.numRacing - 1
-                        sendMessage("AI driver '" .. aiName .. "' deleted.\n")
+                table.sort(aiNames)
+                local msg = "AI drivers:\n"
+                for _, aiName in ipairs(aiNames) do
+                    msg = msg .. aiName .. " - "
+                    local driver = aiState.drivers[aiName]
+                    if driver.ped ~= nil and driver.vehicle ~= nil then
+                        msg = msg .. "'" .. driver.bestLapVehicleName .. "' (" .. driver.model .. ")\n"
                     else
-                        if STATE_RACING == driver.raceState then
-                            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is in a race.\n")
-                        else
-                            sendMessage("Cannot delete AI driver.  '" .. aiName .. "' is not joined to a race.\n")
-                        end
+                        msg = msg .. "NO VEHICLE\n"
                     end
                 end
-                if 0 == aiState.numRacing then
-                    aiState = nil
-                    return true
-                end
+                sendMessage(msg)
             else
-                sendMessage("No AI drivers added.\n")
-                return true
+                sendMessage("Cannot list AI drivers.  No AI drivers to list.\n")
             end
         else
-            sendMessage("AI drivers not allowed.\n")
+            sendMessage("Cannot list AI drivers.  AI drivers not allowed.\n")
         end
     else
-        sendMessage("Race has not been registered.\n")
+        sendMessage("Cannot list AI drivers.  Race has not been registered.\n")
     end
-    return false
 end
 
 local function loadGrp(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    local pIndex = GetPlayerServerId(PlayerId())
-    if starts[pIndex] ~= nil then
-        if "yes" == starts[pIndex].allowAI then
-            if aiState ~= nil then
-                if "pvt" == access or "pub" == access then
-                    if name ~= nil then
-                        TriggerServerEvent("races:loadGrp", "pub" == access, name)
-                    else
-                        sendMessage("Cannot load AI group.  Name required.\n")
-                    end
+    local start = starts[GetPlayerServerId(PlayerId())]
+    if start ~= nil then
+        if "yes" == start.allowAI then
+            if "pvt" == access or "pub" == access then
+                if name ~= nil then
+                    TriggerServerEvent("races:loadGrp", "pub" == access, name)
                 else
-                    sendMessage("Cannot load AI group.  Invalid access type.\n")
+                    sendMessage("Cannot load AI group.  Name required.\n")
                 end
             else
-                sendMessage("No AI drivers added.\n")
+                sendMessage("Cannot load AI group.  Invalid access type.\n")
             end
         else
-            sendMessage("AI drivers not allowed.\n")
+            sendMessage("Cannot load AI group.  AI drivers not allowed.\n")
         end
     else
-        sendMessage("Race has not been registered.\n")
+        sendMessage("Cannot load AI group.  Race has not been registered.\n")
     end
 end
 
 local function saveGrp(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    if "pvt" == access or "pub" == access then
-        if name ~= nil then
-            if aiState ~= nil then
-                local allSpawned = true
-                local group = {}
-                for aiName, driver in pairs(aiState.drivers) do
-                    if driver.ped ~= nil and driver.vehicle ~= nil then
-                        group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+    local start = starts[GetPlayerServerId(PlayerId())]
+    if start ~= nil then
+        if "yes" == start.allowAI then
+            if "pvt" == access or "pub" == access then
+                if name ~= nil then
+                    if aiState ~= nil then
+                        local group = {}
+                        for aiName, driver in pairs(aiState.drivers) do
+                            if driver.ped ~= nil and driver.vehicle ~= nil then
+                                group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, model = driver.model}
+                            else
+                                sendMessage("Cannot save AI group.  Some AI drivers not spawned.\n")
+                                return
+                            end
+                        end
+                        TriggerServerEvent("races:saveGrp", "pub" == access, name, group)
                     else
-                        allSpawned = false
-                        break
+                        sendMessage("Cannot save AI group.  No AI drivers added.\n")
                     end
-                end
-                if true == allSpawned then
-                    TriggerServerEvent("races:saveGrp", "pub" == access, name, group)
                 else
-                    sendMessage("Cannot save AI group.  Some AI drivers not spawned.\n")
+                    sendMessage("Cannot save AI group.  Name required.\n")
                 end
             else
-                sendMessage("Cannot save AI group.  No AI drivers added.\n")
+                sendMessage("Cannot save AI group.  Invalid access type.\n")
             end
         else
-            sendMessage("Cannot save AI group.  Name required.\n")
+            sendMessage("Cannot save AI group.  AI drivers not allowed.\n")
         end
     else
-        sendMessage("Cannot save AI group.  Invalid access type.\n")
+        sendMessage("Cannot save AI group.  Race has not been registered.\n")
     end
 end
 
 local function overwriteGrp(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    if "pvt" == access or "pub" == access then
-        if name ~= nil then
-            if aiState ~= nil then
-                local allSpawned = true
-                local group = {}
-                for aiName, driver in pairs(aiState.drivers) do
-                    if driver.ped ~= nil and driver.vehicle ~= nil then
-                        group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, vehicleHash = GetEntityModel(driver.vehicle)}
+    local start = starts[GetPlayerServerId(PlayerId())]
+    if start ~= nil then
+        if "yes" == start.allowAI then
+            if "pvt" == access or "pub" == access then
+                if name ~= nil then
+                    if aiState ~= nil then
+                        local group = {}
+                        for aiName, driver in pairs(aiState.drivers) do
+                            if driver.ped ~= nil and driver.vehicle ~= nil then
+                                group[aiName] = {startCoord = driver.startCoord, heading = driver.heading, model = driver.model}
+                            else
+                                sendMessage("Cannot overwrite AI group.  Some AI drivers not spawned.\n")
+                                return
+                            end
+                        end
+                        TriggerServerEvent("races:overwriteGrp", "pub" == access, name, group)
                     else
-                        allSpawned = false
-                        break
+                        sendMessage("Cannot overwrite AI group.  No AI drivers added.\n")
                     end
-                end
-                if true == allSpawned then
-                    TriggerServerEvent("races:overwriteGrp", "pub" == access, name, group)
                 else
-                    sendMessage("Cannot overwrite AI group.  Some AI drivers not spawned.\n")
+                    sendMessage("Cannot overwrite AI group.  Name required.\n")
                 end
             else
-                sendMessage("Cannot overwrite AI group.  No AI drivers added.\n")
+                sendMessage("Cannot overwrite AI group.  Invalid access type.\n")
             end
         else
-            sendMessage("Cannot overwrite AI group.  Name required.\n")
+            sendMessage("Cannot overwrite AI group.  AI drivers not allowed.\n")
         end
     else
-        sendMessage("Cannot overwrite AI group.  Invalid access type.\n")
+        sendMessage("Cannot overwrite AI group.  Race has not been registered.\n")
     end
 end
 
 local function deleteGrp(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if name ~= nil then
             TriggerServerEvent("races:deleteGrp", "pub" == access, name)
@@ -1554,10 +1252,6 @@ local function deleteGrp(access, name)
 end
 
 local function listGrps(access)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         TriggerServerEvent("races:listGrps", "pub" == access)
     else
@@ -1565,122 +1259,98 @@ local function listGrps(access)
     end
 end
 
-local function addVeh(vehicle)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    if vehicle ~= nil then
-        if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-            vehicleList[#vehicleList + 1] = vehicle
+local function addVeh(model)
+    if model ~= nil then
+        if 1 == IsModelInCdimage(model) and 1 == IsModelAVehicle(model) then
+            vehicleList[#vehicleList + 1] = model
             if true == panelShown then
-                updateList()
+                updateVehicleList()
             end
-            sendMessage("'" .. vehicle .. "' added to vehicle list.\n")
+            sendMessage("'" .. model .. "' added to vehicle list.\n")
         else
             sendMessage("Cannot add vehicle.  Invalid vehicle.\n")
         end
     else
-        sendMessage("Cannot add vehicle.  Vehicle name required.\n")
+        sendMessage("Cannot add vehicle.  Vehicle model required.\n")
     end
 end
 
-local function delVeh(vehicle)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    if vehicle ~= nil then
-        if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
+local function deleteVeh(model)
+    if model ~= nil then
+        if 1 == IsModelInCdimage(model) and 1 == IsModelAVehicle(model) then
             for i = 1, #vehicleList do
-                if vehicleList[i] == vehicle then
+                if vehicleList[i] == model then
                     table.remove(vehicleList, i)
                     if true == panelShown then
-                        updateList()
+                        updateVehicleList()
                     end
-                    sendMessage("'" .. vehicle .. "' deleted from vehicle list.\n")
+                    sendMessage("'" .. model .. "' deleted from vehicle list.\n")
                     return
                 end
             end
-            sendMessage("Cannot delete vehicle.  '" .. vehicle .. "' not found.\n")
+            sendMessage("Cannot delete vehicle.  '" .. model .. "' not found.\n")
         else
             sendMessage("Cannot delete vehicle.  Invalid vehicle.\n")
         end
     else
-        sendMessage("Cannot delete vehicle.  Vehicle name required.\n")
+        sendMessage("Cannot delete vehicle.  Vehicle model required.\n")
     end
 end
 
-local function addClass(class)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    class = math.tointeger(tonumber(class))
-    if class ~= nil and class >= 0 and class <= 21 then
-        for _, vehicle in pairs(allVehiclesList) do
-            if GetVehicleClassFromName(vehicle) == class then
-                vehicleList[#vehicleList + 1] = vehicle
+local function addClass(vclass)
+    vclass = tonumber(vclass)
+    if vclass ~= fail and "integer" == math.type(vclass) and vclass >= 0 and vclass <= 21 then
+        for _, model in pairs(allVehiclesList) do
+            if GetVehicleClassFromName(model) == vclass then
+                vehicleList[#vehicleList + 1] = model
             end
         end
         if true == panelShown then
-            updateList()
+            updateVehicleList()
         end
-        sendMessage("Vehicles of class " .. getClassName(class) .. " added to vehicle list.\n")
+        sendMessage("Vehicles of class " .. getClassName(vclass) .. " added to vehicle list.\n")
     else
         sendMessage("Cannot add vehicles to vehicle list.  Invalid vehicle class.\n")
     end
 end
 
-local function deleteClass(class)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    class = math.tointeger(tonumber(class))
-    if class ~= nil and class >= 0 and class <= 21 then
+local function deleteClass(vclass)
+    vclass = tonumber(vclass)
+    if vclass ~= fail and "integer" == math.type(vclass) and vclass >= 0 and vclass <= 21 then
         for i = 1, #vehicleList do
             while true do
-                if vehicleList[i] ~= nil then
-                    if GetVehicleClassFromName(vehicleList[i]) == class then
-                        table.remove(vehicleList, i)
-                    else
-                        break
-                    end
+                if vehicleList[i] ~= nil and GetVehicleClassFromName(vehicleList[i]) == vclass then
+                    table.remove(vehicleList, i)
                 else
                     break
                 end
             end
         end
         if true == panelShown then
-            updateList()
+            updateVehicleList()
         end
-        sendMessage("Vehicles of class " .. getClassName(class) .. " deleted from vehicle list.\n")
+        sendMessage("Vehicles of class " .. getClassName(vclass) .. " deleted from vehicle list.\n")
     else
         sendMessage("Cannot delete vehicles from vehicle list.  Invalid vehicle class.\n")
     end
 end
 
 local function addAllVeh()
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
-    for _, vehicle in pairs(allVehiclesList) do
-        vehicleList[#vehicleList + 1] = vehicle
+    for _, model in pairs(allVehiclesList) do
+        vehicleList[#vehicleList + 1] = model
     end
     if true == panelShown then
-        updateList()
+        updateVehicleList()
     end
     sendMessage("Added all vehicles to vehicle list.\n")
 end
 
-local function delAllVeh()
+local function deleteAllVeh()
     vehicleList = {}
     if true == panelShown then
-        updateList()
+        updateVehicleList()
     end
-    sendMessage("All vehicles deleted from vehicle list.\n")
+    sendMessage("Deleted all vehicles from vehicle list.\n")
 end
 
 local function listVeh()
@@ -1690,18 +1360,13 @@ local function listVeh()
         for i = 1, #vehicleList do
             msg = msg .. vehicleList[i] .. ", "
         end
-        msg = string.sub(msg, 1, -3)
-        sendMessage(msg)
+        sendMessage(string.sub(msg, 1, -3) .. "\n")
     else
-        sendMessage("No vehicles in vehicle list.\n")
+        sendMessage("Cannot list vehicles.  Vehicle list is empty.\n")
     end
 end
 
 local function loadLst(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if name ~= nil then
             TriggerServerEvent("races:loadLst", "pub" == access, name)
@@ -1714,10 +1379,6 @@ local function loadLst(access, name)
 end
 
 local function saveLst(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if name ~= nil then
             if #vehicleList > 0 then
@@ -1734,10 +1395,6 @@ local function saveLst(access, name)
 end
 
 local function overwriteLst(access, name)
-    if 0 == roleBits & ROLE_EDIT then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if name ~= nil then
             if #vehicleList > 0 then
@@ -1754,10 +1411,6 @@ local function overwriteLst(access, name)
 end
 
 local function deleteLst(access, name)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         if name ~= nil then
             TriggerServerEvent("races:deleteLst", "pub" == access, name)
@@ -1770,14 +1423,150 @@ local function deleteLst(access, name)
 end
 
 local function listLsts(access)
-    if 0 == roleBits & ROLE_REGISTER then
-        sendMessage("Permission required.\n")
-        return
-    end
     if "pvt" == access or "pub" == access then
         TriggerServerEvent("races:listLsts", "pub" == access)
     else
         sendMessage("Cannot list vehicle lists.  Invalid access type.\n")
+    end
+end
+
+local function register(buyin, laps, timeout, allowAI, rtype, arg0, arg1)
+    if nil == starts[GetPlayerServerId(PlayerId())] then
+        if #waypoints > 1 then
+            local bton = tonumber(buyin)
+            if nil == buyin or "." == buyin or ("integer" == math.type(bton) and bton >= 0) then
+                buyin = (nil == buyin or "." == buyin) and defaultBuyin or bton
+                local lton = tonumber(laps)
+                if nil == laps or "." == laps or ("integer" == math.type(lton) and lton > 0) then
+                    laps = (nil == laps or "." == laps) and defaultLaps or lton
+                    local tton = tonumber(timeout)
+                    if nil == timeout or "." == timeout or ("integer" == math.type(tton) and tton >= 0) then
+                        timeout = (nil == timeout or "." == timeout) and defaultTimeout or tton
+                        allowAI = (nil == allowAI or "." == allowAI) and defaultAllowAI or allowAI
+                        if "yes" == allowAI or "no" == allowAI then
+                            if STATE_IDLE == raceState or STATE_EDITING == raceState then
+                                if 1 == laps or (laps > 1 and true == startIsFinish) then
+                                    local coord = vector3(waypoints[1].coord.x, waypoints[1].coord.y, waypoints[1].coord.z)
+                                    for _, start in pairs(starts) do
+                                        if #(coord - GetBlipCoords(start.blip)) < defaultRadius then
+                                            sendMessage("Cannot register race.  Registration point in use by another race.\n")
+                                            return
+                                        end
+                                    end
+                                    if "." == arg0 then
+                                        arg0 = nil
+                                    end
+                                    local restrict = nil
+                                    local vclass = nil
+                                    local svehicle = nil
+                                    local vehList = nil
+                                    if "rest" == rtype then
+                                        restrict = arg0
+                                        if nil == restrict or IsModelInCdimage(restrict) ~= 1 or IsModelAVehicle(restrict) ~= 1 then
+                                            sendMessage("Cannot register race.  Invalid restricted vehicle.\n")
+                                            return
+                                        end
+                                    elseif "class" == rtype then
+                                        vclass = tonumber(arg0)
+                                        if fail == vclass or math.type(vclass) ~= "integer" or vclass < -1 or vclass > 21 then
+                                            sendMessage("Cannot register race.  Invalid vehicle class.\n")
+                                            return
+                                        end
+                                        if -1 == vclass then
+                                            if 0 == #vehicleList then
+                                                sendMessage("Cannot register race.  Vehicle list is empty.\n")
+                                                return
+                                            end
+                                            vehList = vehicleList
+                                        end
+                                    elseif "rand" == rtype then
+                                        if 0 == #vehicleList  then
+                                            sendMessage("Cannot register race.  Vehicle list is empty.\n")
+                                            return
+                                        end
+                                        vclass = arg0
+                                        if nil == vclass then
+                                            vehList = vehicleList
+                                        else
+                                            vclass = tonumber(vclass)
+                                            if fail == vclass or math.type(vclass) ~= "integer" or vclass < 0 or vclass > 21 then
+                                                sendMessage("Cannot register race.  Invalid vehicle class.\n")
+                                                return
+                                            end
+                                            vehList = {}
+                                            for _, model in pairs(vehicleList) do
+                                                if GetVehicleClassFromName(model) == vclass then
+                                                    vehList[#vehList + 1] = model
+                                                end
+                                            end
+                                            if 0 == #vehList then
+                                                sendMessage("Cannot register race.  No vehicles of " .. getClassName(vclass) .. " class in vehicle list.\n")
+                                                return
+                                            end
+                                        end
+                                        svehicle = arg1
+                                        if svehicle ~= nil then
+                                            if IsModelInCdimage(svehicle) ~= 1 or IsModelAVehicle(svehicle) ~= 1 then
+                                                sendMessage("Cannot register race.  Invalid start vehicle.\n")
+                                                return
+                                            elseif vclass ~= nil and GetVehicleClassFromName(svehicle) ~= vclass then
+                                                sendMessage("Cannot register race.  Start vehicle not of " .. getClassName(vclass) .. " class.\n")
+                                                return
+                                            end
+                                        end
+                                    elseif rtype ~= nil then
+                                        sendMessage("Cannot register race.  Unknown race type.\n")
+                                        return
+                                    end
+                                    if "yes" == allowAI or "rand" == rtype then
+                                        buyin = 0
+                                    end
+                                    local rdata = {rtype = rtype, restrict = restrict, vclass = vclass, svehicle = svehicle, vehicleList = vehList}
+                                    TriggerServerEvent("races:register", waypointsToCoords(), isPublicTrack, savedTrackName, buyin, laps, timeout, allowAI, rdata)
+                                else
+                                    sendMessage("Cannot register race.  Track needs to be converted to a circuit for multi-lap races.\n")
+                                end
+                            else
+                                sendMessage("Cannot register race.  Leave race first.\n")
+                            end
+                        else
+                            sendMessage("Cannot register race.  Invalid AI allowed value.\n")
+                        end
+                    else
+                        sendMessage("Cannot register race.  Invalid DNF timeout.\n")
+                    end
+                else
+                    sendMessage("Cannot register race.  Invalid number of laps.\n")
+                end
+            else
+                sendMessage("Cannot register race.  Invalid buy-in amount.\n")
+            end
+        else
+            sendMessage("Cannot register race.  Track needs to have at least 2 waypoints.\n")
+        end
+    else
+        sendMessage("Cannot register race.  Previous race registered.  Unregister first.\n")
+    end
+end
+
+local function unregister()
+    TriggerServerEvent("races:unregister")
+end
+
+local function startRace(delay)
+    local dton = tonumber(delay)
+    if nil == delay or ("integer" == math.type(dton) and dton >= 5) then
+        if aiState ~= nil then
+            for _, driver in pairs(aiState.drivers) do
+                if nil == driver.ped and nil == driver.vehicle then
+                    sendMessage("Cannot start race.  Some AI drivers not spawned.\n")
+                    return
+                end
+            end
+        end
+        TriggerServerEvent("races:start", dton or defaultDelay)
+    else
+        sendMessage("Cannot start race.  Invalid delay.\n")
     end
 end
 
@@ -1787,15 +1576,17 @@ local function leave()
         raceState = STATE_IDLE
         TriggerServerEvent("races:leave", raceIndex, PedToNet(player), nil)
         removeRacerBlipGT()
+        raceIndex = -1
         sendMessage("Left race.\n")
     elseif STATE_RACING == raceState then
-        if IsPedInAnyVehicle(player, false) == 1 then
+        if 1 == IsPedInAnyVehicle(player, false) then
             FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
         end
         RenderScriptCams(false, false, 0, true, true)
         DeleteCheckpoint(raceCheckpoint)
         finishRace(-1)
         removeRacerBlipGT()
+        raceIndex = -1
         sendMessage("Left race.\n")
     else
         sendMessage("Cannot leave.  Not joined to any race.\n")
@@ -1806,12 +1597,22 @@ local function rivals()
     if STATE_JOINING == raceState or STATE_RACING == raceState then
         TriggerServerEvent("races:rivals", raceIndex)
     else
-        sendMessage("Cannot list competitors.  Not joined to any race.\n")
+        sendMessage("Cannot list rivals.  Not joined to any race.\n")
     end
 end
 
 local function respawn()
     if STATE_RACING == raceState then
+        local coord = startCoord
+        if true == startIsFinish then
+            if currentWaypoint > 0 then
+                coord = waypoints[currentWaypoint].coord
+            end
+        else
+            if currentWaypoint > 1 then
+                coord = waypoints[currentWaypoint - 1].coord
+            end
+        end
         local passengers = {}
         local player = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(player, false)
@@ -1827,22 +1628,12 @@ local function respawn()
                 DeleteVehicle(vehicle)
             end
         end
-        local coord = startCoord
-        if true == startIsFinish then
-            if currentWaypoint > 0 then
-                coord = waypoints[currentWaypoint].coord
-            end
-        else
-            if currentWaypoint > 1 then
-                coord = waypoints[currentWaypoint - 1].coord
-            end
-        end
         if currentVehicleHash ~= nil then
             RequestModel(currentVehicleHash)
-            while HasModelLoaded(currentVehicleHash) == false do
+            while false == HasModelLoaded(currentVehicleHash) do
                 Citizen.Wait(0)
             end
-            vehicle = putPedInVehicle(player, currentVehicleHash, coord)
+            vehicle = putPedInVehicle(player, currentVehicleHash, currentColorPri, currentColorSec, currentColorPearl, currentColorWheel, coord)
             SetEntityAsNoLongerNeeded(vehicle)
             for _, passenger in pairs(passengers) do
                 SetPedIntoVehicle(passenger.ped, vehicle, passenger.seat)
@@ -1863,11 +1654,11 @@ local function viewResults(chatOnly)
         for pos, result in ipairs(results) do
             if -1 == result.finishTime then
                 msg = msg .. "DNF - " .. result.playerName
-                if result.bestLapTime >= 0 then
+                if result.bestLapTime ~= -1 then
                     local minutes, seconds = minutesSeconds(result.bestLapTime)
-                    msg = msg .. (" - best lap %02d:%05.2f using %s"):format(minutes, seconds, result.vehicleName)
+                    msg = msg .. (" - best lap %02d:%05.2f"):format(minutes, seconds)
                 end
-                msg = msg .. "\n"
+                msg = msg .. " using " .. result.vehicleName .. "\n"
             else
                 local fMinutes, fSeconds = minutesSeconds(result.finishTime)
                 local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
@@ -1875,7 +1666,7 @@ local function viewResults(chatOnly)
             end
         end
     else
-        msg = "No results.\n"
+        msg = "No results to view.\n"
     end
     if true == chatOnly then
         notifyPlayer(msg)
@@ -1884,48 +1675,47 @@ local function viewResults(chatOnly)
     end
 end
 
-local function spawn(vehicleHash)
-    if 0 == roleBits & ROLE_SPAWN then
-        sendMessage("Permission required.\n")
-        return
-    end
-    vehicleHash = vehicleHash or defaultVehicle
-    if IsModelInCdimage(vehicleHash) == 1 and IsModelAVehicle(vehicleHash) == 1 then
-        RequestModel(vehicleHash)
-        while HasModelLoaded(vehicleHash) == false do
-            Citizen.Wait(0)
+local function spawn(model)
+    if raceState ~= STATE_RACING and raceState ~= STATE_JOINING then
+        model = model or defaultModel
+        if 1 == IsModelInCdimage(model) and 1 == IsModelAVehicle(model) then
+            local vehicle = switchVehicle(PlayerPedId(), model, -1, -1, -1, -1)
+            if vehicle ~= nil then
+                SetEntityAsNoLongerNeeded(vehicle)
+                sendMessage("'" .. GetLabelText(GetDisplayNameFromVehicleModel(model)) .. "' spawned.\n")
+            else
+                sendMessage("Cannot spawn vehicle.  Not driver of current vehicle.\n")
+            end
+        else
+            sendMessage("Cannot spawn vehicle.  Invalid vehicle.\n")
         end
-        local vehicle = putPedInVehicle(PlayerPedId(), vehicleHash, nil)
-        SetEntityAsNoLongerNeeded(vehicle)
-
-        sendMessage("'" .. GetLabelText(GetDisplayNameFromVehicleModel(vehicleHash)) .. "' spawned.\n")
     else
-        sendMessage("Cannot spawn vehicle.  Invalid vehicle.\n")
+        sendMessage("Cannot spawn vehicle.  Leave race first.\n")
     end
 end
 
 local function lvehicles(vclass)
-    vclass = math.tointeger(tonumber(vclass))
-    if nil == vclass or (vclass >= 0 and vclass <= 21) then
+    local vton = tonumber(vclass)
+    if nil == vclass or ("integer" == math.type(vton) and vton >= 0 and vton <= 21) then
+        vclass = vton
         local msg = "Available vehicles"
-        if nil == vclass then
+        if fail == vclass then
             msg = msg .. ": "
         else
             msg = msg .. " of class " .. getClassName(vclass) .. ": "
         end
         local vehicleFound = false
-        for _, vehicle in ipairs(allVehiclesList) do
-            if nil == vclass or GetVehicleClassFromName(vehicle) == vclass then
-                msg = msg .. vehicle .. ", "
+        for _, model in ipairs(allVehiclesList) do
+            if fail == vclass or GetVehicleClassFromName(model) == vclass then
+                msg = msg .. model .. ", "
                 vehicleFound = true
             end
         end
         if false == vehicleFound then
-            msg = "No vehicles in list."
+            sendMessage("No vehicles in list.\n")
         else
-            msg = string.sub(msg, 1, -3)
+            sendMessage(string.sub(msg, 1, -3) .. "\n")
         end
-        sendMessage(msg)
     else
         sendMessage("Cannot list vehicles.  Invalid vehicle class.\n")
     end
@@ -1964,15 +1754,33 @@ local function showPanel(panel)
         TriggerServerEvent("races:trackNames", true, nil)
         SendNUIMessage({
             panel = "main",
-            defaultVehicle = defaultVehicle,
+            defaultModel = defaultModel,
             allVehicles = allVehiclesHTML
         })
-    elseif "edit" == panel then
+    elseif "track" == panel then
         SetNuiFocus(true, true)
         TriggerServerEvent("races:trackNames", false, nil)
         TriggerServerEvent("races:trackNames", true, nil)
         SendNUIMessage({
-            panel = "edit"
+            panel = "track"
+        })
+    elseif "ai" == panel then
+        SetNuiFocus(true, true)
+        TriggerServerEvent("races:aiGrpNames", false, nil)
+        TriggerServerEvent("races:aiGrpNames", true, nil)
+        SendNUIMessage({
+            panel = "ai",
+            defaultModel = defaultModel,
+            allVehicles = allVehiclesHTML
+        })
+    elseif "list" == panel then
+        SetNuiFocus(true, true)
+        updateVehicleList()
+        TriggerServerEvent("races:listNames", false, nil)
+        TriggerServerEvent("races:listNames", true, nil)
+        SendNUIMessage({
+            panel = "list",
+            allVehicles = allVehiclesHTML
         })
     elseif "register" == panel then
         SetNuiFocus(true, true)
@@ -1983,25 +1791,8 @@ local function showPanel(panel)
             defaultBuyin = defaultBuyin,
             defaultLaps = defaultLaps,
             defaultTimeout = defaultTimeout,
+            defaultAllowAI = defaultAllowAI,
             defaultDelay = defaultDelay,
-            allVehicles = allVehiclesHTML
-        })
-    elseif "ai" == panel then
-        SetNuiFocus(true, true)
-        TriggerServerEvent("races:aiGrpNames", false, nil)
-        TriggerServerEvent("races:aiGrpNames", true, nil)
-        SendNUIMessage({
-            panel = "ai",
-            defaultVehicle = defaultVehicle,
-            allVehicles = allVehiclesHTML
-        })
-    elseif "list" == panel then
-        SetNuiFocus(true, true)
-        updateList()
-        TriggerServerEvent("races:listNames", false, nil)
-        TriggerServerEvent("races:listNames", true, nil)
-        SendNUIMessage({
-            panel = "list",
             allVehicles = allVehiclesHTML
         })
     else
@@ -2010,51 +1801,190 @@ local function showPanel(panel)
     end
 end
 
-RegisterNUICallback("request", function(data)
-    request(data.role)
-end)
-
-RegisterNUICallback("edit", function()
+RegisterNUICallback("edit", function(_, cb)
     edit()
+    cb()
 end)
 
-RegisterNUICallback("clear", function()
+RegisterNUICallback("clear", function(_, cb)
     clear()
+    cb()
 end)
 
-RegisterNUICallback("reverse", function()
+RegisterNUICallback("reverse", function(_, cb)
     reverse()
+    cb()
 end)
 
-RegisterNUICallback("load", function(data)
+RegisterNUICallback("load", function(data, cb)
     loadTrack(data.access, data.trackName)
+    cb()
 end)
 
-RegisterNUICallback("save", function(data)
+RegisterNUICallback("save", function(data, cb)
     local trackName = data.trackName
     if "" == trackName then
         trackName = nil
     end
     saveTrack(data.access, trackName)
+    cb()
 end)
 
-RegisterNUICallback("overwrite", function(data)
+RegisterNUICallback("overwrite", function(data, cb)
     overwriteTrack(data.access, data.trackName)
+    cb()
 end)
 
-RegisterNUICallback("delete", function(data)
+RegisterNUICallback("delete", function(data, cb)
     deleteTrack(data.access, data.trackName)
+    cb()
 end)
 
-RegisterNUICallback("blt", function(data)
-    bestLapTimes(data.access, data.trackName)
-end)
-
-RegisterNUICallback("list", function(data)
+RegisterNUICallback("list", function(data, cb)
     listTracks(data.access)
+    cb()
 end)
 
-RegisterNUICallback("register", function(data)
+RegisterNUICallback("blt", function(data, cb)
+    bestLapTimes(data.access, data.trackName)
+    cb()
+end)
+
+RegisterNUICallback("add_ai", function(data, cb)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    addAIDriver(aiName, GetEntityCoords(PlayerPedId()), GetEntityHeading(PlayerPedId()))
+    cb()
+end)
+
+RegisterNUICallback("spawn_ai", function(data, cb)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    local vehicle = data.vehicle
+    if "" == vehicle then
+        vehicle = nil
+    end
+    spawnAIDriver(aiName, vehicle)
+    cb()
+end)
+
+RegisterNUICallback("delete_ai", function(data, cb)
+    local aiName = data.aiName
+    if "" == aiName then
+        aiName = nil
+    end
+    deleteAIDriver(aiName)
+    cb()
+end)
+
+RegisterNUICallback("delete_all_ai", function(_, cb)
+    deleteAllAIDrivers()
+    cb()
+end)
+
+RegisterNUICallback("list_ai", function(_, cb)
+    listAIDrivers()
+    cb()
+end)
+
+RegisterNUICallback("load_grp", function(data, cb)
+    loadGrp(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("save_grp", function(data, cb)
+    local name = data.name
+    if "" == name then
+        name = nil
+    end
+    saveGrp(data.access, name)
+    cb()
+end)
+
+RegisterNUICallback("overwrite_grp", function(data, cb)
+    overwriteGrp(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("delete_grp", function(data, cb)
+    deleteGrp(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("list_grps", function(data, cb)
+    listGrps(data.access)
+    cb()
+end)
+
+RegisterNUICallback("add_veh", function(data, cb)
+    addVeh(data.vehicle)
+    cb()
+end)
+
+RegisterNUICallback("delete_veh", function(data, cb)
+    deleteVeh(data.vehicle)
+    cb()
+end)
+
+RegisterNUICallback("add_class", function(data, cb)
+    addClass(data.class)
+    cb()
+end)
+
+RegisterNUICallback("delete_class", function(data, cb)
+    deleteClass(data.class)
+    cb()
+end)
+
+RegisterNUICallback("add_all_veh", function(_, cb)
+    addAllVeh()
+    cb()
+end)
+
+RegisterNUICallback("delete_all_veh", function(_, cb)
+    deleteAllVeh()
+    cb()
+end)
+
+RegisterNUICallback("list_veh", function(_, cb)
+    listVeh()
+    cb()
+end)
+
+RegisterNUICallback("load_list", function(data, cb)
+    loadLst(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("save_list", function(data, cb)
+    local name = data.name
+    if "" == name then
+        name = nil
+    end
+    saveLst(data.access, name)
+    cb()
+end)
+
+RegisterNUICallback("overwrite_list", function(data, cb)
+    overwriteLst(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("delete_list", function(data, cb)
+    deleteLst(data.access, data.name)
+    cb()
+end)
+
+RegisterNUICallback("list_lists", function(data, cb)
+    listLsts(data.access)
+    cb()
+end)
+
+RegisterNUICallback("register", function(data, cb)
     local buyin = data.buyin
     if "" == buyin then
         buyin = nil
@@ -2093,192 +2023,88 @@ RegisterNUICallback("register", function(data)
     elseif "rand" == rtype then
         register(buyin, laps, timeout, allowAI, rtype, vclass, svehicle)
     end
+    cb()
 end)
 
-RegisterNUICallback("unregister", function()
+RegisterNUICallback("unregister", function(_, cb)
     unregister()
+    cb()
 end)
 
-RegisterNUICallback("start", function(data)
+RegisterNUICallback("start", function(data, cb)
     local delay = data.delay
     if "" == delay then
         delay = nil
     end
     startRace(delay)
+    cb()
 end)
 
-RegisterNUICallback("add_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    local player = PlayerPedId()
-    addAIDriver(aiName, GetEntityCoords(player), GetEntityHeading(player))
-end)
-
-RegisterNUICallback("delete_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    deleteAIDriver(aiName)
-end)
-
-RegisterNUICallback("spawn_ai", function(data)
-    local aiName = data.aiName
-    if "" == aiName then
-        aiName = nil
-    end
-    local vehicle = data.vehicle
-    if "" == vehicle then
-        vehicle = nil
-    end
-    if vehicle ~= nil then
-        spawnAIDriver(aiName, GetHashKey(vehicle))
-    else
-        spawnAIDriver(aiName, nil)
-    end
-end)
-
-RegisterNUICallback("list_ai", function()
-    listAIDrivers()
-end)
-
-RegisterNUICallback("delete_all_ai", function()
-    deleteAllAIDrivers()
-end)
-
-RegisterNUICallback("load_grp", function(data)
-    loadGrp(data.access, data.name)
-end)
-
-RegisterNUICallback("save_grp", function(data)
-    local name = data.name
-    if "" == name then
-        name = nil
-    end
-    saveGrp(data.access, name)
-end)
-
-RegisterNUICallback("overwrite_grp", function(data)
-    overwriteGrp(data.access, data.name)
-end)
-
-RegisterNUICallback("delete_grp", function(data)
-    deleteGrp(data.access, data.name)
-end)
-
-RegisterNUICallback("list_grps", function(data)
-    listGrps(data.access)
-end)
-
-RegisterNUICallback("add_veh", function(data)
-    addVeh(data.vehicle)
-end)
-
-RegisterNUICallback("delete_veh", function(data)
-    delVeh(data.vehicle)
-end)
-
-RegisterNUICallback("add_class", function(data)
-    addClass(data.class)
-end)
-
-RegisterNUICallback("delete_class", function(data)
-    deleteClass(data.class)
-end)
-
-RegisterNUICallback("add_all_veh", function()
-    addAllVeh()
-end)
-
-RegisterNUICallback("delete_all_veh", function()
-    delAllVeh()
-end)
-
-RegisterNUICallback("list_veh", function()
-    listVeh()
-end)
-
-RegisterNUICallback("load_list", function(data)
-    loadLst(data.access, data.name)
-end)
-
-RegisterNUICallback("save_list", function(data)
-    local name = data.name
-    if "" == name then
-        name = nil
-    end
-    saveLst(data.access, name)
-end)
-
-RegisterNUICallback("overwrite_list", function(data)
-    overwriteLst(data.access, data.name)
-end)
-
-RegisterNUICallback("delete_list", function(data)
-    deleteLst(data.access, data.name)
-end)
-
-RegisterNUICallback("list_lists", function(data)
-    listLsts(data.access)
-end)
-
-RegisterNUICallback("leave", function()
+RegisterNUICallback("leave", function(_, cb)
     leave()
+    cb()
 end)
 
-RegisterNUICallback("rivals", function()
+RegisterNUICallback("rivals", function(_, cb)
     rivals()
+    cb()
 end)
 
-RegisterNUICallback("respawn", function()
+RegisterNUICallback("respawn", function(_, cb)
     respawn()
+    cb()
 end)
 
-RegisterNUICallback("results", function()
+RegisterNUICallback("results", function(_, cb)
     viewResults(false)
+    cb()
 end)
 
-RegisterNUICallback("spawn", function(data)
+RegisterNUICallback("spawn", function(data, cb)
     local vehicle = data.vehicle
     if "" == vehicle then
         vehicle = nil
     end
     spawn(vehicle)
+    cb()
 end)
 
-RegisterNUICallback("lvehicles", function(data)
+RegisterNUICallback("lvehicles", function(data, cb)
     local vclass = data.vclass
     if "-1" == vclass then
         vclass = nil
     end
     lvehicles(vclass)
+    cb()
 end)
 
-RegisterNUICallback("speedo", function(data)
+RegisterNUICallback("speedo", function(data, cb)
     local unit = data.unit
     if "" == unit then
         unit = nil
     end
     setSpeedo(unit)
+    cb()
 end)
 
-RegisterNUICallback("funds", function()
+RegisterNUICallback("funds", function(_, cb)
     viewFunds()
+    cb()
 end)
 
-RegisterNUICallback("show", function(data)
+RegisterNUICallback("show", function(data, cb)
     local panel = data.panel
     if "main" == panel then
         panel = nil
     end
     showPanel(panel)
+    cb()
 end)
 
-RegisterNUICallback("close", function()
+RegisterNUICallback("close", function(_, cb)
     panelShown = false
     SetNuiFocus(false, false)
+    cb()
 end)
 
 --[[
@@ -2294,14 +2120,14 @@ end
 
 local function setEngineHealth(num)
     local player = PlayerPedId()
-    if IsPedInAnyVehicle(player, false) == 1 then
+    if 1 == IsPedInAnyVehicle(player, false) then
         SetVehicleEngineHealth(GetVehiclePedIsIn(player, false), tonumber(num))
     end
 end
 
 local function getEngineHealth()
     local player = PlayerPedId()
-    if IsPedInAnyVehicle(player, false) == 1 then
+    if 1 == IsPedInAnyVehicle(player, false) then
         print(GetVehicleEngineHealth(GetVehiclePedIsIn(player, false)))
     end
 end
@@ -2377,19 +2203,19 @@ end
 local function createPedInSeat()
     print("createPedInSeat")
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), true)
-    local pedHash = "a_m_y_skater_01"
-    RequestModel(pedHash)
-    while HasModelLoaded(pedHash) == false do
+    local pedModel = "a_m_y_skater_01"
+    RequestModel(pedModel)
+    while false == HasModelLoaded(pedModel) do
         Citizen.Wait(0)
     end
     for seat = -1, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
-        if IsVehicleSeatFree(vehicle, seat) == 1 then
-            CreatePedInsideVehicle(vehicle, PED_TYPE_CIVMALE, pedHash, seat, true, false)
+        if 1 == IsVehicleSeatFree(vehicle, seat) then
+            CreatePedInsideVehicle(vehicle, PED_TYPE_CIVMALE, pedModel, seat, true, false)
             print("seat:" .. seat)
             break
         end
     end
-    SetModelAsNoLongerNeeded(pedHash)
+    SetModelAsNoLongerNeeded(pedModel)
 end
 
 local vehicle0
@@ -2461,11 +2287,7 @@ AddEventHandler("vehicles", function(list)
         else
             print(vehicle .. ":" .. GetVehicleModelNumberOfSeats(vehicle))
             local class = GetVehicleClassFromName(vehicle)
-            if nil == classes[class] then
-                classes[class] = 1
-            else
-                classes[class] = classes[class] + 1
-            end
+            classes[class] = nil == classes[class] and 1 or classes[class] + 1
             local name = GetLabelText(GetDisplayNameFromVehicleModel(vehicle))
             local len = string.len(name)
             if len > maxLen then
@@ -2492,7 +2314,7 @@ AddEventHandler("vehicles", function(list)
     for vclass = 0, 21 do
         local vehicles = {}
         for _, vehicle in ipairs(list) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
+            if 1 == IsModelInCdimage(vehicle) and 1 == IsModelAVehicle(vehicle) then
                 if GetVehicleClassFromName(vehicle) == vclass then
                     vehicles[#vehicles + 1] = vehicle
                 end
@@ -2508,35 +2330,25 @@ RegisterCommand("races", function(_, args)
         local msg = "Commands:\n"
         msg = msg .. "Required arguments are in square brackets.  Optional arguments are in parentheses.\n"
         msg = msg .. "/races - display list of available /races commands\n"
-        msg = msg .. "/races request [role] - request permission to have [role] = {edit, register, spawn} role\n"
         msg = msg .. "/races edit - toggle editing track waypoints\n"
         msg = msg .. "/races clear - clear track waypoints\n"
         msg = msg .. "/races reverse - reverse order of track waypoints\n"
         msg = msg .. "\n"
-        msg = msg .. "For the following '/races' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private track and 'pub' operates on a public track\n"
+        msg = msg .. "For the following '/races' commands, [access] = {pvt, pub} where 'pvt' operates on a private track and 'pub' operates on a public track\n"
         msg = msg .. "/races load [access] [name] - load private or public track saved as [name]\n"
         msg = msg .. "/races save [access] [name] - save new private or public track as [name]\n"
         msg = msg .. "/races overwrite [access] [name] - overwrite existing private or public track saved as [name]\n"
         msg = msg .. "/races delete [access] [name] - delete private or public track saved as [name]\n"
-        msg = msg .. "/races blt [access] [name] - list 10 best lap times of private or public track saved as [name]\n"
         msg = msg .. "/races list [access] - list saved private or public tracks\n"
-        msg = msg .. "\n"
-        msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) - register your race with no vehicle restrictions\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle] - register your race restricted to [vehicle]\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] - register your race restricted to vehicles of type [class]; if [class] is '-1' then use custom vehicle list\n"
-        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (class) (vehicle) - register your race changing vehicles randomly every lap; (class) defaults to any; (vehicle) defaults to any\n"
-        msg = msg .. "\n"
-        msg = msg .. "/races unregister - unregister your race\n"
-        msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
+        msg = msg .. "/races blt [access] [name] - list 10 best lap times of private or public track saved as [name]\n"
         msg = msg .. "\n"
         msg = msg .. "/races ai add [name] - add an AI driver named [name]\n"
-        msg = msg .. "/races ai delete [name] - delete an AI driver named [name]\n"
         msg = msg .. "/races ai spawn [name] (vehicle) - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'\n"
-        msg = msg .. "/races ai list - list AI driver names\n"
+        msg = msg .. "/races ai delete [name] - delete an AI driver named [name]\n"
         msg = msg .. "/races ai deleteAll - delete all AI drivers\n"
+        msg = msg .. "/races ai list - list AI driver names\n"
         msg = msg .. "\n"
-        msg = msg .. "For the following '/races ai' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\n"
+        msg = msg .. "For the following '/races ai' commands, [access] = {pvt, pub} where 'pvt' operates on a private AI group and 'pub' operates on a public AI group\n"
         msg = msg .. "/races ai loadGrp [access] [name] - load private or public AI group saved as [name]\n"
         msg = msg .. "/races ai saveGrp [access] [name] - save new private or public AI group as [name]\n"
         msg = msg .. "/races ai overwriteGrp [access] [name] - overwrite existing private or public AI group saved as [name]\n"
@@ -2551,12 +2363,21 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races vl deleteAll - delete all vehicles from vehicle list\n"
         msg = msg .. "/races vl list - list all vehicles in vehicle list\n"
         msg = msg .. "\n"
-        msg = msg .. "For the following '/races vl' commands, [access] = {'pvt', 'pub'} where 'pvt' operates on a private vehicle list and 'pub' operates on a public vehicle list\n"
+        msg = msg .. "For the following '/races vl' commands, [access] = {pvt, pub} where 'pvt' operates on a private vehicle list and 'pub' operates on a public vehicle list\n"
         msg = msg .. "/races vl loadLst [access] [name] - load private or public vehicle list saved as [name]\n"
         msg = msg .. "/races vl saveLst [access] [name] - save new private or public vehicle list as [name]\n"
         msg = msg .. "/races vl overwriteLst [access] [name] - overwrite existing private or public vehicle list saved as [name]\n"
         msg = msg .. "/races vl deleteLst [access] [name] - delete private or public vehicle list saved as [name]\n"
         msg = msg .. "/races vl listLsts [access] - list saved private or public vehicle lists\n"
+        msg = msg .. "\n"
+        msg = msg .. "For the following '/races register' commands, (buy-in) defaults to 500, (laps) defaults to 1 lap, (DNF timeout) defaults to 120 seconds and (allow AI) = {yes, no} defaults to no\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) - register your race with no vehicle restrictions\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) rest [vehicle] - register your race restricted to [vehicle]\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) class [class] - register your race restricted to vehicles of type [class]; if [class] is '-1' then use custom vehicle list\n"
+        msg = msg .. "/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (class) (vehicle) - register your race changing vehicles randomly every lap; (class) defaults to any; (vehicle) defaults to any\n"
+        msg = msg .. "\n"
+        msg = msg .. "/races unregister - unregister your race\n"
+        msg = msg .. "/races start (delay) - start your registered race; (delay) defaults to 30 seconds\n"
         msg = msg .. "\n"
         msg = msg .. "/races leave - leave a race that you joined\n"
         msg = msg .. "/races rivals - list competitors in a race that you joined\n"
@@ -2564,12 +2385,10 @@ RegisterCommand("races", function(_, args)
         msg = msg .. "/races results - view latest race results\n"
         msg = msg .. "/races spawn (vehicle) - spawn a vehicle; (vehicle) defaults to 'adder'\n"
         msg = msg .. "/races lvehicles (class) - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified\n"
-        msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit) = {imp, met}; otherwise toggle display of speedometer if (unit) is not specified\n"
+        msg = msg .. "/races speedo (unit) - change unit of speed measurement to (unit) = {imperial, metric}; otherwise toggle display of speedometer if (unit) is not specified\n"
         msg = msg .. "/races funds - view available funds\n"
-        msg = msg .. "/races panel (panel) - display (panel) = {edit, register, ai, list} panel; otherwise display main panel if (panel) is not specified\n"
+        msg = msg .. "/races panel (panel) - display (panel) = {track, ai, list, register} panel; otherwise display main panel if (panel) is not specified\n"
         notifyPlayer(msg)
-    elseif "request" == args[1] then
-        request(args[2])
     elseif "edit" == args[1] then
         edit()
     elseif "clear" == args[1] then
@@ -2584,32 +2403,21 @@ RegisterCommand("races", function(_, args)
         overwriteTrack(args[2], args[3])
     elseif "delete" == args[1] then
         deleteTrack(args[2], args[3])
-    elseif "blt" == args[1] then
-        bestLapTimes(args[2], args[3])
     elseif "list" == args[1] then
         listTracks(args[2])
-    elseif "register" == args[1] then
-        register(args[2], args[3], args[4], args[5], args[6], args[7], args[8])
-    elseif "unregister" == args[1] then
-        unregister()
-    elseif "start" == args[1] then
-        startRace(args[2])
+    elseif "blt" == args[1] then
+        bestLapTimes(args[2], args[3])
     elseif "ai" == args[1] then
         if "add" == args[2] then
-            local player = PlayerPedId()
-            addAIDriver(args[3], GetEntityCoords(player), GetEntityHeading(player))
+            addAIDriver(args[3], GetEntityCoords(PlayerPedId()), GetEntityHeading(PlayerPedId()))
+        elseif "spawn" == args[2] then
+            spawnAIDriver(args[3], args[4])
         elseif "delete" == args[2] then
             deleteAIDriver(args[3])
-        elseif "spawn" == args[2] then
-            if args[4] ~= nil then
-                spawnAIDriver(args[3], GetHashKey(args[4]))
-            else
-                spawnAIDriver(args[3], nil)
-            end
-        elseif "list" == args[2] then
-            listAIDrivers()
         elseif "deleteAll" == args[2] then
             deleteAllAIDrivers()
+        elseif "list" == args[2] then
+            listAIDrivers()
         elseif "loadGrp" == args[2] then
             loadGrp(args[3], args[4])
         elseif "saveGrp" == args[2] then
@@ -2627,7 +2435,7 @@ RegisterCommand("races", function(_, args)
         if "add" == args[2] then
             addVeh(args[3])
         elseif "delete" == args[2] then
-            delVeh(args[3])
+            deleteVeh(args[3])
         elseif "addClass" == args[2] then
             addClass(args[3])
         elseif "deleteClass" == args[2] then
@@ -2635,7 +2443,7 @@ RegisterCommand("races", function(_, args)
         elseif "addAll" == args[2] then
             addAllVeh()
         elseif "deleteAll" == args[2] then
-            delAllVeh()
+            deleteAllVeh()
         elseif "list" == args[2] then
             listVeh()
         elseif "loadLst" == args[2] then
@@ -2651,6 +2459,12 @@ RegisterCommand("races", function(_, args)
         else
             notifyPlayer("Unknown vehicle list command.\n")
         end
+    elseif "register" == args[1] then
+        register(args[2], args[3], args[4], args[5], args[6], args[7], args[8])
+    elseif "unregister" == args[1] then
+        unregister()
+    elseif "start" == args[1] then
+        startRace(args[2])
     elseif "leave" == args[1] then
         leave()
     elseif "rivals" == args[1] then
@@ -2699,6 +2513,8 @@ RegisterCommand("races", function(_, args)
             vehInfo()
         elseif "d" == args[2] then
             printSource()
+        elseif "e" == args[2] then
+            TriggerEvent("vehicles", allVehiclesList)
         elseif "dp" == args[2] then
             deletePeds()
         elseif "pp" == args[2] then
@@ -2715,20 +2531,52 @@ RegisterCommand("races", function(_, args)
             getVeh1()
         elseif "ppiv1" == args[2] then
             putPedInVeh1()
+        elseif "sct" == args[2] then
+            local hr = math.tointeger(args[3])
+            local min = math.tointeger(args[4])
+            local sec = math.tointeger(args[5])
+            if fail == hr or hr < 0 or hr > 23 or fail == min or min < 0 or min > 59 or fail == sec or sec < 0 or sec > 59 then
+                print("Invalid time.")
+            else
+                NetworkOverrideClockTime(hr, min, sec)
+            end
+        elseif "swt" == args[2] then
+            local weatherType = {}
+            weatherType[#weatherType + 1] = "BLIZZARD"
+            weatherType[#weatherType + 1] = "CLEAR"
+            weatherType[#weatherType + 1] = "CLEARING"
+            weatherType[#weatherType + 1] = "CLOUDS"
+            weatherType[#weatherType + 1] = "EXTRASUNNY"
+            weatherType[#weatherType + 1] = "FOGGY"
+            weatherType[#weatherType + 1] = "HALLOWEEN"
+            weatherType[#weatherType + 1] = "NEUTRAL"
+            weatherType[#weatherType + 1] = "OVERCAST"
+            weatherType[#weatherType + 1] = "RAIN"
+            weatherType[#weatherType + 1] = "SMOG"
+            weatherType[#weatherType + 1] = "SNOW"
+            weatherType[#weatherType + 1] = "SNOWLIGHT"
+            weatherType[#weatherType + 1] = "THUNDER"
+            weatherType[#weatherType + 1] = "XMAS"
+            local t = math.tointeger(args[3])
+            if fail == t or t < 1 or t > #weatherType then
+                print("Invalid weather type.")
+                for i = 1, #weatherType do
+                    print(i .. " " .. weatherType[i])
+                end
+            else
+                SetWeatherOwnedByNetwork(false)
+                SetWeatherTypeNow(weatherType[t])
+                print("Weather type = " .. t .. " " .. weatherType[t])
+            end
+        elseif "frz" == args[2] and args[3] ~= nil and aiState ~= nil and aiState.drivers[ args[3] ] ~= nil then
+            FreezeEntityPosition(aiState.drivers[ args[3] ].vehicle, true)
+        elseif "ufrz" == args[2] and args[3] ~= nil and aiState ~= nil and aiState.drivers[ args[3] ] ~= nil then
+            FreezeEntityPosition(aiState.drivers[ args[3] ].vehicle, false)
         end
 --]]
     else
         notifyPlayer("Unknown command.\n")
     end
-end)
-
-RegisterNetEvent("races:roles")
-AddEventHandler("races:roles", function(roles)
-    if 0 == roles & ROLE_EDIT and STATE_EDITING == raceState then
-        roleBits = roleBits | ROLE_EDIT
-        edit()
-    end
-    roleBits = roles
 end)
 
 RegisterNetEvent("races:message")
@@ -2747,7 +2595,7 @@ AddEventHandler("races:load", function(isPublic, trackName, waypointCoords)
         elseif STATE_EDITING == raceState then
             isPublicTrack = isPublic
             savedTrackName = trackName
-            highlightedCheckpoint = 0
+            highlightedIndex = 0
             selectedIndex0 = 0
             selectedIndex1 = 0
             deleteWaypointCheckpoints()
@@ -2803,12 +2651,37 @@ AddEventHandler("races:blt", function(isPublic, trackName, bestLaps)
     end
 end)
 
+RegisterNetEvent("races:loadGrp")
+AddEventHandler("races:loadGrp", function(isPublic, name, group)
+    if isPublic ~= nil and name ~= nil and group ~= nil then
+        local loaded = true
+        if true == deleteAllAIDrivers() then
+            -- group[aiName] = {startCoord = {x, y, z}, heading, model}
+            for aiName, driver in pairs(group) do
+                if false == addAIDriver(aiName, vector3(driver.startCoord.x, driver.startCoord.y, driver.startCoord.z), driver.heading) or false == spawnAIDriver(aiName, driver.model) then
+                    loaded = false
+                    break
+                end
+            end
+        else
+            loaded = false
+        end
+        if true == loaded then
+            sendMessage((true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' loaded.\n")
+        else
+            sendMessage("Could not load " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
+        end
+    else
+        notifyPlayer("Ignoring load AI group event.  Invalid parameters.\n")
+    end
+end)
+
 RegisterNetEvent("races:loadLst")
 AddEventHandler("races:loadLst", function(isPublic, name, list)
     if isPublic ~= nil and name ~= nil and list ~= nil then
         vehicleList = list
         if true == panelShown then
-            updateList()
+            updateVehicleList()
         end
         sendMessage((true == isPublic and "Public" or "Private") .. " vehicle list '" .. name .. "' loaded.\n")
     else
@@ -2822,28 +2695,27 @@ AddEventHandler("races:register", function(rIndex, coord, isPublic, trackName, o
         local blip = AddBlipForCoord(coord.x, coord.y, coord.z) -- registration blip
         SetBlipSprite(blip, registerSprite)
         SetBlipColour(blip, registerBlipColor)
-        BeginTextCommandSetBlipName("STRING")
-        local msg = owner .. " (" .. buyin .. " buy-in"
+        local msg = ("%s:%d buy-in:%d lap(s):%d timeout"):format(owner, buyin, laps, timeout)
         if "yes" == allowAI then
-            msg = msg .. " : AI allowed"
+            msg = msg .. ":AI allowed"
         end
         if "rest" == rdata.rtype then
-            msg = msg .. " : using '" .. rdata.restrict .. "' vehicle"
+            msg = msg .. ":using '" .. rdata.restrict .. "' vehicle"
         elseif "class" == rdata.rtype then
-            msg = msg .. " : using " .. getClassName(rdata.vclass) .. " vehicle class"
+            msg = msg .. ":using " .. getClassName(rdata.vclass) .. " class vehicles"
         elseif "rand" == rdata.rtype then
-            msg = msg .. " : using random "
+            msg = msg .. ":using random "
             if rdata.vclass ~= nil then
-                msg = msg .. getClassName(rdata.vclass) .. " vehicle class"
+                msg = msg .. getClassName(rdata.vclass) .. " class vehicles"
             else
                 msg = msg .. "vehicles"
             end
             if rdata.svehicle ~= nil then
-                msg = msg .. " : '" .. rdata.svehicle .. "'"
+                msg = msg .. ":start '" .. rdata.svehicle .. "'"
             end
         end
-        msg = msg .. ")"
-        AddTextComponentSubstringPlayerName(msg)
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentSubstringPlayerName(string.sub(msg, 1, 79)) -- blip name has limit of 79 characters
         EndTextCommandSetBlipName(blip)
 
         coord.r = defaultRadius
@@ -2874,12 +2746,23 @@ RegisterNetEvent("races:unregister")
 AddEventHandler("races:unregister", function(rIndex)
     if rIndex ~= nil then
         if starts[rIndex] ~= nil then
-            removeRegistrationPoint(rIndex)
+            deleteRegistrationPoint(rIndex)
         end
+        -- SCENARIO: rIndex = A, raceIndex = -1
+        -- 1. register race 'A'
+        -- 2. do not join any registered race -> raceIndex = -1
+        -- 3. unregister race 'A' -> receive unregister event from race 'A' -> rIndex = A
+        -- do not unregister player from race 'A' since player did not join race 'A'
+        -- SCENARIO: rIndex = A, raceIndex = B
+        -- 1. register race 'A'
+        -- 2. join another race 'B' -> raceIndex = B
+        -- 3. unregister race 'A' -> receive unregister event from race 'A' -> rIndex = A
+        -- do not unregister player from race 'B'
         if rIndex == raceIndex then
             if STATE_JOINING == raceState then
                 raceState = STATE_IDLE
                 removeRacerBlipGT()
+                raceIndex = -1
                 notifyPlayer("Race canceled.\n")
             elseif STATE_RACING == raceState then
                 raceState = STATE_IDLE
@@ -2891,67 +2774,44 @@ AddEventHandler("races:unregister", function(rIndex)
                 removeRacerBlipGT()
                 RenderScriptCams(false, false, 0, true, true)
                 local player = PlayerPedId()
-                if IsPedInAnyVehicle(player, false) == 1 then
+                if 1 == IsPedInAnyVehicle(player, false) then
                     FreezeEntityPosition(GetVehiclePedIsIn(player, false), false)
                 end
-                if originalVehicleHash ~= nil then
-                    local vehicle = switchVehicle(player, originalVehicleHash)
-                    if vehicle ~= nil then
-                        SetVehicleColours(vehicle, colorPri, colorSec)
-                        SetEntityAsNoLongerNeeded(vehicle)
-                    end
+                if originalVehicleHash ~= nil then -- in random vehicle race
+                    SetEntityAsNoLongerNeeded(switchVehicle(player, originalVehicleHash, originalColorPri, originalColorSec, originalColorPearl, originalColorWheel))
                 end
+                raceIndex = -1
                 notifyPlayer("Race canceled.\n")
             end
         end
-        if aiState ~= nil and GetPlayerServerId(PlayerId()) == rIndex then
-            for _, driver in pairs(aiState.drivers) do
-                if driver.ped ~= nil then
-                    SetEntityAsNoLongerNeeded(driver.ped)
-                end
-                if IsEntityDead(driver.ped) == false and driver.originalVehicleHash ~= nil then
-                    driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
-                    if driver.vehicle ~= nil then
-                        SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
+        if aiState ~= nil then
+            -- SCENARIO: rIndex = B, GetPlayerServerId(PlayerId()) = A
+            -- 1. register race 'A' with AI -> GetPlayerServerId(PlayerId()) = A
+            -- 2. join another race 'B' with AI
+            -- 3. receive unregister event from race 'B' -> rIndex = B
+            -- do not unregister AI for race 'A'
+            if GetPlayerServerId(PlayerId()) == rIndex then
+                for _, driver in pairs(aiState.drivers) do
+                    if false == IsEntityDead(driver.ped) and "rand" == aiState.rtype then
+                        driver.vehicle = switchVehicle(driver.ped, driver.model, driver.colorPri, driver.colorSec, driver.colorPearl, driver.colorWheel)
                     end
-                end
-                if driver.vehicle ~= nil then
                     SetEntityAsNoLongerNeeded(driver.vehicle)
+                    Citizen.CreateThread(function()
+                        while true do
+                            if 0 == GetVehicleNumberOfPassengers(driver.vehicle) then
+                                Citizen.Wait(1000)
+                                SetEntityAsNoLongerNeeded(driver.ped)
+                                break
+                            end
+                            Citizen.Wait(1000)
+                        end
+                    end)
                 end
+                aiState = nil
             end
-            aiState = nil
         end
     else
         notifyPlayer("Ignoring unregister event.  Invalid parameters.\n")
-    end
-end)
-
-RegisterNetEvent("races:loadGrp")
-AddEventHandler("races:loadGrp", function(isPublic, name, group)
-    if isPublic ~= nil and name ~= nil and group ~= nil then
-        local loaded = true
-        if deleteAllAIDrivers() == true then
-            -- group[aiName] = {startCoord = {x, y, z}, heading, vehicleHash}
-            for aiName, driver in pairs(group) do
-                if addAIDriver(aiName, vector3(driver.startCoord.x, driver.startCoord.y, driver.startCoord.z), driver.heading) == false then
-                    loaded = false
-                    break
-                end
-                if spawnAIDriver(aiName, driver.vehicleHash) == false then
-                    loaded = false
-                    break
-                end
-            end
-        else
-            loaded = false
-        end
-        if true == loaded then
-            sendMessage((true == isPublic and "Public" or "Private") .. " AI group '" .. name .. "' loaded.\n")
-        else
-            sendMessage("Could not load " .. (true == isPublic and "public" or "private") .. " AI group '" .. name .. "'.\n")
-        end
-    else
-        notifyPlayer("Ignoring load AI group event.  Invalid parameters.\n")
     end
 end)
 
@@ -2960,12 +2820,16 @@ AddEventHandler("races:start", function(rIndex, delay)
     if rIndex ~= nil and delay ~= nil then
         if delay >= 5 then
             local currentTime = GetGameTimer()
-            -- SCENARIO:
-            -- 1. player registers ai race
-            -- 2. player adds ai
-            -- 3. player does not join race they registered
-            -- 4. player starts registered race -- receives start event
-            -- player should not start in race they registered since they did not join
+            -- SCENARIO: rIndex = A, raceIndex = -1
+            -- 1. register race 'A'
+            -- 2. do not join any registered race -> raceIndex = -1
+            -- 3. start race 'A' -> receive start event from race 'A' -> rIndex = A
+            -- do not start race 'A' for player since player did not join race 'A'
+            -- SCENARIO: rIndex = A, raceIndex = B
+            -- 1. register race 'A'
+            -- 2. join another race 'B' -> raceIndex = B
+            -- 3. start race 'A' -> receive start event from race 'A' -> rIndex = A
+            -- do not start race 'B' for player since race 'B' was not started
             if rIndex == raceIndex then
                 if STATE_JOINING == raceState then
                     raceStart = currentTime
@@ -2973,7 +2837,12 @@ AddEventHandler("races:start", function(rIndex, delay)
                     beginDNFTimeout = false
                     timeoutStart = -1
                     started = false
+                    vehicleFrozen = false
                     currentVehicleHash = nil
+                    currentColorPri = -1
+                    currentColorSec = -1
+                    currentColorPearl = -1
+                    currentColorWheel = -1
                     currentVehicleName = "FEET"
                     position = -1
                     numWaypointsPassed = 0
@@ -2981,7 +2850,6 @@ AddEventHandler("races:start", function(rIndex, delay)
                     bestLapTime = -1
                     bestLapVehicleName = currentVehicleName
                     countdown = 5
-                    drawLights = false
                     numRacers = -1
                     results = {}
                     speedo = true
@@ -2989,10 +2857,7 @@ AddEventHandler("races:start", function(rIndex, delay)
                     camTransStarted = false
 
                     if startVehicle ~= nil then
-                        local vehicle = switchVehicle(PlayerPedId(), startVehicle)
-                        if vehicle ~= nil then
-                            SetEntityAsNoLongerNeeded(vehicle)
-                        end
+                        SetEntityAsNoLongerNeeded(switchVehicle(PlayerPedId(), startVehicle, -1, -1, -1, -1))
                     end
 
                     numVisible = maxNumVisible < #waypoints and maxNumVisible or (#waypoints - 1)
@@ -3020,21 +2885,21 @@ AddEventHandler("races:start", function(rIndex, delay)
                 end
             end
 
-            -- SCENARIO:
-            -- 1. player registers ai race
-            -- 2. player adds ai
-            -- 3. player joins another race
-            -- 4. joined race starts -- receives start event from joined race
-            -- do not trigger start event for ai's in player's registered race
-            -- only trigger start event for ai's if player started their registered race
-            if aiState ~= nil and GetPlayerServerId(PlayerId()) == rIndex then
-                aiState.raceStart = currentTime
-                aiState.raceDelay = delay
-                for _, driver in pairs(aiState.drivers) do
-                    if aiState.svehicle ~= nil then
-                        driver.vehicle = switchVehicle(driver.ped, aiState.svehicle)
+            if aiState ~= nil then
+                -- SCENARIO: rIndex = B, GetPlayerServerId(PlayerId() = A
+                -- 1. register race 'A' with AI -> GetPlayerServerId(PlayerId() = A
+                -- 2. join another race 'B' with AI
+                -- 3. receive start event from race 'B' -> rIndex = B
+                -- do not start race for AI's in race 'A'
+                if GetPlayerServerId(PlayerId()) == rIndex then
+                    aiState.raceStart = currentTime
+                    aiState.raceDelay = delay
+                    for _, driver in pairs(aiState.drivers) do
+                        if aiState.svehicle ~= nil then
+                            driver.vehicle = switchVehicle(driver.ped, aiState.svehicle, -1, -1, -1, -1)
+                        end
+                        driver.raceState = STATE_RACING
                     end
-                    driver.raceState = STATE_RACING
                 end
             end
         else
@@ -3049,7 +2914,7 @@ RegisterNetEvent("races:hide")
 AddEventHandler("races:hide", function(rIndex)
     if rIndex ~= nil then
         if starts[rIndex] ~= nil then
-            removeRegistrationPoint(rIndex)
+            deleteRegistrationPoint(rIndex)
         else
             notifyPlayer("Ignoring hide event.  Race does not exist.\n")
         end
@@ -3061,48 +2926,49 @@ end)
 RegisterNetEvent("races:join")
 AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
     if rIndex ~= nil and waypointCoords ~= nil then
-        if starts[rIndex] ~= nil then
+        local start = starts[rIndex]
+        if start ~= nil then
             if nil == aiName then
                 if STATE_IDLE == raceState then
                     raceState = STATE_JOINING
                     raceIndex = rIndex
-                    numLaps = starts[rIndex].laps
-                    DNFTimeout = starts[rIndex].timeout * 1000
+                    numLaps = start.laps
+                    DNFTimeout = start.timeout * 1000
                     restrictedHash = nil
-                    restrictedClass = starts[rIndex].vclass
+                    restrictedClass = start.vclass
                     customClassVehicleList = {}
-                    startVehicle = starts[rIndex].svehicle
-                    randVehicles = {}
+                    randomVehicleList = {}
+                    startVehicle = start.svehicle
                     loadWaypointBlips(waypointCoords)
-                    local msg = "Joined race using "
-                    if nil == starts[rIndex].trackName then
-                        msg = msg .. "unsaved track "
+                    local msg = "Joined race registered by '" .. start.owner .. "' using "
+                    if nil == start.trackName then
+                        msg = msg .. "unsaved track"
                     else
-                        msg = msg .. (true == starts[rIndex].isPublic and "publicly" or "privately") .. " saved track '" .. starts[rIndex].trackName .. "' "
+                        msg = msg .. (true == start.isPublic and "publicly" or "privately") .. " saved track '" .. start.trackName .. "'"
                     end
-                    msg = msg .. ("registered by %s : %d buy-in : %d lap(s)"):format(starts[rIndex].owner, starts[rIndex].buyin, starts[rIndex].laps)
-                    if "yes" == starts[rIndex].allowAI then
+                    msg = msg .. (" : %d buy-in : %d lap(s) : %d timeout"):format(start.buyin, start.laps, start.timeout)
+                    if "yes" == start.allowAI then
                         msg = msg .. " : AI allowed"
                     end
-                    if "rest" == starts[rIndex].rtype then
-                        msg = msg .. " : using '" .. starts[rIndex].restrict .. "' vehicle"
-                        restrictedHash = GetHashKey(starts[rIndex].restrict)
-                    elseif "class" == starts[rIndex].rtype then
-                        msg = msg .. " : using " .. getClassName(restrictedClass) .. " vehicle class"
-                        customClassVehicleList = starts[rIndex].vehicleList
-                    elseif "rand" == starts[rIndex].rtype then
+                    if "rest" == start.rtype then
+                        msg = msg .. " : using '" .. start.restrict .. "' vehicle"
+                        restrictedHash = GetHashKey(start.restrict)
+                    elseif "class" == start.rtype then
+                        msg = msg .. " : using " .. getClassName(restrictedClass) .. " class vehicles"
+                        customClassVehicleList = start.vehicleList
+                    elseif "rand" == start.rtype then
                         msg = msg .. " : using random "
                         if restrictedClass ~= nil then
-                            msg = msg .. getClassName(restrictedClass) .. " vehicle class"
+                            msg = msg .. getClassName(restrictedClass) .. " class vehicles"
                         else
                             msg = msg .. "vehicles"
                         end
                         if startVehicle ~= nil then
-                            msg = msg .. " : '" .. startVehicle .. "'"
+                            msg = msg .. " : start '" .. startVehicle .. "'"
                         end
-                        randVehicles = starts[rIndex].vehicleList
+                        randomVehicleList = start.vehicleList
                     end
-                    msg = msg .. ".\n"
+                    msg = msg .. "\n"
                     notifyPlayer(msg)
                 elseif STATE_EDITING == raceState then
                     notifyPlayer("Ignoring join event.  Currently editing.\n")
@@ -3126,11 +2992,11 @@ AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
                     driver.destSet = true
                     driver.currentWP = true == aiState.startIsFinish and 0 or 1
                     if "rand" == aiState.rtype then
-                        aiState.randVehicles = aiState.vehicleList
+                        aiState.randomVehicleList = aiState.vehicleList
                     end
                     notifyPlayer("AI driver '" .. aiName .. "' joined race.\n")
                 else
-                    notifyPlayer("Ignoring join event.  '" .. aiName .. "' is not a valid AI driver.\n")
+                    notifyPlayer("Ignoring join event.  AI driver '" .. aiName .. "' not found.\n")
                 end
             else
                 notifyPlayer("Ignoring join event.  No AI drivers added.\n")
@@ -3143,18 +3009,20 @@ AddEventHandler("races:join", function(rIndex, aiName, waypointCoords)
     end
 end)
 
--- SCENARIO:
--- 1. player finishes a race
--- 2. receives finish events from previous race because other players/AI finished
--- 3. player joins another race
--- 4. joined race starts
--- 5. receives finish event from previous race before current race
--- if accepting finish events from previous race, DNF timeout for current race may be started
--- only accept finish events from current race
--- do not accept finish events from previous race
 RegisterNetEvent("races:finish")
 AddEventHandler("races:finish", function(rIndex, playerName, raceFinishTime, raceBestLapTime, raceVehicleName)
     if rIndex ~= nil and playerName ~= nil and raceFinishTime ~= nil and raceBestLapTime ~= nil and raceVehicleName ~= nil then
+        local currentTime = GetGameTimer()
+        -- SCENARIO: rIndex = A, raceIndex = -1
+        -- 1. finish race 'A' -> raceIndex = A
+        -- 2. receive results event from race 'A' -> raceIndex = -1
+        -- 3. receive finish events from race 'A' -> rIndex = A
+        -- do not notify player/begin DNF timeout for race 'A' finish events
+        -- SCENARIO: rIndex = A, raceIndex = B
+        -- 1. finish race 'A' -> raceIndex = A
+        -- 2. join another race 'B' -> raceIndex = B
+        -- 3. receive finish events from race 'A' -> rIndex = A
+        -- do not notify player/begin DNF timeout for race 'A' finish events
         if rIndex == raceIndex then
             if -1 == raceFinishTime then
                 if -1 == raceBestLapTime then
@@ -3164,19 +3032,26 @@ AddEventHandler("races:finish", function(rIndex, playerName, raceFinishTime, rac
                     notifyPlayer(("%s did not finish and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, minutes, seconds, raceVehicleName))
                 end
             else
-                local currentTime = GetGameTimer()
                 if false == beginDNFTimeout then
                     beginDNFTimeout = true
                     timeoutStart = currentTime
                 end
-                if aiState ~= nil and false == aiState.beginDNFTimeout then
-                    aiState.beginDNFTimeout = true
-                    aiState.timeoutStart = currentTime
-                end
-
                 local fMinutes, fSeconds = minutesSeconds(raceFinishTime)
                 local lMinutes, lSeconds = minutesSeconds(raceBestLapTime)
                 notifyPlayer(("%s finished in %02d:%05.2f and had a best lap time of %02d:%05.2f using %s.\n"):format(playerName, fMinutes, fSeconds, lMinutes, lSeconds, raceVehicleName))
+            end
+        end
+
+        if raceFinishTime ~= -1 and aiState ~= nil and false == aiState.beginDNFTimeout then
+            -- SCENARIO: rIndex = B, GetPlayerServerId(PlayerId()) = A
+            -- 1. register race 'A' with AI -> GetPlayerServerId(PlayerId()) = A
+            -- 2. join another race 'B' with AI
+            -- 3. joined race 'B' starts
+            -- 4. receive finish events from race 'B' -> rIndex = B
+            -- do not begin AI DNF timeout for race 'A'
+            if GetPlayerServerId(PlayerId()) == rIndex then
+                aiState.beginDNFTimeout = true
+                aiState.timeoutStart = currentTime
             end
         end
     else
@@ -3184,18 +3059,16 @@ AddEventHandler("races:finish", function(rIndex, playerName, raceFinishTime, rac
     end
 end)
 
--- SCENARIO:
--- 1. player finishes a race
--- 2. doesn't receive results event because other players/AI have not finished
--- 3. player joins another race
--- 4. joined race starts
--- 5. receives results event from previous race before current race
--- only accept results event from current race
--- do not accept results event from previous race
 RegisterNetEvent("races:results")
 AddEventHandler("races:results", function(rIndex, raceResults)
     if rIndex ~= nil and raceResults ~= nil then
+        -- SCENARIO: rIndex = A, raceIndex = B
+        -- 1. finish race 'A' -> raceIndex = A
+        -- 2. join another race 'B' -> raceIndex = B
+        -- 3. receive results event from race 'A' -> rIndex = A
+        -- do not view results from race 'A'
         if rIndex == raceIndex then
+            raceIndex = -1
             results = raceResults
             viewResults(true)
         end
@@ -3204,17 +3077,19 @@ AddEventHandler("races:results", function(rIndex, raceResults)
     end
 end)
 
--- SCENARIO:
--- 1. player finishes previous race
--- 2. still receiving position events from previous race because other players/AI have not finished
--- 3. player joins another race
--- 4. joined race started
--- receiving position events from previous race and joined race
--- only accept position events from joined race
--- do not accept position events from previous race
 RegisterNetEvent("races:position")
 AddEventHandler("races:position", function(rIndex, pos, numR)
     if rIndex ~= nil and pos ~= nil and numR ~= nil then
+        -- SCENARIO: rIndex = A, raceIndex = -1
+        -- 1. finish race 'A' -> raceIndex = A
+        -- 2. receive results event -> raceIndex = -1
+        -- 3. receive position events from race 'A' -> rIndex = A
+        -- do not update position for race 'A' position events
+        -- SCENARIO: rIndex = A, raceIndex = B
+        -- 1. finish race 'A' -> raceIndex = A
+        -- 2. join another race 'B' -> raceIndex = B
+        -- 3. receive position events from race 'A' -> rIndex = A
+        -- do not update position for race 'A' position events
         if rIndex == raceIndex then
             position = pos
             numRacers = numR
@@ -3231,22 +3106,25 @@ AddEventHandler("races:addRacer", function(netID, name)
             RemoveBlip(racerBlipGT[netID].blip)
             RemoveMpGamerTag(racerBlipGT[netID].gamerTag)
         end
-        local ped = NetToPed(netID)
-        if DoesEntityExist(ped) == 1 then
+        if 1 == NetworkDoesNetworkIdExist(netID) then
+            local ped = NetToPed(netID)
             local blip = AddBlipForEntity(ped)
             SetBlipSprite(blip, racerSprite)
             SetBlipColour(blip, racerBlipColor)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentSubstringPlayerName("Racer")
+            EndTextCommandSetBlipName(blip)
             local gamerTag = CreateFakeMpGamerTag(ped, name, false, false, nil, 0)
             SetMpGamerTagVisibility(gamerTag, 0, true)
-            racerBlipGT[netID] = {blip = blip, gamerTag = gamerTag, netID = netID, name = name}
+            racerBlipGT[netID] = {blip = blip, gamerTag = gamerTag, name = name}
         end
     else
         notifyPlayer("Ignoring addRacer event.  Invalid parameters.\n")
     end
 end)
 
-RegisterNetEvent("races:delRacer")
-AddEventHandler("races:delRacer", function(netID)
+RegisterNetEvent("races:deleteRacer")
+AddEventHandler("races:deleteRacer", function(netID)
     if netID ~= nil then
         if racerBlipGT[netID] ~= nil then
             RemoveBlip(racerBlipGT[netID].blip)
@@ -3254,7 +3132,7 @@ AddEventHandler("races:delRacer", function(netID)
             racerBlipGT[netID] = nil
         end
     else
-        notifyPlayer("Ignoring delRacer event.  Invalid parameters.\n")
+        notifyPlayer("Ignoring deleteRacer event.  Invalid parameters.\n")
     end
 end)
 
@@ -3263,10 +3141,11 @@ AddEventHandler("races:allVehicles", function(allVehicles)
     if allVehicles ~= nil then
         allVehiclesList = {}
         allVehiclesHTML = ""
-        for _, vehicle in ipairs(allVehicles) do
-            if IsModelInCdimage(vehicle) == 1 and IsModelAVehicle(vehicle) == 1 then
-                allVehiclesList[#allVehiclesList + 1] = vehicle
-                allVehiclesHTML = allVehiclesHTML .. "<option value = \"" .. vehicle .. "\">" .. vehicle .. "</option>"
+        table.sort(allVehicles)
+        for _, model in ipairs(allVehicles) do
+            if 1 == IsModelInCdimage(model) and 1 == IsModelAVehicle(model) then
+                allVehiclesList[#allVehiclesList + 1] = model
+                allVehiclesHTML = allVehiclesHTML .. "<option value = \"" .. model .. "\">" .. model .. "</option>"
             end
         end
     else
@@ -3278,6 +3157,7 @@ RegisterNetEvent("races:trackNames")
 AddEventHandler("races:trackNames", function(isPublic, trackNames)
     if isPublic ~= nil and trackNames ~= nil then
         if true == panelShown then
+            table.sort(trackNames)
             local html = ""
             for _, trackName in ipairs(trackNames) do
                 html = html .. "<option value = \"" .. trackName .. "\">" .. trackName .. "</option>"
@@ -3297,6 +3177,7 @@ RegisterNetEvent("races:aiGrpNames")
 AddEventHandler("races:aiGrpNames", function(isPublic, grpNames)
     if isPublic ~= nil and grpNames ~= nil then
         if true == panelShown then
+            table.sort(grpNames)
             local html = ""
             for _, grpName in ipairs(grpNames) do
                 html = html .. "<option value = \"" .. grpName .. "\">" .. grpName .. "</option>"
@@ -3316,6 +3197,7 @@ RegisterNetEvent("races:listNames")
 AddEventHandler("races:listNames", function(isPublic, listNames)
     if isPublic ~= nil and listNames ~= nil then
         if true == panelShown then
+            table.sort(listNames)
             local html = ""
             for _, listName in ipairs(listNames) do
                 html = html .. "<option value = \"" .. listName .. "\">" .. listName .. "</option>"
@@ -3331,20 +3213,28 @@ AddEventHandler("races:listNames", function(isPublic, listNames)
     end
 end)
 
+RegisterNetEvent("races:cash")
+AddEventHandler("races:cash", function(cash)
+    StatSetInt(`MP0_WALLET_BALANCE`, cash, true)
+    SetMultiplayerWalletCash()
+    Citizen.Wait(5000)
+    RemoveMultiplayerWalletCash()
+end)
+
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(500)
         if STATE_RACING == raceState then
             local player = PlayerPedId()
             local distance = #(GetEntityCoords(player) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z))
-            TriggerServerEvent("races:report", raceIndex, PedToNet(player), nil, numWaypointsPassed, distance)
+            TriggerServerEvent("races:report", raceIndex, PedToNet(player), numWaypointsPassed, distance)
         end
 
         if aiState ~= nil then
-            for aiName, driver in pairs(aiState.drivers) do
+            for _, driver in pairs(aiState.drivers) do
                 if STATE_RACING == driver.raceState then
                     local distance = #(GetEntityCoords(driver.ped) - vector3(driver.destCoord.x, driver.destCoord.y, driver.destCoord.z))
-                    TriggerServerEvent("races:report", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, distance)
+                    TriggerServerEvent("races:report", GetPlayerServerId(PlayerId()), driver.netID, driver.numWaypointsPassed, distance)
                 end
             end
         end
@@ -3354,9 +3244,8 @@ end)
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
-        local player = PlayerPedId()
-        local playerCoord = GetEntityCoords(player)
         if STATE_EDITING == raceState then
+            local playerCoord = GetEntityCoords(PlayerPedId())
             local closestIndex = 0
             local minDist = maxRadius
             for index, waypoint in ipairs(waypoints) do
@@ -3368,21 +3257,21 @@ Citizen.CreateThread(function()
             end
 
             if closestIndex ~= 0 then
-                if highlightedCheckpoint ~= 0 and closestIndex ~= highlightedCheckpoint then
-                    local color = (highlightedCheckpoint == selectedIndex0 or highlightedCheckpoint == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
-                    SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
+                if highlightedIndex ~= 0 and closestIndex ~= highlightedIndex then
+                    local color = (highlightedIndex == selectedIndex0 or highlightedIndex == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedIndex].color)
+                    SetCheckpointRgba(waypoints[highlightedIndex].checkpoint, color.r, color.g, color.b, 127)
                 end
                 local color = (closestIndex == selectedIndex0 or closestIndex == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[closestIndex].color)
                 SetCheckpointRgba(waypoints[closestIndex].checkpoint, color.r, color.g, color.b, 255)
-                highlightedCheckpoint = closestIndex
+                highlightedIndex = closestIndex
                 drawMsg(0.50, 0.50, "Press [ENTER] key, [A] button or [CROSS] button to select waypoint", 0.7, 0)
-            elseif highlightedCheckpoint ~= 0 then
-                local color = (highlightedCheckpoint == selectedIndex0 or highlightedCheckpoint == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedCheckpoint].color)
-                SetCheckpointRgba(waypoints[highlightedCheckpoint].checkpoint, color.r, color.g, color.b, 127)
-                highlightedCheckpoint = 0
+            elseif highlightedIndex ~= 0 then
+                local color = (highlightedIndex == selectedIndex0 or highlightedIndex == selectedIndex1) and getCheckpointColor(selectedBlipColor) or getCheckpointColor(waypoints[highlightedIndex].color)
+                SetCheckpointRgba(waypoints[highlightedIndex].checkpoint, color.r, color.g, color.b, 127)
+                highlightedIndex = 0
             end
 
-            if IsWaypointActive() == 1 then
+            if 1 == IsWaypointActive() then
                 SetWaypointOff()
                 local coord = GetBlipCoords(GetFirstBlipInfoId(8))
                 for height = 1000.0, 0.0, -50.0 do
@@ -3390,22 +3279,22 @@ Citizen.CreateThread(function()
                     Citizen.Wait(0)
                     local foundZ, groundZ = GetGroundZFor_3dCoord(coord.x, coord.y, height, true)
                     if 1 == foundZ then
-                        coord = vector3(coord.x, coord.y, groundZ)
+                        coord = vector3(coord.x, coord.y, groundZ + 1.0) -- add 1.0 to groundZ so it's not right at ground level
                         editWaypoints(coord)
                         break
                     end
                 end
-            elseif IsControlJustReleased(0, 215) == 1 then -- enter key or A button or cross button
+            elseif 1 == IsControlJustReleased(0, 215) then -- enter key or A button or cross button
                 editWaypoints(playerCoord)
             elseif selectedIndex0 ~= 0 and 0 == selectedIndex1 then
                 local selectedWaypoint0 = waypoints[selectedIndex0]
-                if IsControlJustReleased(2, 216) == 1 then -- space key or X button or square button
+                if 1 == IsControlJustReleased(2, 216) then -- space key or X button or square button
                     DeleteCheckpoint(selectedWaypoint0.checkpoint)
                     RemoveBlip(selectedWaypoint0.blip)
                     table.remove(waypoints, selectedIndex0)
 
-                    if highlightedCheckpoint == selectedIndex0 then
-                        highlightedCheckpoint = 0
+                    if highlightedIndex == selectedIndex0 then
+                        highlightedIndex = 0
                     end
                     selectedIndex0 = 0
 
@@ -3421,14 +3310,14 @@ Citizen.CreateThread(function()
                         SetBlipRoute(waypoints[1].blip, true)
                         SetBlipRouteColour(waypoints[1].blip, blipRouteColor)
                     end
-                elseif IsControlJustReleased(0, 187) == 1 and selectedWaypoint0.coord.r > minRadius then -- arrow down or DPAD DOWN
+                elseif 1 == IsControlJustReleased(0, 187) and selectedWaypoint0.coord.r > minRadius then -- arrow down or DPAD DOWN
                     selectedWaypoint0.coord.r = selectedWaypoint0.coord.r - 0.5
                     DeleteCheckpoint(selectedWaypoint0.checkpoint)
                     local color = getCheckpointColor(selectedBlipColor)
                     local checkpointType = 38 == selectedWaypoint0.sprite and finishCheckpoint or midCheckpoint
                     selectedWaypoint0.checkpoint = makeCheckpoint(checkpointType, selectedWaypoint0.coord, selectedWaypoint0.coord, color, 127, selectedIndex0 - 1)
                     savedTrackName = nil
-                elseif IsControlJustReleased(0, 188) == 1 and selectedWaypoint0.coord.r < maxRadius then -- arrow up or DPAD UP
+                elseif 1 == IsControlJustReleased(0, 188) and selectedWaypoint0.coord.r < maxRadius then -- arrow up or DPAD UP
                     selectedWaypoint0.coord.r = selectedWaypoint0.coord.r + 0.5
                     DeleteCheckpoint(selectedWaypoint0.checkpoint)
                     local color = getCheckpointColor(selectedBlipColor)
@@ -3438,6 +3327,7 @@ Citizen.CreateThread(function()
                 end
             end
         elseif STATE_RACING == raceState then
+            local player = PlayerPedId()
             local currentTime = GetGameTimer()
             local elapsedTime = currentTime - raceStart - raceDelay * 1000
             if elapsedTime < 0 then
@@ -3448,7 +3338,7 @@ Citizen.CreateThread(function()
                 if false == camTransStarted then
                     camTransStarted = true
                     Citizen.CreateThread(function()
-                        local entity = IsPedInAnyVehicle(player, false) == 1 and GetVehiclePedIsIn(player, false) or player
+                        local entity = 1 == IsPedInAnyVehicle(player, false) and GetVehiclePedIsIn(player, false) or player
 
                         local cam0 = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
                         SetCamCoord(cam0, GetOffsetFromEntityInWorldCoords(entity, 0.0, 5.0, 1.0))
@@ -3465,38 +3355,52 @@ Citizen.CreateThread(function()
                         RenderScriptCams(true, false, 0, true, true)
 
                         SetCamActiveWithInterp(cam1, cam0, 1000, 0, 0)
-                        Citizen.Wait(2000)
+                        while 1 == IsCamInterpolating(cam1) do
+                            Citizen.Wait(0)
+                        end
+                        Citizen.Wait(500)
 
                         SetCamActiveWithInterp(cam2, cam1, 1000, 0, 0)
-                        Citizen.Wait(2000)
+                        while 1 == IsCamInterpolating(cam2) do
+                            Citizen.Wait(0)
+                        end
+                        Citizen.Wait(500)
 
                         RenderScriptCams(false, true, 1000, true, true)
 
-                        SetGameplayCamRelativeRotation(GetEntityRotation(entity))
+                        SetGameplayCamRelativeRotation(GetEntityRotation(entity, 2))
+
+                        DestroyAllCams(true)
                     end)
                 end
 
-                if elapsedTime > -countdown * 1000 then
-                    drawLights = true
+                if -elapsedTime <= countdown * 1000 then
                     countdown = countdown - 1
                     PlaySoundFrontend(-1, "MP_5_SECOND_TIMER", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                 end
 
-                if true == drawLights then
+                if countdown < 5 then
                     for i = 0, 4 - countdown do
                         drawRect(i * 0.2 + 0.05, 0.15, 0.1, 0.1, 255, 0, 0, 255)
                     end
                 end
 
-                if IsPedInAnyVehicle(player, false) == 1 then
-                    FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
+                if 1 == IsPedInAnyVehicle(player, false) then
+                    if false == vehicleFrozen then
+                        vehicleFrozen = true
+                        FreezeEntityPosition(GetVehiclePedIsIn(player, false), true)
+                    end
+                elseif true == vehicleFrozen then
+                    vehicleFrozen = false
+                    FreezeEntityPosition(GetVehiclePedIsIn(player, true), false)
                 end
             else
                 local vehicle = nil
-                if IsPedInAnyVehicle(player, false) == 1 then
+                if 1 == IsPedInAnyVehicle(player, false) then
                     vehicle = GetVehiclePedIsIn(player, false)
-                    FreezeEntityPosition(vehicle, false)
                     currentVehicleHash = GetEntityModel(vehicle)
+                    currentColorPri, currentColorSec = GetVehicleColours(vehicle)
+                    currentColorPearl, currentColorWheel = GetVehicleExtraColours(vehicle)
                     currentVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(currentVehicleHash))
                 else
                     currentVehicleName = "FEET"
@@ -3507,17 +3411,24 @@ Citizen.CreateThread(function()
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
                     bestLapVehicleName = currentVehicleName
                     lapTimeStart = currentTime
+                    if vehicle ~= nil then
+                        FreezeEntityPosition(vehicle, false)
+                    end
                 end
 
-                if IsControlPressed(0, 73) == 1 then -- X key or A button or cross button
+                if 1 == IsControlPressed(0, 73) then -- X key or A button or cross button
                     if true == respawnCtrlPressed then
-                        if currentTime - respawnTime > 1000 then
+                        if currentTime - respawnStart > 1000 then
                             respawnCtrlPressed = false
                             respawn()
+                        else
+                            drawMsg(leftSide, topSide - 0.06, "Respawn", 0.5, 1)
+                            drawRect(rightSide, topSide - 0.06, 0.11, 0.03, 0, 0, 0, 127)
+                            drawRect(rightSide, topSide - 0.06, 0.11 * (currentTime - respawnStart) / 1000, 0.03, 255, 255, 0, 255)
                         end
                     else
                         respawnCtrlPressed = true
-                        respawnTime = currentTime
+                        respawnStart = currentTime
                     end
                 else
                     respawnCtrlPressed = false
@@ -3526,10 +3437,10 @@ Citizen.CreateThread(function()
                 drawRect(leftSide - 0.01, topSide - 0.01, 0.21, 0.35, 0, 0, 0, 127)
 
                 drawMsg(leftSide, topSide, "Position", 0.5, 1)
-                if -1 == position then
-                    drawMsg(rightSide, topSide, "-- of --", 0.5, 1)
-                else
+                if position ~= -1 then
                     drawMsg(rightSide, topSide, ("%d of %d"):format(position, numRacers), 0.5, 1)
+                else
+                    drawMsg(rightSide, topSide, "-- of --", 0.5, 1)
                 end
 
                 drawMsg(leftSide, topSide + 0.03, "Lap", 0.5, 1)
@@ -3555,11 +3466,11 @@ Citizen.CreateThread(function()
                 drawMsg(rightSide, topSide + 0.17, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
 
                 drawMsg(leftSide, topSide + 0.21, "Best lap", 0.7, 1)
-                if -1 == bestLapTime then
-                    drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7, 1)
-                else
+                if bestLapTime ~= -1 then
                     minutes, seconds = minutesSeconds(bestLapTime)
                     drawMsg(rightSide, topSide + 0.21, ("%02d:%05.2f"):format(minutes, seconds), 0.7, 1)
+                else
+                    drawMsg(rightSide, topSide + 0.21, "- - : - -", 0.7, 1)
                 end
 
                 if true == beginDNFTimeout then
@@ -3575,7 +3486,7 @@ Citizen.CreateThread(function()
                 end
 
                 if STATE_RACING == raceState then
-                    if #(playerCoord - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
+                    if #(GetEntityCoords(player) - vector3(waypointCoord.x, waypointCoord.y, waypointCoord.z)) < waypointCoord.r then
                         local waypointPassed = true
                         if restrictedHash ~= nil then
                             if nil == vehicle or currentVehicleHash ~= restrictedHash then
@@ -3584,7 +3495,7 @@ Citizen.CreateThread(function()
                         elseif restrictedClass ~= nil then
                             if vehicle ~= nil then
                                 if -1 == restrictedClass then
-                                    if vehicleInList(vehicle, customClassVehicleList) == false then
+                                    if false == vehicleInList(vehicle, customClassVehicleList) then
                                         waypointPassed = false
                                     end
                                 elseif GetVehicleClass(vehicle) ~= restrictedClass then
@@ -3604,19 +3515,16 @@ Citizen.CreateThread(function()
                             if currentWaypoint < #waypoints then
                                 currentWaypoint = currentWaypoint + 1
                             else
-                                currentWaypoint = 1
-                                lapTimeStart = currentTime
                                 if -1 == bestLapTime or lapTime < bestLapTime then
                                     bestLapTime = lapTime
                                     bestLapVehicleName = currentVehicleName
                                 end
                                 if currentLap < numLaps then
+                                    currentWaypoint = 1
+                                    lapTimeStart = currentTime
                                     currentLap = currentLap + 1
-                                    if #randVehicles > 0 then
-                                        local randVehicle = switchVehicle(player, randVehicles[math.random(#randVehicles)])
-                                        if randVehicle ~= nil then
-                                            SetEntityAsNoLongerNeeded(randVehicle)
-                                        end
+                                    if #randomVehicleList > 0 then -- in random vehicle race
+                                        SetEntityAsNoLongerNeeded(switchVehicle(player, randomVehicleList[math.random(#randomVehicleList)], -1, -1, -1, -1))
                                         PlaySoundFrontend(-1, "CHARACTER_SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
                                     end
                                 else
@@ -3673,6 +3581,8 @@ Citizen.CreateThread(function()
                 end
             end
         elseif STATE_IDLE == raceState then
+            local player = PlayerPedId()
+            local playerCoord = GetEntityCoords(player)
             local closestIndex = -1
             local minDist = defaultRadius
             for rIndex, start in pairs(starts) do
@@ -3683,107 +3593,85 @@ Citizen.CreateThread(function()
                 end
             end
             if closestIndex ~= -1 then
-                local msg = "Join race using "
-                if nil == starts[closestIndex].trackName then
-                    msg = msg .. "unsaved track "
+                local start = starts[closestIndex]
+
+                local msg = "Join race registered by '" .. start.owner .. "' using "
+                if nil == start.trackName then
+                    msg = msg .. "unsaved track"
                 else
-                    msg = msg .. (true == starts[closestIndex].isPublic and "publicly" or "privately") .. " saved track '" .. starts[closestIndex].trackName .. "' "
+                    msg = msg .. (true == start.isPublic and "publicly" or "privately") .. " saved track '" .. start.trackName .. "'"
                 end
-                msg = msg .. "registered by " .. starts[closestIndex].owner
                 drawMsg(0.50, 0.50, msg, 0.7, 0)
-                msg = ("%d buy-in : %d lap(s)"):format(starts[closestIndex].buyin, starts[closestIndex].laps)
-                if "yes" == starts[closestIndex].allowAI then
+
+                msg = ("%d buy-in : %d lap(s) : %d timeout"):format(start.buyin, start.laps, start.timeout)
+                if "yes" == start.allowAI then
                     msg = msg .. " : AI allowed"
                 end
-                if "rest" == starts[closestIndex].rtype then
-                    msg = msg .. " : using '" .. starts[closestIndex].restrict .. "' vehicle"
-                elseif "class" == starts[closestIndex].rtype then
-                    msg = msg .. " : using " .. getClassName(starts[closestIndex].vclass) .. " vehicle class"
-                elseif "rand" == starts[closestIndex].rtype then
-                    msg = msg .. " : using random "
-                    if starts[closestIndex].vclass ~= nil then
-                        msg = msg .. getClassName(starts[closestIndex].vclass) .. " vehicle class"
-                    else
-                        msg = msg .. "vehicles"
-                    end
-                    if starts[closestIndex].svehicle ~= nil then
-                        msg = msg .. " : '" .. starts[closestIndex].svehicle .. "'"
-                    end
-                end
                 drawMsg(0.50, 0.54, msg, 0.7, 0)
-                if IsControlJustReleased(0, 51) == 1 then -- E key or DPAD RIGHT
+
+                if start.rtype ~= nil then
+                    if "rest" == start.rtype then
+                        msg = "using '" .. start.restrict .. "' vehicle"
+                    elseif "class" == start.rtype then
+                        msg = "using " .. getClassName(start.vclass) .. " class vehicles"
+                    elseif "rand" == start.rtype then
+                        msg = "using random "
+                        if start.vclass ~= nil then
+                            msg = msg .. getClassName(start.vclass) .. " class vehicles"
+                        else
+                            msg = msg .. "vehicles"
+                        end
+                        if start.svehicle ~= nil then
+                            msg = msg .. " : start '" .. start.svehicle .. "'"
+                        end
+                    end
+                    drawMsg(0.50, 0.58, msg, 0.7, 0)
+                end
+
+                if 1 == IsControlJustReleased(0, 51) then -- E key or DPAD RIGHT
                     local joinRace = true
                     originalVehicleHash = nil
-                    colorPri = -1
-                    colorSec = -1
+                    originalColorPri = -1
+                    originalColorSec = -1
+                    originalColorPearl = -1
+                    originalColorWheel = -1
                     local vehicle = nil
-                    if IsPedInAnyVehicle(player, false) == 1 then
+                    if 1 == IsPedInAnyVehicle(player, false) then
                         vehicle = GetVehiclePedIsIn(player, false)
                     end
-                    if "rest" == starts[closestIndex].rtype then
-                        if vehicle ~= nil then
-                            if GetEntityModel(vehicle) ~= GetHashKey(starts[closestIndex].restrict) then
-                                joinRace = false
-                                notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
-                            end
-                        else
+                    if "rest" == start.rtype then
+                        if nil == vehicle or GetEntityModel(vehicle) ~= GetHashKey(start.restrict) then
                             joinRace = false
-                            notifyPlayer("Cannot join race.  Player needs to be in restricted vehicle.")
+                            notifyPlayer("Cannot join race.  Player needs to be in '" .. start.restrict .. "' vehicle.\n")
                         end
-                    elseif "class" == starts[closestIndex].rtype then
-                        if starts[closestIndex].vclass ~= -1 then
-                            if vehicle ~= nil then
-                                if GetVehicleClass(vehicle) ~= starts[closestIndex].vclass then
-                                    joinRace = false
-                                    notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
-                                end
-                            else
+                    elseif "class" == start.rtype then
+                        if start.vclass ~= -1 then
+                            if nil == vehicle or GetVehicleClass(vehicle) ~= start.vclass then
                                 joinRace = false
-                                notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
+                                notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(start.vclass) .. " class.\n")
                             end
-                        else
-                            if #starts[closestIndex].vehicleList == 0 then
-                                joinRace = false
-                                notifyPlayer("Cannot join race.  No valid vehicles in vehicle list.")
-                            else
-                                local list = ""
-                                for _, vehName in pairs(starts[closestIndex].vehicleList) do
-                                    list = list .. vehName .. ", "
-                                end
-                                list = string.sub(list, 1, -3)
-                                if vehicle ~= nil then
-                                    if vehicleInList(vehicle, starts[closestIndex].vehicleList) == false then
-                                        joinRace = false
-                                        notifyPlayer("Cannot join race.  Player needs to be in one of the following vehicles: " .. list)
-                                    end
-                                else
-                                    joinRace = false
-                                    notifyPlayer("Cannot join race.  Player needs to be in one of the following vehicles: " .. list)
-                                end
-                            end
-                        end
-                    elseif "rand" == starts[closestIndex].rtype then
-                        if #starts[closestIndex].vehicleList == 0 then
+                        elseif 0 == #start.vehicleList then
                             joinRace = false
-                            notifyPlayer("Cannot join race.  No valid vehicles in vehicle list.")
-                        else
-                            if vehicle ~= nil then
-                                originalVehicleHash = GetEntityModel(vehicle)
-                                colorPri, colorSec = GetVehicleColours(vehicle)
+                            notifyPlayer("Cannot join race.  Vehicle list is empty.\n")
+                        elseif nil == vehicle or false == vehicleInList(vehicle, start.vehicleList) then
+                            joinRace = false
+                            local list = ""
+                            for _, model in pairs(start.vehicleList) do
+                                list = list .. model .. ", "
                             end
-                            if starts[closestIndex].vclass ~= nil then
-                                if nil == starts[closestIndex].svehicle then
-                                    if vehicle ~= nil then
-                                        if GetVehicleClass(vehicle) ~= starts[closestIndex].vclass then
-                                            joinRace = false
-                                            notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
-                                        end
-                                    else
-                                        joinRace = false
-                                        notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(starts[closestIndex].vclass) .. " class.")
-                                    end
-                                end
-                            end
+                            notifyPlayer("Cannot join race.  Player needs to be in one of the following vehicles: " .. string.sub(list, 1, -3) .. "\n")
+                        end
+                    elseif "rand" == start.rtype then
+                        if 0 == #start.vehicleList then
+                            joinRace = false
+                            notifyPlayer("Cannot join race.  Vehicle list is empty.\n")
+                        elseif start.vclass ~= nil and nil == start.svehicle and (nil == vehicle or GetVehicleClass(vehicle) ~= start.vclass) then
+                            joinRace = false
+                            notifyPlayer("Cannot join race.  Player needs to be in vehicle of " .. getClassName(start.vclass) .. " class.\n")
+                        elseif vehicle ~= nil then
+                            originalVehicleHash = GetEntityModel(vehicle)
+                            originalColorPri, originalColorSec = GetVehicleColours(vehicle)
+                            originalColorPearl, originalColorWheel = GetVehicleExtraColours(vehicle)
                         end
                     end
                     if true == joinRace then
@@ -3792,44 +3680,6 @@ Citizen.CreateThread(function()
                     end
                 end
             end
-        end
-
-        if IsPedInAnyVehicle(player, true) == false then
-            local vehicle = GetVehiclePedIsTryingToEnter(player)
-            if DoesEntityExist(vehicle) == 1 then
-                if false == enteringVehicle then
-                    enteringVehicle = true
-                    local numSeats = GetVehicleModelNumberOfSeats(GetEntityModel(vehicle))
-                    if numSeats > 0 then
-                        for seat = -1, numSeats - 2 do
-                            if IsVehicleSeatFree(vehicle, seat) == 1 then
-                                TaskEnterVehicle(player, vehicle, 10.0, seat, 1.0, 1, 0)
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        else
-            enteringVehicle = false
-        end
-
-        if true == speedo then
-            local speed = GetEntitySpeed(player)
-            if "metric" == unitom then
-                drawMsg(leftSide, topSide + 0.25, "Speed(kph)", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 3.6), 0.7, 1)
-            else
-                drawMsg(leftSide, topSide + 0.25, "Speed(mph)", 0.7, 1)
-                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 2.2369363), 0.7, 1)
-            end
-        end
-
-        if true == panelShown then
-            DisableControlAction(0, 142, true)
-            DisableControlAction(0, 18, true)
-            DisableControlAction(0, 322, true)
-            DisableControlAction(0, 106, true)
         end
     end
 end)
@@ -3846,30 +3696,25 @@ Citizen.CreateThread(function()
                         if false == driver.started then
                             driver.started = true
                             driver.lapTimeStart = currentTime
-                        end
-                        if true == aiState.beginDNFTimeout then
-                            if aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
-                                driver.raceState = STATE_IDLE
-                                TriggerServerEvent("races:finish", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
-                            end
-                        end
-                        if IsEntityDead(driver.ped) == false and STATE_RACING == driver.raceState then
-                            if IsVehicleDriveable(driver.vehicle, false) == false then
+                            driver.stuckStart = currentTime
+                        elseif true == aiState.beginDNFTimeout and aiState.timeoutStart + aiState.DNFTimeout - currentTime <= 0 then
+                            driver.raceState = STATE_IDLE
+                            TriggerServerEvent("races:finish", GetPlayerServerId(PlayerId()), driver.netID, aiName, driver.numWaypointsPassed, -1, driver.bestLapTime, driver.bestLapVehicleName, nil)
+                        elseif false == IsEntityDead(driver.ped) then
+                            if false == IsVehicleDriveable(driver.vehicle, false) then
                                 respawnAI(driver)
                             else
                                 local coord = GetEntityCoords(driver.ped)
                                 if #(coord - driver.stuckCoord) < 5.0 then
-                                    if -1 == driver.stuckStart then
+                                    if currentTime - driver.stuckStart > 10000 then
                                         driver.stuckStart = currentTime
-                                    elseif currentTime - driver.stuckStart > 10000 then
                                         respawnAI(driver)
-                                        driver.stuckStart = -1
                                     end
                                 else
                                     driver.stuckCoord = coord
-                                    driver.stuckStart = -1
+                                    driver.stuckStart = currentTime
                                 end
-                                if IsPedInAnyVehicle(driver.ped, true) == false then
+                                if false == IsPedInVehicle(driver.ped, driver.vehicle, true) then
                                     if false == driver.enteringVehicle then
                                         driver.enteringVehicle = true
                                         driver.destSet = true
@@ -3881,28 +3726,28 @@ Citizen.CreateThread(function()
                                         driver.destSet = false
                                         -- TaskVehicleDriveToCoordLongrange(ped, vehicle, x, y, z, speed, driveMode, stopRange)
                                         -- driveMode: https://vespura.com/fivem/drivingstyle/
-                                        -- actual speed is around speed * 2 mph
-                                        -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, 60.0, 787004, driver.destCoord.r * 0.5)
+                                        -- TaskVehicleDriveToCoordLongrange(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, GetVehicleEstimatedMaxSpeed(driver.vehicle), 787004, driver.destCoord.r * 0.5)
                                         -- On public track '01' and waypoint 7, AI would miss waypoint 7, move past it, wander a long way around, then come back to waypoint 7 when using TaskVehicleDriveToCoordLongrange
                                         -- Using TaskVehicleDriveToCoord instead.  Waiting to see if there is any weird behaviour with this function.
                                         -- TaskVehicleDriveToCoord(ped, vehicle, x, y, z, speed, p6, vehicleModel, drivingMode, stopRange, p10)
-                                        TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, 70.0, 1.0, GetEntityModel(driver.vehicle), 787004, driver.destCoord.r * 0.5, true)
+                                        TaskVehicleDriveToCoord(driver.ped, driver.vehicle, driver.destCoord.x, driver.destCoord.y, driver.destCoord.z, GetVehicleEstimatedMaxSpeed(driver.vehicle), 1.0, driver.model, 787004, driver.destCoord.r * 0.5, true)
                                     else
                                         if #(GetEntityCoords(driver.ped) - vector3(driver.destCoord.x, driver.destCoord.y, driver.destCoord.z)) < driver.destCoord.r then
                                             driver.numWaypointsPassed = driver.numWaypointsPassed + 1
                                             if driver.currentWP < #aiState.waypointCoords then
                                                 driver.currentWP = driver.currentWP + 1
                                             else
-                                                driver.currentWP = 1
                                                 local lapTime = currentTime - driver.lapTimeStart
                                                 if -1 == driver.bestLapTime or lapTime < driver.bestLapTime then
                                                     driver.bestLapTime = lapTime
+                                                    driver.bestLapVehicleName = GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(driver.vehicle)))
                                                 end
-                                                driver.lapTimeStart = currentTime
                                                 if driver.currentLap < aiState.numLaps then
+                                                    driver.currentWP = 1
+                                                    driver.lapTimeStart = currentTime
                                                     driver.currentLap = driver.currentLap + 1
-                                                    if #aiState.randVehicles > 0 then
-                                                        driver.vehicle = switchVehicle(driver.ped, aiState.randVehicles[math.random(#aiState.randVehicles)])
+                                                    if #aiState.randomVehicleList > 0 then -- in random vehicle race
+                                                        driver.vehicle = switchVehicle(driver.ped, aiState.randomVehicleList[math.random(#aiState.randomVehicleList)], -1, -1, -1, -1)
                                                     end
                                                 else
                                                     driver.raceState = STATE_IDLE
@@ -3921,16 +3766,13 @@ Citizen.CreateThread(function()
                         end
                     end
                 elseif STATE_IDLE == driver.raceState then
-                    if IsEntityDead(driver.ped) == false and driver.originalVehicleHash ~= nil then
-                        driver.vehicle = switchVehicle(driver.ped, driver.originalVehicleHash)
-                        if driver.vehicle ~= nil then
-                            SetVehicleColours(driver.vehicle, driver.colorPri, driver.colorSec)
-                        end
+                    if false == IsEntityDead(driver.ped) and "rand" == aiState.rtype then
+                        driver.vehicle = switchVehicle(driver.ped, driver.model, driver.colorPri, driver.colorSec, driver.colorPearl, driver.colorWheel)
                     end
                     SetEntityAsNoLongerNeeded(driver.vehicle)
                     Citizen.CreateThread(function()
                         while true do
-                            if GetVehicleNumberOfPassengers(driver.vehicle) == 0 then
+                            if 0 == GetVehicleNumberOfPassengers(driver.vehicle) then
                                 Citizen.Wait(1000)
                                 SetEntityAsNoLongerNeeded(driver.ped)
                                 break
@@ -3950,22 +3792,68 @@ Citizen.CreateThread(function()
 end)
 
 Citizen.CreateThread(function()
+    local enteringVehicle = false
     local recreated = false
     while true do
         Citizen.Wait(0)
-        if IsPauseMenuActive() == false then
+
+        local player = PlayerPedId()
+
+        if false == IsPedInAnyVehicle(player, true) then
+            local vehicle = GetVehiclePedIsTryingToEnter(player)
+            if false == enteringVehicle and 1 == DoesEntityExist(vehicle) then
+                enteringVehicle = true
+                for seat = -1, GetVehicleModelNumberOfSeats(GetEntityModel(vehicle)) - 2 do
+                    if 1 == IsVehicleSeatFree(vehicle, seat) then
+                        TaskEnterVehicle(player, vehicle, 10.0, seat, 1.0, 1, 0)
+                        break
+                    end
+                end
+                Citizen.CreateThread(function()
+                    Citizen.Wait(10000)
+                    if false == IsPedInVehicle(player, vehicle, true) then
+                        ClearPedTasksImmediately(player)
+                        enteringVehicle = false
+                    end
+                end)
+            end
+        else
+            enteringVehicle = false
+        end
+
+        if true == speedo then
+            local speed = GetEntitySpeed(player)
+            if "metric" == unitom then
+                drawMsg(leftSide, topSide + 0.25, "Speed(kph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 3.6), 0.7, 1)
+            else
+                drawMsg(leftSide, topSide + 0.25, "Speed(mph)", 0.7, 1)
+                drawMsg(rightSide, topSide + 0.25, ("%05.2f"):format(speed * 2.2369363), 0.7, 1)
+            end
+        end
+
+        if false == IsPauseMenuActive() then
             if false == recreated then
-                for _, racer in pairs(racerBlipGT) do
-                    ped = NetToPed(racer.netID)
-                    if DoesEntityExist(ped) == 1 then
-                        racer.gamerTag = CreateFakeMpGamerTag(ped, racer.name, false, false, nil, 0)
+                recreated = true
+                for netID, racer in pairs(racerBlipGT) do
+                    if 1 == NetworkDoesNetworkIdExist(netID) then
+                        racer.gamerTag = CreateFakeMpGamerTag(NetToPed(netID), racer.name, false, false, nil, 0)
                         SetMpGamerTagVisibility(racer.gamerTag, 0, true)
                     end
                 end
-                recreated = true
             end
         else
             recreated = false
         end
+
+        if true == panelShown then
+            DisableControlAction(0, 142, true)
+            DisableControlAction(0, 18, true)
+            DisableControlAction(0, 322, true)
+            DisableControlAction(0, 106, true)
+        end
+
+        --SetVehicleDensityMultiplierThisFrame(0.0) -- debug
+        --SetPedDensityMultiplierThisFrame(0.0) -- debug
     end
 end)

@@ -1,8 +1,0 @@
-cablecar
-freight
-freightcar
-freightcont1
-freightcont2
-freightgrain
-metrotrain
-tankercar

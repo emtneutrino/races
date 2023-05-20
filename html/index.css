@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2022, Neil J. Tan
+Copyright (c) 2023, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,19 @@ body {
     background: none !important;
 }
 
+button {
+    background-color: rgb(127, 127, 127);
+    padding: 10px;
+    margin: 5px;
+    min-width: max-content;
+}
+
+input {
+    margin-bottom: 5px;
+    font-size: 15px;
+    padding: 12px;
+}
+
 .row {
     display: flex;
     flex-direction: row;
@@ -57,23 +70,15 @@ body {
     border-radius: 7px;
 }
 
-#request {
-    width: 25%;
-}
-
-#role {
-    height: 44px;
-}
-
 #main_clear {
     width: 25%;
 }
 
-#main_track_access {
+#main_access {
     height: 44px;
 }
 
-#main_name {
+#main_track_name {
     width: 500px;
     height: 44px;
 }
@@ -90,23 +95,23 @@ body {
     width: 25%;
 }
 
-#leave {
+#main_leave {
     width: 20%;
 }
 
-#rivals {
+#main_rivals {
     width: 20%;
 }
 
-#respawn {
+#main_respawn {
     width: 20%;
 }
 
-#results {
+#main_results {
     width: 20%;
 }
 
-#spawn {
+#main_spawn {
     width: 25%;
 }
 
@@ -115,35 +120,31 @@ body {
     height: 44px;
 }
 
-#lvehicles {
+#main_lvehicles {
     width: 25%;
 }
 
-#main_vclass {
+#main_class {
     height: 44px;
 }
 
-#speedo {
+#main_speedo {
     width: 25%;
 }
 
-#change {
+#main_change {
     width: 25%;
 }
 
-#unit {
+#main_unit {
     height: 44px;
 }
 
-#funds {
+#main_funds {
     width: 25%;
 }
 
-#main_edit {
-    width: 25%;
-}
-
-#main_register {
+#main_track {
     width: 25%;
 }
 
@@ -155,7 +156,11 @@ body {
     width: 25%;
 }
 
-#editPanel {
+#main_register {
+    width: 25%;
+}
+
+#trackPanel {
     text-align: center;
     font-size: 25px;
     padding: 25px;
@@ -169,171 +174,72 @@ body {
     border-radius: 7px;
 }
 
-#edit {
+#track_edit {
     width: 25%;
 }
 
-#edit_clear {
+#track_clear {
     width: 25%;
 }
 
-#edit_reverse {
+#track_reverse {
     width: 25%;
 }
 
-#edit_track_access0 {
+#track_access0 {
     height: 44px;
 }
 
-#edit_name {
+#track_track_name {
     width: 500px;
     height: 44px;
 }
 
-#edit_load {
+#track_load {
     width: 15%;
 }
 
-#edit_overwrite {
+#track_overwrite {
     width: 15%;
 }
 
-#edit_delete {
+#track_delete {
     width: 15%;
 }
 
-#edit_blt {
+#track_blt {
     width: 15%;
 }
 
-#edit_list {
+#track_list {
     width: 15%;
 }
 
-#edit_track_access1 {
+#track_access1 {
     height: 44px;
 }
 
-#edit_unsaved {
+#track_unsaved {
     width: 500px;
 }
 
-#edit_save {
+#track_save {
     width: 15%;
 }
 
-#edit_main {
+#track_main {
     width: 25%;
 }
 
-#edit_register {
+#track_ai {
     width: 25%;
 }
 
-#edit_ai {
+#track_vlist {
     width: 25%;
 }
 
-#edit_vlist {
-    width: 25%;
-}
-
-#registerPanel {
-    text-align: center;
-    font-size: 25px;
-    padding: 25px;
-    color: rgb(191, 191, 191);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgb(255, 255, 255);
-    border-radius: 7px;
-}
-
-#register_track_access {
-    height: 44px;
-}
-
-#register_name {
-    width: 500px;
-    height: 44px;
-}
-
-#register_load {
-    width: 25%;
-}
-
-#register_blt {
-    width: 25%;
-}
-
-#register_list {
-    width: 25%;
-}
-
-#register {
-    width: 15%;
-}
-
-#buyin {
-    width: 10%;
-}
-
-#laps {
-    width: 10%;
-}
-
-#timeout {
-    width: 10%;
-}
-
-#allowAI {
-    height: 44px;
-}
-
-#rtype {
-    height: 44px;
-}
-
-#register_rest_vehicle {
-    height: 44px;
-}
-
-#register_vclass {
-    height: 44px;
-}
-
-#register_start_vehicle {
-    height: 44px;
-}
-
-#unregister {
-    width: 25%;
-}
-
-#start {
-    width: 25%;
-}
-
-#delay {
-    width: 10%;
-}
-
-#register_main {
-    width: 25%;
-}
-
-#register_edit {
-    width: 25%;
-}
-
-#register_ai {
-    width: 25%;
-}
-
-#register_vlist {
+#track_register {
     width: 25%;
 }
 
@@ -351,7 +257,7 @@ body {
     border-radius: 7px;
 }
 
-#ai_name {
+#ai_ai_name {
     width: 25%;
 }
 
@@ -360,60 +266,60 @@ body {
     height: 44px;
 }
 
-#add_ai {
+#ai_add {
     width: 15%;
 }
 
-#delete_ai {
+#ai_delete {
     width: 15%;
 }
 
-#spawn_ai {
+#ai_spawn {
     width: 15%;
 }
 
-#list_ai {
+#ai_list {
     width: 15%;
 }
 
-#delete_all_ai {
+#ai_delete_all {
     width: 15%;
 }
 
-#grp_access0 {
+#ai_access0 {
     height: 44px;
 }
 
-#grp_name {
+#ai_group_name {
     width: 500px;
     height: 44px;
 }
 
-#load_grp {
+#ai_load_grp {
     width: 20%;
 }
 
-#overwrite_grp {
+#ai_overwrite_grp {
     width: 20%;
 }
 
-#delete_grp {
+#ai_delete_grp {
     width: 20%;
 }
 
-#list_grps {
+#ai_list_grps {
     width: 20%;
 }
 
-#grp_access1 {
+#ai_access1 {
     height: 44px;
 }
 
-#grp_unsaved {
+#ai_unsaved {
     width: 500px;
 }
 
-#save_grp {
+#ai_save_grp {
     width: 20%;
 }
 
@@ -421,15 +327,15 @@ body {
     width: 25%;
 }
 
-#ai_edit {
-    width: 25%;
-}
-
-#ai_register {
+#ai_track {
     width: 25%;
 }
 
 #ai_vlist {
+    width: 25%;
+}
+
+#ai_register {
     width: 25%;
 }
 
@@ -447,45 +353,45 @@ body {
     border-radius: 7px;
 }
 
-#add_veh {
+#list_add_veh {
     width: 15%;
 }
 
-#list_vehicle {
+#list_add_list {
     width: 500px;
     height: 44px;
 }
 
-#delete_veh {
+#list_delete_veh {
     width: 15%;
 }
 
-#veh_list {
+#list_delete_list {
     width: 500px;
     height: 44px;
 }
 
-#add_class {
+#list_add_class {
     width: 20%;
 }
 
-#delete_class {
+#list_delete_class {
     width: 20%;
 }
 
-#list_vclass {
+#list_class_list {
     height: 44px;
 }
 
-#add_all_veh {
+#list_add_all_veh {
     width: 20%;
 }
 
-#delete_all_veh {
+#list_delete_all_veh {
     width: 20%;
 }
 
-#list_veh {
+#list_list_veh {
     width: 20%;
 }
 
@@ -493,24 +399,24 @@ body {
     height: 44px;
 }
 
-#list_name {
+#list_vl_name {
     width: 500px;
     height: 44px;
 }
 
-#load_list {
+#list_load {
     width: 20%;
 }
 
-#overwrite_list {
+#list_overwrite {
     width: 20%;
 }
 
-#delete_list {
+#list_delete {
     width: 20%;
 }
 
-#list_lists {
+#list_list {
     width: 20%;
 }
 
@@ -522,23 +428,122 @@ body {
     width: 500px;
 }
 
-#save_list {
+#list_save {
     width: 20%;
 }
 
-#vlist_main {
+#list_main {
     width: 25%;
 }
 
-#vlist_edit {
+#list_track {
     width: 25%;
 }
 
-#vlist_register {
+#list_ai {
     width: 25%;
 }
 
-#vlist_ai {
+#list_register {
+    width: 25%;
+}
+
+#registerPanel {
+    text-align: center;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#register_access {
+    height: 44px;
+}
+
+#register_track_name {
+    width: 500px;
+    height: 44px;
+}
+
+#register_load {
+    width: 25%;
+}
+
+#register_blt {
+    width: 25%;
+}
+
+#register_list {
+    width: 25%;
+}
+
+#register_register {
+    width: 15%;
+}
+
+#register_buyin {
+    width: 10%;
+}
+
+#register_laps {
+    width: 10%;
+}
+
+#register_timeout {
+    width: 10%;
+}
+
+#register_allowAI {
+    height: 44px;
+}
+
+#register_rtype {
+    height: 44px;
+}
+
+#register_rest_vehicle {
+    height: 44px;
+}
+
+#register_vclass {
+    height: 44px;
+}
+
+#register_start_vehicle {
+    height: 44px;
+}
+
+#register_unregister {
+    width: 25%;
+}
+
+#register_start {
+    width: 25%;
+}
+
+#register_delay {
+    width: 10%;
+}
+
+#register_main {
+    width: 25%;
+}
+
+#register_track {
+    width: 25%;
+}
+
+#register_ai {
+    width: 25%;
+}
+
+#register_vlist {
     width: 25%;
 }
 
@@ -564,17 +569,4 @@ body {
     font-size: 25px;
     padding: 25px;
     color: rgb(191, 191, 191);
-}
-
-button {
-    background-color: rgb(127, 127, 127);
-    padding: 10px;
-    margin: 5px;
-    min-width: max-content;
-}
-
-input {
-    margin-bottom: 5px;
-    font-size: 15px;
-    padding: 12px;
 }
