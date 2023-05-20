@@ -108,14 +108,14 @@ Required arguments are in square brackets.
 
 ## QUICK GUIDE FOR RACING
 ---
-- There are seven possible types of race you can join:
-   1. Any vehicle can be used
-   2. Restricted to a specific vehicle
-   3. Restricted to a specific vehicle class
-   4. Vehicles change randomly every lap
-   5. Vehicles change randomly every lap and racers start in a specified vehicle
-   6. Vehicles change randomly every lap to one in a specific class
-   7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.
+- There are seven possible types of race you can join:  
+   1\. Any vehicle can be used  
+   2\. Restricted to a specific vehicle  
+   3\. Restricted to a specific vehicle class  
+   4\. Vehicles change randomly every lap  
+   5\. Vehicles change randomly every lap and racers start in a specified vehicle  
+   6\. Vehicles change randomly every lap to one in a specific class  
+   7\. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.
 
    For the random vehicle race types 4, 5, 6 and 7, buy-in amounts will be set to 0 even if an amount was specified.
 
@@ -254,14 +254,14 @@ Required arguments are in square brackets.
    - Vehicle list data is saved in the file **`resources/races/vehicleListData.json`**.
 
 - ### REGISTERING A RACE
-   - There are seven possible types of race you can register:
-      1. Any vehicle can be used
-      2. Restricted to a specific vehicle
-      3. Restricted to a specific vehicle class
-      4. Vehicles change randomly every lap
-      5. Vehicles change randomly every lap and racers start in a specified vehicle
-      6. Vehicles change randomly every lap to one in a specific class
-      7. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.
+   - There are seven possible types of race you can register:  
+      1\. Any vehicle can be used  
+      2\. Restricted to a specific vehicle  
+      3\. Restricted to a specific vehicle class  
+      4\. Vehicles change randomly every lap  
+      5\. Vehicles change randomly every lap and racers start in a specified vehicle  
+      6\. Vehicles change randomly every lap to one in a specific class  
+      7\. Vehicles change randomly every lap to one in a specific class and racers start in a specified vehicle.
 
       For random vehicle race types 4, 5, 6 and 7, buy-in amounts will be set to 0 even if an amount was specified.
 
@@ -410,17 +410,17 @@ Required arguments are in square brackets.
    >**`local saveLog <const> = true`**  
 
 - The following events will be logged to **`resources/races/log.txt`**:  
-   1. Exporting a track
-   2. Importing a track
-   3. Saving a track
-   4. Overwriting a track
-   5. Deleting a track
-   6. Saving an AI group
-   7. Overwriting an AI group
-   8. Deleting an AI group
-   9. Saving a vehicle list
-   10. Overwriting a vehicle list
-   11. Deleting a vehicle list
+   1\. Exporting a track  
+   2\. Importing a track  
+   3\. Saving a track  
+   4\. Overwriting a track  
+   5\. Deleting a track  
+   6\. Saving an AI group  
+   7\. Overwriting an AI group  
+   8\. Deleting an AI group  
+   9\. Saving a vehicle list  
+   10\. Overwriting a vehicle list  
+   11\. Deleting a vehicle list
 
 ## ADD-ON VEHICLES
 ---
