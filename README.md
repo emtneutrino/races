@@ -92,10 +92,10 @@ Required arguments are in square brackets.
 ## QUICK GUIDE FOR RACING
 
 - There are four possible types of race you can join:
-   1. Any vehicle can be used
-   2. Restricted to a specific vehicle
-   3. Restricted to a specific vehicle class
-   4. Vehicles change randomly every lap
+1. Any vehicle can be used
+2. Restricted to a specific vehicle
+3. Restricted to a specific vehicle class
+4. Vehicles change randomly every lap
 
 - Look for registration waypoints which appear as purple circled star blips on the waypoint map.  The label for a blip in the waypoint map will indicate the player who registered the race, the buy-in amount, the number of laps, the DNF timeout, if AI drivers are allowed and other parameters of the race.  There will be corresponding purple cylinder checkpoints in the world.
 
