@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2023, Neil J. Tan
+Copyright (c) 2024, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -76,29 +76,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <button id = "main_lvehicles">List Vehicles</button>
                 <label for = "main_class">Vehicle Class:</label>
                 <select id = "main_class">
-                    <option value = -1>Any</option>
-                    <option value = 0>0:Compacts</option>
-                    <option value = 1>1:Sedans</option>
-                    <option value = 2>2:SUVs</option>
-                    <option value = 3>3:Coupes</option>
-                    <option value = 4>4:Muscle</option>
-                    <option value = 5>5:Sports Classics</option>
-                    <option value = 6>6:Sports</option>
-                    <option value = 7>7:Super</option>
-                    <option value = 8>8:Motorcycles</option>
-                    <option value = 9>9:Off-road</option>
-                    <option value = 10>10:Industrial</option>
-                    <option value = 11>11:Utility</option>
-                    <option value = 12>12:Vans</option>
-                    <option value = 13>13:Cycles</option>
-                    <option value = 14>14:Boats</option>
-                    <option value = 15>15:Helicopters</option>
-                    <option value = 16>16:Planes</option>
-                    <option value = 17>17:Service</option>
-                    <option value = 18>18:Emergency</option>
-                    <option value = 19>19:Military</option>
-                    <option value = 20>20:Commercial</option>
-                    <option value = 21>21:Trains</option>
                 </select>
             </div>
             <br>
@@ -252,28 +229,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <button id = "list_add_class">Add Vehicle Class</button>
                 <button id = "list_delete_class">Delete Vehicle Class</button>
                 <select id = "list_class_list">
-                    <option value = 0>0:Compacts</option>
-                    <option value = 1>1:Sedans</option>
-                    <option value = 2>2:SUVs</option>
-                    <option value = 3>3:Coupes</option>
-                    <option value = 4>4:Muscle</option>
-                    <option value = 5>5:Sports Classics</option>
-                    <option value = 6>6:Sports</option>
-                    <option value = 7>7:Super</option>
-                    <option value = 8>8:Motorcycles</option>
-                    <option value = 9>9:Off-road</option>
-                    <option value = 10>10:Industrial</option>
-                    <option value = 11>11:Utility</option>
-                    <option value = 12>12:Vans</option>
-                    <option value = 13>13:Cycles</option>
-                    <option value = 14>14:Boats</option>
-                    <option value = 15>15:Helicopters</option>
-                    <option value = 16>16:Planes</option>
-                    <option value = 17>17:Service</option>
-                    <option value = 18>18:Emergency</option>
-                    <option value = 19>19:Military</option>
-                    <option value = 20>20:Commercial</option>
-                    <option value = 21>21:Trains</option>
                 </select>
             </div>
             <br>
@@ -347,8 +302,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 Timeout:<input id = "register_timeout" placeholder = "Timeout">
                 <label for = "register_allowAI">Allow AI:</label>
                 <select id = "register_allowAI">
-                    <option value = "no">No</option>
                     <option value = "yes">Yes</option>
+                    <option value = "no">No</option>
                 </select>
                 <label for = "register_rtype">Race Type:</label>
                 <select id = "register_rtype">
@@ -369,9 +324,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <select id = "register_vclass">
                     </select>
                 </div>
+                <div id = "register_rclass">
+                    <label for = "register_rvclass">Vehicle Class:</label>
+                    <select id = "register_rvclass">
+                    </select>
+                </div>
                 <div id = "register_sveh">
                     <label for = "register_start_vehicle">Start Vehicle:</label>
                     <select id = "register_start_vehicle">
+                    </select>
+                </div>
+                <div id = "register_recurring">
+                    <label for = "register_recur">Recurring:</label>
+                    <select id = "register_recur">
+                        <option value = "yes">Yes</option>
+                        <option value = "no">No</option>
+                    </select>
+                </div>
+                <div id = "register_ordered">
+                    <label for = "register_order">Ordered:</label>
+                    <select id = "register_order">
+                        <option value = "yes">Yes</option>
+                        <option value = "no">No</option>
                     </select>
                 </div>
             </div>
@@ -404,6 +378,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <br>
             <br>
             <button id = "reply_close">Close</button>
+        </div>
+
+        <div id = "confirmPanel">
+            <p id = "confirm_message"></p>
+            <br>
+            <br>
+            <div class = "row">
+                <button id = "confirm_yes">Yes</button>
+                <button id = "confirm_no">No</button>
+            </div>
         </div>
 
         <script src = "index.js" type = "text/javascript"></script>

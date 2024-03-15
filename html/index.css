@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2023, Neil J. Tan
+Copyright (c) 2024, Neil J. Tan
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,6 @@ input {
 }
 
 #main_vehicle {
-    width: 25%;
     height: 44px;
 }
 
@@ -262,7 +261,6 @@ input {
 }
 
 #ai_vehicle {
-    width: 25%;
     height: 44px;
 }
 
@@ -515,7 +513,19 @@ input {
     height: 44px;
 }
 
+#register_rvclass {
+    height: 44px;
+}
+
 #register_start_vehicle {
+    height: 44px;
+}
+
+#register_recur {
+    height: 44px;
+}
+
+#register_order {
     height: 44px;
 }
 
@@ -569,4 +579,31 @@ input {
     font-size: 25px;
     padding: 25px;
     color: rgb(191, 191, 191);
+}
+
+#confirmPanel {
+    text-align: center;
+    padding: 25px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 7px;
+}
+
+#confirm_message {
+    text-align: left;
+    font-size: 25px;
+    padding: 25px;
+    color: rgb(191, 191, 191);
+}
+
+#confirm_yes {
+    width: 25%;
+}
+
+#confirm_no {
+    width: 25%;
 }

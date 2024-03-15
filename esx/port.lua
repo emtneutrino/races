@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --]]
 
-local ESX = nil
+local ESX = exports["es_extended"]:getSharedObject()
 
 function GetFunds(source)
     local xPlayer = ESX.GetPlayerFromId(source)
@@ -77,10 +77,3 @@ end
 function Remove(source)
     -- do nothing
 end
-
-Citizen.CreateThread(function()
-    while nil == ESX do
-        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-        Citizen.Wait(0)
-    end
-end)
