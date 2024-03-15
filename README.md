@@ -91,10 +91,10 @@ Required arguments are in square brackets.
 
 ## QUICK GUIDE FOR RACING
 
-- There are four possible types of race you can join:
-   1\. Any vehicle can be used
-   2\. Restricted to a specific vehicle
-   3\. Restricted to a specific vehicle class
+- There are four possible types of race you can join:  
+   1\. Any vehicle can be used  
+   2\. Restricted to a specific vehicle  
+   3\. Restricted to a specific vehicle class  
    4\. Vehicles change randomly every lap
 
 - Look for registration waypoints which appear as purple circled star blips on the waypoint map.  The label for a blip in the waypoint map will indicate the player who registered the race, the buy-in amount, the number of laps, the DNF timeout, if AI drivers are allowed and other parameters of the race.  There will be corresponding purple cylinder checkpoints in the world.
@@ -246,10 +246,10 @@ Required arguments are in square brackets.
    - Vehicle list data is saved in the file **`resources/races/vehicleListData.json`**.
 
 - ### REGISTERING A RACE
-   - There are four possible types of race you can register:
-      1\. Any vehicle can be used
-      2\. Restricted to a specific vehicle
-      3\. Restricted to a specific vehicle class
+   - There are four possible types of race you can register:  
+      1\. Any vehicle can be used  
+      2\. Restricted to a specific vehicle  
+      3\. Restricted to a specific vehicle class  
       4\. Vehicles change randomly every lap
 
    - You will need to create or load a track before you can register a race.  Registering your race will advertise the race to all players.  At the starting waypoint of the track, also known as the registration waypoint, a purple circled star blip will appear on the waypoint map and a purple cylinder checkpoint will appear in the world.  The registration waypoint will be visible to all players.
