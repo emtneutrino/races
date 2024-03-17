@@ -2214,6 +2214,7 @@ local humanPed
 RegisterCommand("races", function(_, args)
     if nil == args[1] then
         notifyPlayer(
+            "\n" ..
             "Commands:\n" ..
             "Required arguments are in square brackets.  Optional arguments are in parentheses.\n" ..
             "/races - display list of available /races commands\n" ..
