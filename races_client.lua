@@ -3551,7 +3551,6 @@ Citizen.CreateThread(function()
                 if false == started then
                     started = true
                     PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
-                    bestLapVehicleName = currentVehicleName
                     lapTimeStart = currentTime
                     speedo = true
                     if vehicle ~= 0 then
