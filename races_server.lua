@@ -91,22 +91,16 @@ local allVehicles = readData("vehicles.json") or {} -- list of all vehicles
 if 0 == #allVehicles then
     print("^1Warning!  The file 'vehicles.json' does not exist or is empty.^0")
 else
-    table.sort(allVehicles)
-    local current = allVehicles[1]
-    for i = 2, #allVehicles do
-        while true do
-            if allVehicles[i] ~= nil then
-                if allVehicles[i] == current then
-                    table.remove(allVehicles, i)
-                else
-                    current = allVehicles[i]
-                    break
-                end
-            else
-                break
-            end
+    local exists = {}
+    local list = {}
+    for _, model in pairs(allVehicles) do
+        if nil == exists[model] then
+            exists[model] = true
+            list[#list + 1] = model
         end
     end
+    table.sort(list)
+    allVehicles = list
 end
 
 local races = {} -- races[source] = {owner, access, trackName, buyin, laps, timeout, rtype, restrict, vclass, className, svehicle, recur, order, vehicleList, state, waypointCoords[] = {x, y, z, r}, numRacing, players[netID] = {source, playerName, aiName, numWaypointsPassed, data}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
@@ -464,68 +458,50 @@ local function minutesSeconds(milliseconds)
 end
 
 local function saveResults(race)
-    -- races[source] = {owner, access, trackName, buyin, laps, timeout, rtype, restrict, vclass, className, svehicle, recur, order, vehicleList, state, waypointCoords[] = {x, y, z, r}, numRacing, players[netID] = {source, playerName, aiName, numWaypointsPassed, data}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
-    local msg = "Race registered by '" .. race.owner .. "' using "
-    if nil == race.trackName then
-        msg = msg .. "unsaved track "
-    else
-        msg = msg .. ("pub" == race.access and "publicly" or "privately") .. " saved track '" .. race.trackName .. "'"
-    end
-
-    msg = msg .. (" : %d buy-in : %d lap(s) : %d timeout"):format(race.buyin, race.laps, race.timeout)
-
-    if "yes" == race.allowAI then
-        msg = msg .. " : AI allowed"
-    end
-
-    if "rest" == race.rtype then
-        msg = msg .. " : using '" .. race.restrict .. "' vehicle"
-    elseif "class" == race.rtype then
-        msg = msg .. " : using " .. race.className .. " class vehicles"
-    elseif "rand" == race.rtype then
-        msg = msg .. " : using random "
-        if race.vclass ~= nil then
-            msg = msg .. race.className .. " class "
-        end
-        msg = msg .. "vehicles"
-        if race.svehicle ~= nil then
-            msg = msg .. " : start '" .. race.svehicle .. "'"
-        end
-        if "yes" == race.recur then
-            msg = msg .. " : recurring"
-        else
-            msg = msg .. " : nonrecurring"
-        end
-        if "yes" == race.order then
-            msg = msg .. " : ordered"
-        else
-            msg = msg .. " : unordered"
-        end
-    end
-
-    msg = msg .. "\n"
+    local results = {}
 
     -- results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}
-    msg = msg .. "Results:\n"
     for pos, result in ipairs(race.results) do
-        if -1 == result.finishTime then
-            msg = msg .. "DNF - " .. result.playerName
-
-            if result.bestLapTime ~= -1 then
-                local minutes, seconds = minutesSeconds(result.bestLapTime)
-                msg = msg .. (" - best lap %02d:%05.2f"):format(minutes, seconds)
-            end
-
-            msg = msg .. " using " .. result.vehicleName .. "\n"
-        else
-            local fMinutes, fSeconds = minutesSeconds(result.finishTime)
-            local lMinutes, lSeconds = minutesSeconds(result.bestLapTime)
-            msg = msg .. ("%d - %02d:%05.2f - %s - best lap %02d:%05.2f using %s\n"):format(pos, fMinutes, fSeconds, result.playerName, lMinutes, lSeconds, result.vehicleName)
+        local finishTime = "DNF"
+        local bestLapTime = "DNF"
+        if result.finishTime ~= -1 then
+            local minutes, seconds = minutesSeconds(result.finishTime)
+            finishTime = ("%02d:%05.2f"):format(minutes, seconds)
         end
+        if result.bestLapTime ~= -1 then
+            local minutes, seconds = minutesSeconds(result.bestLapTime)
+            bestLapTime = ("%02d:%05.2f"):format(minutes, seconds)
+        end
+        results[#results + 1] = {
+            position = pos,
+            playerName = result.playerName,
+            isAI = result.aiName ~= nil and "yes" or "no",
+            finishTime = finishTime,
+            bestLapTime = bestLapTime,
+            vehicleName = result.vehicleName
+        }
     end
 
-    local resultsFileName = "results_" .. race.owner .. ".txt"
-    if false == writeFile(resultsFileName, msg) then
+    -- races[source] = {owner, access, trackName, buyin, laps, timeout, rtype, restrict, vclass, className, svehicle, recur, order, vehicleList, state, waypointCoords[] = {x, y, z, r}, numRacing, players[netID] = {source, playerName, aiName, numWaypointsPassed, data}, results[] = {source, playerName, aiName, finishTime, bestLapTime, vehicleName}}
+    local raceResults = {
+        owner = race.owner,
+        access = race.access or "none",
+        trackName = race.trackName or "unsaved",
+        buyin = race.buyin,
+        laps = race.laps,
+        timeout = race.timeout,
+        allowAI = race.allowAI,
+        rtype = race.rtype or "norm",
+        restrict = race.restrict or "none",
+        class = race.className or "any",
+        svehicle = race.svehicle or "any",
+        recur = race.recur or "N/A",
+        order = race.order or "N/A",
+        results = results
+    }
+
+    local resultsFileName = "results_" .. race.owner .. ".json"
+    if false == writeData(resultsFileName, raceResults) then
         print("Error writing file '" .. resultsFileName .. "'")
     end
 end
@@ -671,24 +647,21 @@ end)
 
 --[[
 local function sortRemDup(sounds)
-    table.sort(sounds, function(p0, p1)
-        return (p0.set < p1.set) or (p0.set == p1.set and p0.name < p1.name)
-    end)
-    local current = sounds[1]
-    for i = 2, #sounds do
-        while true do
-            if sounds[i] ~= nil then
-                if sounds[i].set == current.set and sounds[i].name == current.name then
-                    table.remove(sounds, i)
-                else
-                    current = sounds[i]
-                    break
-                end
-            else
-                break
-            end
+    local exists = {}
+    local list = {}
+    for _, sound in pairs(sounds) do
+        if nil == exists[sound.set] then
+            exists[sound.set] = {}
+        end
+        if nil == exists[sound.set][sound.name] then
+            exists[sound.set][sound.name] = true
+            list[#list + 1] = {set = sound.set, name = sound.name}
         end
     end
+    table.sort(list, function(p0, p1)
+        return (p0.set < p1.set) or (p0.set == p1.set and p0.name < p1.name)
+    end)
+    return list
 end
 
 RegisterNetEvent("sounds0")
@@ -705,16 +678,13 @@ AddEventHandler("sounds0", function()
     for line in file:lines() do
         local i = string.find(line, ",")
         if i ~= fail then
-            local name = string.upper(string.sub(line, 1, i - 1))
-            local set = string.upper(string.sub(line, i + 1, -1))
-            sounds[#sounds + 1] = {name = name, set = set}
+            sounds[#sounds + 1] = {set = string.upper(string.sub(line, i + 1, -1)), name = string.upper(string.sub(line, 1, i - 1))}
         else
             print(line)
         end
     end
     file:close()
-    sortRemDup(sounds)
-    TriggerClientEvent("sounds", source, sounds)
+    TriggerClientEvent("sounds", source, sortRemDup(sounds))
 end)
 
 RegisterNetEvent("sounds1")
@@ -731,16 +701,13 @@ AddEventHandler("sounds1", function()
     for line in file:lines() do
         local name, set = string.match(line, "(\t.*)(\t.*)")
         if name ~= nil and set ~= nil then
-            name = string.upper(string.sub(name, 2, -1))
-            set = string.upper(string.sub(set, 2, -1))
-            sounds[#sounds + 1] = {name = name, set = set}
+            sounds[#sounds + 1] = {set = string.upper(string.sub(set, 2, -1)), name = string.upper(string.sub(name, 2, -1))}
         else
             print(line)
         end
     end
     file:close()
-    sortRemDup(sounds)
-    TriggerClientEvent("sounds", source, sounds)
+    TriggerClientEvent("sounds", source, sortRemDup(sounds))
 end)
 
 RegisterNetEvent("vehicleHashes")
@@ -763,24 +730,19 @@ AddEventHandler("vehicleHashes", function()
         end
     end
     file:close()
-    table.sort(vehicles)
-    local current = vehicles[1]
-    for i = 2, #vehicles do
-        while true do
-            if vehicles[i] ~= nil then
-                if vehicles[i] == current then
-                    table.remove(vehicles, i)
-                else
-                    current = vehicles[i]
-                    break
-                end
-            else
-                break
-            end
+
+    local exists = {}
+    local list = {}
+    for _, model in pairs(vehicles) do
+        if nil == exists[model] then
+            exists[model] = true
+            list[#list + 1] = model
         end
     end
-    writeData("vehicles_latest.json", vehicles)
-    TriggerClientEvent("vehicleHashes", source, vehicles)
+    table.sort(list)
+
+    writeData("vehicles_latest.json", list)
+    TriggerClientEvent("vehicleHashes", source, list)
 end)
 --]]
 

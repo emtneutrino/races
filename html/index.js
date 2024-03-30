@@ -369,22 +369,16 @@ $(function() {
     });
 
     /* AI panel */
-    $("#ai_add").click(function() {
-        $.post("https://races/add_ai", JSON.stringify({
-            name: $("#ai_ai_name").val()
+    $("#ai_spawn").click(function() {
+        $.post("https://races/spawn_ai", JSON.stringify({
+            name: $("#ai_ai_name").val(),
+            vehicle: $("#ai_vehicle").val()
         }));
     });
 
     $("#ai_delete").click(function() {
         $.post("https://races/delete_ai", JSON.stringify({
             name: $("#ai_ai_name").val()
-        }));
-    });
-
-    $("#ai_spawn").click(function() {
-        $.post("https://races/spawn_ai", JSON.stringify({
-            name: $("#ai_ai_name").val(),
-            vehicle: $("#ai_vehicle").val()
         }));
     });
 

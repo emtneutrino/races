@@ -20,8 +20,7 @@ For the following **`/races`** commands, [access] = {pvt, pub} where 'pvt' opera
 >**`/races list [access]`** - list saved private or public tracks  
 >**`/races blt [access] [name]`** - list 10 best lap times of private or public track saved as [name]
 
->**`/races ai add [name]`** - add an AI driver named [name]  
->**`/races ai spawn [name] (vehicle)`** - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder'  
+>**`/races ai spawn [name] (vehicle)`** - spawn AI driver named [name] in (vehicle); (vehicle) defaults to 'adder' if not specified  
 >**`/races ai delete [name]`** - delete an AI driver named [name]  
 >**`/races ai deleteAll`** - delete all AI drivers  
 >**`/races ai list`** - list AI driver names
@@ -55,17 +54,17 @@ For the following **`/races register`** commands, (buy-in) defaults to 500, (lap
 >**`/races register (buy-in) (laps) (DNF timeout) (allow AI) rand (class) (start) (recur) (order)`** - register your race changing vehicles randomly every lap; (class) defaults to any; (start) defaults to any; (recur) = {yes, no} defaults to 'yes'; (order) = {yes, no} defaults to 'no'
 
 >**`/races unregister`** - unregister your race  
->**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds
+>**`/races start (delay)`** - start your registered race; (delay) defaults to 30 seconds if not specified
 
 >**`/races leave`** - leave a race that you joined  
 >**`/races rivals`** - list players in a race that you joined  
 >**`/races respawn`** - respawn at last waypoint  
 >**`/races results`** - view latest race results  
->**`/races spawn (vehicle)`** - spawn a vehicle; (vehicle) defaults to 'adder'  
->**`/races lvehicles (class)`** - list available vehicles of type (class); otherwise list all available vehicles if (class) is not specified  
+>**`/races spawn (vehicle)`** - spawn a vehicle; (vehicle) defaults to 'adder' if not specified  
+>**`/races lvehicles (class)`** - list available vehicles of type (class); (class) defaults to all classes if not specified  
 >**`/races speedo (unit)`** - change unit of speed measurement to (unit) = {imperial, metric}; otherwise toggle display of speedometer if (unit) is not specified  
 >**`/races funds`** - view available funds  
->**`/races panel (panel)`** - display (panel) = {track, ai, list, register} panel; otherwise display main panel if (panel) is not specified
+>**`/races panel (panel)`** - display (panel) = {track, ai, list, register} panel; (panel) defaults to main panel if not specified
 
 **IF YOU DO NOT WANT TO TYPE CHAT COMMANDS, YOU CAN BRING UP A PANEL THAT CAN DO THE SAME TASK BY TYPING `/races panel`, `/races panel track`, `/races panel ai`, `/races panel list` OR `/races panel register`.**
 
@@ -130,7 +129,7 @@ Required arguments are in square brackets.
 - ### EDITING TRACKS
    - Type **`/races edit`** until you see the message **`'Editing started'`** to start editing waypoints.  Once you are finished, type **`/races edit`** until you see the message **`'Editing stopped'`** to stop editing.  You cannot edit waypoints if you have joined a race.  Leave the race or finish it first.
 
-   - There are four types of track waypoints and one type of registration waypoint.  Each track waypoint will have a corresponding blip on the waypoint map and, when editing, a corresponding checkpoint in the world.  A combined start/finish waypoint is a yellow checkered flag blip/checkpoint.  A start waypoint is a green checkered flag blip/checkpoint.  A finish waypoint is a white checkered flag blip/checkpoint.  A waypoint that is not a start and/or finish waypoint is a blue numbered blip/checkpoint.  A registration waypoint is a purple blip/checkpoint.  When you stop editing, all the checkpoints in the world, except for registration checkpoints, will disappear, but all the blips on the waypoint map will remain.
+   - There are four types of track waypoints and one type of registration waypoint.  Each track waypoint will have a corresponding blip on the waypoint map and, when editing, a corresponding checkpoint in the world.  A combined start/finish waypoint is an orange checkered flag blip/checkpoint.  A start waypoint is a green checkered flag blip/checkpoint.  A finish waypoint is a white checkered flag blip/checkpoint.  A waypoint that is not a start and/or finish waypoint is a blue numbered blip/checkpoint.  A registration waypoint is a purple blip/checkpoint.  When you stop editing, all the checkpoints in the world, except for registration checkpoints, will disappear, but all the blips on the waypoint map will remain.
 
    - Selecting a waypoint on the waypoint map is done by moving the waypoint you want to select under the crosshairs and pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a PlayStation controller.  Selecting a waypoint in the world is done by moving toward the waypoint until prompted to select the waypoint and pressing 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a PlayStation controller.  The corresponding blip on the waypoint map and checkpoint in the world will turn red.  Unselecting a waypoint is done by selecting the waypoint again.  This will turn the waypoint color back to its original color.
 
@@ -138,7 +137,7 @@ Required arguments are in square brackets.
 
    - To add a waypoint in the world, unselect any waypoints, move to the point where you want to add the waypoint and press 'Enter' on a keyboard, 'A' button on an Xbox controller or 'Cross' button on a PlayStation controller.  A corresponding blip in the waypoint map will be created.
 
-   - The first waypoint you add will be a start/finish waypoint (yellow checkered flag).  Adding a second waypoint will turn the start/finish waypoint into a start waypoint (green checkered flag) and the second waypoint will become a finish waypoint (white checkered flag).  Every waypoint added after the first two will become a finish waypoint (white checkered flag).  Waypoints between the start and finish waypoints will become blue numbered waypoints.
+   - The first waypoint you add will be a start/finish waypoint (orange checkered flag).  Adding a second waypoint will turn the start/finish waypoint into a start waypoint (green checkered flag) and the second waypoint will become a finish waypoint (white checkered flag).  Every waypoint added after the first two will become a finish waypoint (white checkered flag).  Waypoints between the start and finish waypoints will become blue numbered waypoints.
 
    - If you want to add a waypoint between two consecutive waypoints, select the two waypoints first and then add the new waypoint.  The two waypoints you select must be consecutive waypoints.  You will not be able to select two non-consecutive waypoints.  After adding the new waypoint, the two waypoints you selected will become unselected.  You will not be able to add a waypoint between the first and last waypoints this way.  To add a waypoint between the first and last waypoints, unselect any waypoints and add the new waypoint.
 
@@ -152,9 +151,9 @@ Required arguments are in square brackets.
 
    - You can increase or decrease the radius of an existing waypoint in the world, but not in the waypoint map.  There are minimum and maximum radius limits to waypoints.  To increase the radius of the waypoint, select the waypoint, then press 'Up Arrow' on a keyboard or DPAD up.  To decrease the radius of the waypoint, select the waypoint, then press 'Down Arrow' on a keyboard or DPAD down.  When in a race, a player has passed a waypoint if they pass within the radius of the waypoint.  The waypoint will disappear and the next waypoint will appear.
 
-   - For multi-lap races, the start and finish must be the same waypoint.  Select the finish waypoint (white checkered flag) first, then select the start waypoint (green checkered flag).  The original start waypoint (green checkered flag) will become a start/finish waypoint (yellow checkered flag).  The original finish waypoint (white checkered flag) will become a blue numbered waypoint.
+   - For multi-lap races, the start and finish must be the same waypoint.  Select the finish waypoint (white checkered flag) first, then select the start waypoint (green checkered flag).  The original start waypoint (green checkered flag) will become a start/finish waypoint (orange checkered flag).  The original finish waypoint (white checkered flag) will become a blue numbered waypoint.
 
-   - You can separate the start/finish waypoint (yellow checkered flag) in one of two ways.  The first way is by selecting the start/finish waypoint (yellow checkered flag) first, then selecting the highest numbered blue waypoint.  The start/finish waypoint will become the start waypoint (green checkered flag).  The highest numbered blue waypoint will become the finish waypoint (white checkered flag).  The second way is by unselecting any waypoints and adding a new waypoint.  The start/finish waypoint will become the start waypoint (green checkered flag).  The added waypoint will become the finish waypoint (white checkered flag).
+   - You can separate the start/finish waypoint (orange checkered flag) in one of two ways.  The first way is by selecting the start/finish waypoint (orange checkered flag) first, then selecting the highest numbered blue waypoint.  The start/finish waypoint will become the start waypoint (green checkered flag).  The highest numbered blue waypoint will become the finish waypoint (white checkered flag).  The second way is by unselecting any waypoints and adding a new waypoint.  The start/finish waypoint will become the start waypoint (green checkered flag).  The added waypoint will become the finish waypoint (white checkered flag).
 
    - Type **`/races clear`** to clear all waypoints, except registration waypoints.  You cannot clear waypoints if you have joined a race. Leave the race or finish it first.
 
@@ -182,11 +181,9 @@ Required arguments are in square brackets.
 - ### EDITING AI GROUPS
    - An AI group is made of one or more AI drivers and the vehicles they drive.  Before you can add and spawn AI drivers, you will need to register a race allowing AI to join first.  You must join the race to see the gamer tags of any AI you add and spawn.
 
-   - Type **`/races ai add alpha`** to add an AI driver named **`alpha`** at your current location and heading.  This only sets the location and heading of the driver.
+   - Type **`/races ai spawn alpha elegy2`** to add an AI driver named **`alpha`** in an **`elegy2`** vehicle at your location and heading.  Move away from the location where you added the driver until the AI and vehicle spawns.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  If you decide the driver should be in a different vehicle, type **`/races ai spawn alpha zentorno`** to change the vehicle to a **`zentrono`**.  If the race is restricted to a specific vehicle or a vehicle class and the vehicle you tried to spawn does not satisfy the restriction, a message will display saying what vehicle or vehicle class is allowed and **THE AI WILL BE ADDED, BUT NOT SPAWNED**.  You need to type the spawn command with a vehicle that satisfies the restriction to spawn the AI and vehicle.
 
-   - Type **`/races ai spawn alpha elegy2`**, after moving away from the location where you added the driver, to spawn a driver in an **`elegy2`** vehicle at the location and heading you set.  If you do not specify a vehicle, an **`adder`** vehicle is spawned by default.  If you decide the driver should be in a different vehicle, type **`/races ai spawn alpha zentorno`** to change the vehicle to a **`zentrono`**.
-
-   - Type **`/races ai delete alpha`** to delete an AI driver you added named **`alpha`**.  You can delete the driver before or after you spawn the driver.
+   - Type **`/races ai delete alpha`** to delete an AI driver you added named **`alpha`**.  You can delete the driver whether or not the AI and vehicle has spawned.
 
    - Type **`/races ai deleteAll`** to delete all AI drivers.
 
@@ -373,7 +370,7 @@ Required arguments are in square brackets.
 
 - Once everyone who wants to join your registered race have joined, you can start the race.  Multiple races can be started simultaneously by different players.  Type **`/races start 10`** to start the race with a delay of 10 seconds before the actual start.  If you do not specify a delay, the default is 30 seconds.  The minimum delay allowed is 5 seconds.  Any vehicles the players are in will be frozen until after the delay expires.  After the race has started, your race advertisement will be removed from all players.  The position of all human players and AI drivers will show up as green blips on the minimap and waypoint map.
 
-- The current race waypoint will have a yellow cylinder checkpoint appear in the world.  It will have an arrow indicating the direction of the next waypoint.  If a restricted vehicle or vehicle class was specified at the race registration waypoint, you will need to be in the restricted vehicle or a vehicle of the specified class when passing the waypoint to make the next waypoint appear.  If a restricted vehicle or vehicle class was not specified, you can pass the waypoint in any vehicle or on foot to make the next waypoint appear.  Once you pass the waypoint, it will disappear, a sound will play and the next waypoint will appear in the world.  Only the next three waypoints will be shown on the minimap at a time.  A blue route will be shown in your minimap to the current race waypoint.  Once you pass the current waypoint, it will disappear on the minimap and the next third waypoint along the route will appear on the minimap.  Once you leave or finish the race, all the race waypoints will reappear on the minimap.
+- The current race waypoint will have a yellow cylinder checkpoint in the world and a yellow blip on the minimap.  The checkpoint will have an arrow indicating the direction of the next waypoint.  If a restricted vehicle or vehicle class was specified at the race registration waypoint, you will need to be in the restricted vehicle or a vehicle of the specified class when passing the waypoint to make the next waypoint appear.  If a restricted vehicle or vehicle class was not specified, you can pass the waypoint in any vehicle or on foot to make the next waypoint appear.  Once you pass the waypoint, it will disappear, a sound will play and the next waypoint will appear in the world.  Only the next three waypoints will be shown on the minimap at a time.  A blue route will be shown in your minimap to the current race waypoint.  Once you pass the current waypoint, it will disappear on the minimap and the next third waypoint along the route will appear on the minimap.  Once you leave or finish the race, all the race waypoints will reappear on the minimap.
 
 - Your current position, lap, waypoint, lap time, best lap time, total time, vehicle name and speed will display.  If someone has already finished the race, a DNF timeout will also appear.
 
@@ -586,6 +583,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - Added requirement that random vehicle races must be at least 2 laps.
 
 ## CHANGE NOTES
+- 2024-03-29
+   - races_client.lua
+      - removed '/races ai add [name]' command
+      - removed 'addAIDriver' function
+      - added 'coord' and 'heading' arguments to 'spawnAIDriver' function
+      - player adds and spawns AI driver using '/races ai spawn [name] (vehicle)' command
+         - player must move away from where AI driver was added for ped and vehicle to spawn
+      - if player attempts to spawn AI driver, but fails because some restriction is not satisfied(vehicle or vehicle class), AI will be added without a ped and vehicle spawning
+         - '/races ai list' command will show AI driver without a vehicle
+      - if player types '/races ai loadGrp [access] [name]', AI driver ped and vehicle will not spawn if player is too close to where AI driver would spawn
+         - '/races ai list' command will show AI driver without a vehicle
+         - player must move away for AI driver ped and vehicle to spawn
+      - player can change AI's vehicle using '/races ai spawn [name] (vehicle)' command
+      - fixed bug where player is unable spawn AI or load AI group in 'Custom'(-1) class races
+         - aiState.drivers[name].raceVehicleList was nil when 'spawnAIDriver' function was called
+      - fixed bug where AI drivers calculated current waypoint incorrectly if player's 'startIsFinish' value is different than 'aiState.startIsFinish'
+         - was using 'startIsFinish' instead of 'aiState.startIsFinish'
+         - fix was to use 'aiState.startIsFinish' instead of 'startIsFinish' to calculate current waypoint
+      - fixed bug where finish event was not triggered by server if player joined race, then left before start delay expired
+         - 'bestLapVehicleName' was nil before start delay expired
+         - server ignored finish event because 'vehicleName' argument was nil
+         - results event would not be triggered by server
+         - race would not be deleted on server and player would not be able to register another race
+            - player would have to unregister race as work around for problem
+         - fix was to set 'bestLapVehicleName' before start delay expired
+      - fixed bugs where finish and results events were not caught by client if player joined race, then left before start delay expired
+         - leaving would set 'raceIndex = -1' prematurely and finish and results events were not caught because 'rIndex' did not equal 'raceIndex'
+         - fix was to set 'raceIndex = -1' only when results event was caught
+      - changed combined start/finish waypoint color to orange
+      - changed current waypoint blip color to yellow so racer knows which blip is current waypoint
+      - print model and long name of vehicles in 'listVeh' function
+   - races_server.lua
+      - modified 'saveResults' function so results are saved as JSON file instead of text file
+   - index.html
+      - removed 'ai_add' button
+   - index.css
+      - removed 'ai_add' style
+   - index.js
+      - removed 'ai_add' click function
+
 - 2024-03-14
    - races_client.lua and races_server.lua
       - flattened nested if statements for better readability

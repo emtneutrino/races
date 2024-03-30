@@ -264,15 +264,11 @@ input {
     height: 44px;
 }
 
-#ai_add {
+#ai_spawn {
     width: 15%;
 }
 
 #ai_delete {
-    width: 15%;
-}
-
-#ai_spawn {
     width: 15%;
 }
 
